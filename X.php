@@ -35,6 +35,9 @@ if (file_exists(__XDIR__ . '3rdparty/Twig/Autoloader.php')){
 
 class X extends \X\AbstractClasses\PrivateInstantiation{
 
+  static public function getScript(){
+    return $_SERVER['SCRIPT_FILENAME'];
+  }
 }
 
 ?>
