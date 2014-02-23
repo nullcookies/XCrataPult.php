@@ -62,6 +62,26 @@ final class Validators extends PrivateInstantiation{
     $imagedata  = getimagesize( $path );
     return $imagedata && $imagedata[0] && $imagedata[1];
   }
+
+  public static function is_unsigned_float($val) {
+    $val=str_replace(" ","",trim($val));
+    return eregi("^([0-9])+([\.|,]([0-9])*)?$",$val);
+  }
+
+  public static function is_unsigned_integer($val) {
+    $val=str_replace(" ","",trim($val));
+    return eregi("^([0-9])+$",$val);
+  }
+
+  public static function is_signed_float($val) {
+    $val=str_replace(" ","",trim($val));
+    return eregi("^-?([0-9])+([\.|,]([0-9])*)?$",$val);
+  }
+
+  public static function is_signed_integer($val) {
+    $val=str_replace(" ","",trim($val));
+    return eregi("^-?([0-9])+$",$val);
+  }
 }
 
 
