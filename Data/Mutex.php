@@ -10,8 +10,8 @@ class Mutex{
     $this->key = $name;
   }
 
-  public function lock($ttl=1, $wait=0){
-    Xredis::getInstance()->lock($this->key, $ttl, $wait);
+  public function lock($wait=0, $ttl=1){
+    return Xredis::getInstance()->lock($this->key, $ttl, $wait);
   }
 
   public function unlock(){
