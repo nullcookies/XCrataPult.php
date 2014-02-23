@@ -173,14 +173,16 @@ class Xredis{
 
   public function lock($lockName, $ttl = 1, $timeWait = 0){
     $timeWaitTo = min(10, abs(intval($timeWait))) + time();
-    $ttlTo      = min(10, abs(intval($ttl))) + time();
+    $ttlTo      = $ttl ? (min(10, abs(intval($ttl))) + time()) : 2147483646;
     while (!$this->redisObject->setnx("LOCK_" . $lockName, $ttlTo)) {
-      if (doubleval($this->get("LOCK_" . $lockName)) <= time()) {
+
+      if (intval($this->get("LOCK_" . $lockName)) <= time()) {
+        echo "OK!\n";
         $this->set("LOCK_" . $lockName, $ttlTo);
         return true;
       }
       usleep(100);
-      if ($timeWaitTo!=0 && $timeWaitTo < time()){
+      if ($timeWait==0 || $timeWaitTo < time()){
         return false;
       }
     }
