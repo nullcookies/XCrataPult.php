@@ -8,16 +8,14 @@ final class Time extends PrivateInstantiation{
   /**
    * @return int milliseconds
    */
-  static public function microTime()
-  {
+  static public function microTime(){
     $time = microtime();
     $time = explode(' ', $time);
     $time = $time[1] + $time[0];
     return $time;
   }
 
-  static public function microDelta($base)
-  {
+  static public function microDelta($base){
     return bcsub(self::microTime(), $base, 4);
   }
 }
