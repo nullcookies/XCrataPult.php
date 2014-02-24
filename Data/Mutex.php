@@ -5,17 +5,26 @@ if (!defined('__XDIR__')) die();
 class Mutex{
   private $key = null;
   private $sem = null;
+  private $locked = false;
 
   public function __construct($name){
     $this->key = $name;
   }
 
   public function lock($wait=0, $ttl=0){
-    return Xredis::getInstance()->lock($this->key, $ttl, $wait);
+    if (Xredis::getInstance()->lock($this->key, $ttl, $wait)){
+      $this->locked=true;
+    }else{
+      $this->locked=false;
+    }
+    return $this->locked;
   }
 
   public function unlock(){
-    Xredis::getInstance()->unlock($this->key);
+    if ($this->locked){
+      Xredis::getInstance()->unlock($this->key);
+    }
+    $this->locked=false;
   }
 
   public function __destruct(){
