@@ -176,7 +176,6 @@ class Xredis{
     while (!$this->redisObject->setnx("LOCK_" . $lockName, $ttlTo)) {
 
       if (intval($this->get("LOCK_" . $lockName)) <= time()) {
-        echo "OK!\n";
         $this->set("LOCK_" . $lockName, $ttlTo);
         return true;
       }
