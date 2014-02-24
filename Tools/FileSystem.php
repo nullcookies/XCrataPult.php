@@ -4,14 +4,12 @@ if (!defined('__XDIR__')) die();
 
 // TODO: add Exceptions
 
-use \X\X;
 use \X\AbstractClasses\PrivateInstantiation;
 use \X\Debug\Tracer;
 
 class FileSystem extends PrivateInstantiation{
 
-  public static function writeLocked($fileLink, $content, $mode="w", $permissions=0774)
-  {
+  public static function writeLocked($fileLink, $content, $mode="w", $permissions=0774){
     if (!is_resource($fileLink)){
       if (is_string($fileLink)){
 
@@ -33,30 +31,26 @@ class FileSystem extends PrivateInstantiation{
         return;
       }
     }
-    if (flock($fileLink, LOCK_EX ))
-    {
+    if (flock($fileLink, LOCK_EX )){
       fwrite($fileLink, $content);
       flock($fileLink, LOCK_UN);
       $meta_data = stream_get_meta_data($fileLink);
       $filename = $meta_data["uri"];
       chmod ( $filename, $permissions );
-    }
-    else{
+    }else{
       ;//Exception
       return;
     }
   }
 
-  public static function finalizeDirPath($dir)
-  {
+  public static function finalizeDirPath($dir){
     if (strlen($dir) && !in_array(substr($dir,-1), Array("/", "\\"))){
       $dir.=DIRECTORY_SEPARATOR;
     }
     return $dir;
   }
 
-  public static function dirList($base=null, $pattern='*', $filesOnly=true, $limit=1000, $globOptions=null)
-  {
+  public static function dirList($base=null, $pattern='*', $filesOnly=true, $limit=1000, $globOptions=null){
     if ($globOptions===null){
       $globOptions = GLOB_NOSORT|GLOB_BRACE;
     }

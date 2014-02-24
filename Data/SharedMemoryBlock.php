@@ -2,9 +2,6 @@
 namespace X\Data;
 if (!defined('__XDIR__')) die();
 
-use X\Tools\Time;
-use X\Tools\Values;
-
 class SharedMemoryBlock{
 
   private $link;

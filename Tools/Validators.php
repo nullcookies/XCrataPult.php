@@ -6,7 +6,7 @@ use \X\AbstractClasses\PrivateInstantiation;
 
 final class Validators extends PrivateInstantiation{
 
-  static public function isJSON($data){
+  public static function isJSON($data){
     if (!is_string($data)){
       return false;
     }
@@ -15,7 +15,7 @@ final class Validators extends PrivateInstantiation{
     return (json_last_error() == JSON_ERROR_NONE);
   }
 
-  static function isCallback($var){
+  public static function isCallback($var){
     if ($var instanceof \Closure) {
       return true;
     }
@@ -63,34 +63,34 @@ final class Validators extends PrivateInstantiation{
     return $imagedata && $imagedata[0] && $imagedata[1];
   }
 
-  public static function is_unsigned_float($val) {
+  public static function is_unsigned_float($val){
     $val=str_replace(" ","",trim($val));
     return eregi("^([0-9])+([\.|,]([0-9])*)?$",$val);
   }
 
-  public static function is_unsigned_integer($val) {
+  public static function is_unsigned_integer($val){
     $val=str_replace(" ","",trim($val));
     return eregi("^([0-9])+$",$val);
   }
 
-  public static function is_signed_float($val) {
+  public static function is_signed_float($val){
     $val=str_replace(" ","",trim($val));
     return eregi("^-?([0-9])+([\.|,]([0-9])*)?$",$val);
   }
 
-  public static function is_signed_integer($val) {
+  public static function is_signed_integer($val){
     $val=str_replace(" ","",trim($val));
     return eregi("^-?([0-9])+$",$val);
   }
 
-  public static function startsWith($haystack, $needle) {
+  public static function startsWith($haystack, $needle){
     $haystack = strtolower($haystack);
     $needle = strtolower($needle);
     $length = strlen($needle);
     return (substr($haystack, 0, $length) === $needle);
   }
 
-  public static function endsWith($haystack, $needle) {
+  public static function endsWith($haystack, $needle){
     $haystack = strtolower($haystack);
     $needle = strtolower($needle);
     $length = strlen($needle);

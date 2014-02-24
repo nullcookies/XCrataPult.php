@@ -5,7 +5,6 @@ if (!defined('__XDIR__')) die();
 use \X\AbstractClasses\Singleton;
 use \X\Tools\Values;
 use \X\Tools\Time;
-use \X\Debug\Tracer;
 
 final class Logger extends Singleton{
 
@@ -13,10 +12,8 @@ final class Logger extends Singleton{
   public $lastTime;
   public $debugLog;
 
-  static public function add($message)
-  {
-    if (!self::x()->debugTime)
-    {
+  public static function add($message){
+    if (!self::x()->debugTime){
       self::x()->debugTime = Time::microTime();
       self::x()->lastTime = Time::microTime();
       self::add("Log started");
@@ -27,8 +24,9 @@ final class Logger extends Singleton{
     $line   = $caller['line'];
     $object = isset($caller['object']) ? $caller['object'] : '';
 
-    if (is_object($object))
+    if (is_object($object)){
       $object = get_class($object);
+    }
     $arr=explode(DIRECTORY_SEPARATOR, $file);
     $file = array_pop($arr);
 
@@ -42,15 +40,13 @@ final class Logger extends Singleton{
     self::x()->lastTime = Time::microTime();
   }
 
-  static public function get($html=false)
-  {
+  static public function get($html=false){
     Logger::Add("Memory used (peak): " . Values::Grades(memory_get_peak_usage(true), 1024, 'B,KB,MB,GB'));
     Logger::Add("Memory used (now): " . Values::Grades(memory_get_usage(true), 1024, 'B,KB,MB,GB'));
     Logger::Add("Sending logs");
-    if (!$html)
+    if (!$html){
       return implode("\n", self::x()->debugLog);
-    else
-    {
+    }else{
       $condensed = Array();
       foreach(self::x()->debugLog as $dl)
         $condensed[]=preg_replace("/\t/", "</td><td>", $dl, 3);

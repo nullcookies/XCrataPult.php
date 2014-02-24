@@ -3,14 +3,13 @@ namespace X\Data;
 if (!defined('__XDIR__')) die();
 
 use X\Debug\Logger;
-use X\Tools\Time;
 
 class Xredis{
   private $redisObject = null;
 
-  static private $instance=null;
+  private static $instance=null;
 
-  static public function &getInstance($hosts=null){
+  public static function &getInstance($hosts=null){
     if ($hosts!=null){
       self::$instance = new Xredis($hosts);
     }elseif (self::$instance==null){
@@ -193,11 +192,11 @@ class Xredis{
     $this->redisObject->del("LOCK_" . $lockName);
   }
 
-  public function __isset($name) {
+  public function __isset($name){
     return $this->exists($name);
   }
 
-  public function __unset($name) {
+  public function __unset($name){
     $this->remove($name);
   }
 }
