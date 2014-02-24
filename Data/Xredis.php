@@ -129,6 +129,14 @@ class Xredis{
     return $this->redisObject->hSet($hash, $key, $value);
   }
 
+  public function groupIncItem($hash, $key, $value=1){
+    return $this->redisObject->hIncrBy($hash, $key, $value);
+  }
+
+  public function groupDecItem($hash, $key, $value=1){
+    return $this->redisObject->hIncrBy($hash, $key, -$value);
+  }
+
   public function groupRemoveItem($hash, $key){
     $this->redisObject->hDel($hash, $key);
   }
