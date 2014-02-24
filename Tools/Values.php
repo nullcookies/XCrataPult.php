@@ -12,25 +12,6 @@ class Values{
   const SIZE_100MB  =  104857600;
   const SIZE_1GB    = 1073741824;
 
-  public static function startsWith($haystack, $needle) {
-    $haystack = strtolower($haystack);
-    $needle = strtolower($needle);
-    $length = strlen($needle);
-    return (substr($haystack, 0, $length) === $needle);
-  }
-
-  public static function endsWith($haystack, $needle) {
-    $haystack = strtolower($haystack);
-    $needle = strtolower($needle);
-    $length = strlen($needle);
-    $start  = $length * -1;
-    return (substr($haystack, $start) === $needle);
-  }
-
-  public static function isAssoc(&$arr){
-    return array_keys($arr) !== range(0, count($arr) - 1);
-  }
-
   static public function smartImplode($values, $delimiter, $callback){
     if (is_array($values)){
       array_walk($values, $callback);

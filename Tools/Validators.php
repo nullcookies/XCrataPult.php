@@ -82,6 +82,25 @@ final class Validators extends PrivateInstantiation{
     $val=str_replace(" ","",trim($val));
     return eregi("^-?([0-9])+$",$val);
   }
+
+  public static function startsWith($haystack, $needle) {
+    $haystack = strtolower($haystack);
+    $needle = strtolower($needle);
+    $length = strlen($needle);
+    return (substr($haystack, 0, $length) === $needle);
+  }
+
+  public static function endsWith($haystack, $needle) {
+    $haystack = strtolower($haystack);
+    $needle = strtolower($needle);
+    $length = strlen($needle);
+    $start  = $length * -1;
+    return (substr($haystack, $start) === $needle);
+  }
+
+  public static function isAssoc(&$arr){
+    return array_keys($arr) !== range(0, count($arr) - 1);
+  }
 }
 
 
