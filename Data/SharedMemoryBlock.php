@@ -26,6 +26,32 @@ class SharedMemoryBlock{
     $this->link->groupSetItem($this->getRedisKey(), $name, $val);
   }
 
+  public function max($name, $val){
+    $mutex = new Mutex("LOCK_".$this->getRedisKey());
+    $mutex->lock();
+    if ($this->get($name)<$val){
+      $this->link->groupSetItem($this->getRedisKey(), $name, $val);
+    }
+    $mutex->unlock();
+  }
+
+  public function min($name, $val){
+    $mutex = new Mutex("LOCK_".$this->getRedisKey());
+    $mutex->lock();
+    if ($this->get($name)>$val){
+      $this->link->groupSetItem($this->getRedisKey(), $name, $val);
+    }
+    $mutex->unlock();
+  }
+
+  public function inc($name, $val=1){
+    $this->link->groupIncItem($this->getRedisKey(), $name, $val);
+  }
+
+  public function dec($name, $val=1){
+    $this->link->groupDecItem($this->getRedisKey(), $name, $val);
+  }
+
   public function exists($name){
     return !!$this->link->groupGetItem($this->getRedisKey(), $name);
   }
