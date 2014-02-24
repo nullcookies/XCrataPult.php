@@ -146,7 +146,7 @@ class Xredis{
   }
 
   public function groupGet($hash){
-    $this->redisObject->hGetAll($hash);
+    return $this->redisObject->hGetAll($hash);
   }
 
   public function queryPush($qry, $value){
