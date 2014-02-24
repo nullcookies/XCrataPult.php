@@ -64,6 +64,10 @@ class SharedMemoryBlock{
     return $this->blockName;
   }
 
+  public function dump(){
+    return $this->link->groupGet($this->getRedisKey());
+  }
+
   public function destroy(){
     $this->link->groupDelete($this->getRedisKey());
   }
