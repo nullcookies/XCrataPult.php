@@ -28,9 +28,13 @@ function registerAutoloader($namespaceName, $rootDirectory){
 
     if (file_exists( $rootDirectory . $classFullName . '.php')){
       include ( $rootDirectory . $classFullName . '.php');
-      \X\Debug\Logger::Add("Autoloader: " . $rootDirectory . $classFullName . '.php... Ok!');
+      if (class_exists("\\X\\Debug\\Logger") && class_exists("\\X\\Tools\\Time") && class_exists("\\X\\Tools\\Validators") && class_exists("\\X\\Debug\\Tracer")){
+        \X\Debug\Logger::Add("Autoloader: " . $rootDirectory . $classFullName . '.php... Ok!');
+      }
     }else{
-      \X\Debug\Logger::Add("Autoloader: " . $rootDirectory . $classFullName . '.php... FAIL!');
+      if (class_exists("\\X\\Debug\\Logger") && class_exists("\\X\\Tools\\Time") && class_exists("\\X\\Tools\\Validators") && class_exists("\\X\\Debug\\Tracer")){
+        \X\Debug\Logger::Add("Autoloader: " . $rootDirectory . $classFullName . '.php... FAIL!');
+      }
     }
   });
 }
