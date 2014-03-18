@@ -13,7 +13,7 @@ class Xredis{
     if ($hosts!=null){
       self::$instance = new Xredis($hosts);
     }elseif (self::$instance==null){
-      self::$instance = new Xredis(["/home/sockets/redis.sock"]); //default for XCrataServer
+      self::$instance = new Xredis(["/var/run/redis/redis.sock"]); //default for XCrataPult.server
     }
     return self::$instance;
   }
