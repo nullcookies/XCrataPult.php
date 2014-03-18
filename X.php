@@ -35,8 +35,12 @@ if (file_exists(__XDIR__ . '3rdparty/Twig/Autoloader.php')){
 
 class X extends \X\AbstractClasses\PrivateInstantiation{
 
-  static public function getScript(){
+  public static function getScript(){
     return $_SERVER['SCRIPT_FILENAME'];
+  }
+
+  public static function getIP(){
+    return getenv("HTTP_X_REAL_IP") ?: getenv("REMOTE_ADDR");
   }
 }
 
