@@ -39,6 +39,14 @@ class X extends \X\AbstractClasses\PrivateInstantiation{
     return $_SERVER['SCRIPT_FILENAME'];
   }
 
+  public static function getScriptDir(){
+    static $appdir;
+    if (!$appdir){
+      $appdir = dirname(self::getScript()).DIRECTORY_SEPARATOR;
+    }
+    return $appdir;
+  }
+
   public static function getIP(){
     return getenv("HTTP_X_REAL_IP") ?: getenv("REMOTE_ADDR");
   }
