@@ -1,18 +1,20 @@
 <?php
-namespace X\Tools;
+/**
+ * Created by mr.xcray in the name of magic
+ *
+ * Date: 17.03.14
+ * Time: 18:43
+ */
+
+namespace X\Validators;
 if (!defined('__XDIR__')) die();
 
-use \X\AbstractClasses\PrivateInstantiation;
+use X\AbstractClasses\PrivateInstantiation;
 
-final class Validators extends PrivateInstantiation{
+class Values extends PrivateInstantiation{
 
-  public static function isJSON($data){
-    if (!is_string($data)){
-      return false;
-    }
-
-    json_decode($data);
-    return (json_last_error() == JSON_ERROR_NONE);
+  public static function isIP($ip){
+    return filter_var($ip, FILTER_VALIDATE_IP);
   }
 
   public static function isCallback($var){
@@ -47,22 +49,14 @@ final class Validators extends PrivateInstantiation{
     return false;
   }
 
-  public static function isPDF($path){
-    if ($fd = fopen($path, 'r')){
-      if (fread($fd,5)==='%PDF-'){
-        fclose($fd);
-        return true;
-      }
-      fclose($fd);
+  public static function isJSON($data){
+    if (!is_string($data)){
+      return false;
     }
-    return false;
-  }
 
-  public static function isImage($path){
-    $imagedata  = getimagesize( $path );
-    return $imagedata && $imagedata[0] && $imagedata[1];
+    json_decode($data);
+    return (json_last_error() == JSON_ERROR_NONE);
   }
-
   public static function is_unsigned_float($val){
     $val=str_replace(" ","",trim($val));
     return eregi("^([0-9])+([\.|,]([0-9])*)?$",$val);
@@ -105,7 +99,4 @@ final class Validators extends PrivateInstantiation{
   public static function isSocket($var){
     return (is_resource($var) === true && @get_resource_type($var) === 'Socket');
   }
-}
-
-
-?>
+} 
