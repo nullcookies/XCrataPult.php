@@ -7,6 +7,7 @@
  */
 
 namespace X\Tools;
+if (!defined('__XDIR__')) die();
 
 require_once(__XDIR__.'3rdparty/ipgeobase/ipgeobase.php');
 

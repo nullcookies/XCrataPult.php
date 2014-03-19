@@ -5,9 +5,10 @@
  * Date: 18.03.14
  * Time: 12:30
  */
+namespace X\Tools;
+if (!defined('__XDIR__')) die();
 
-
-\X\Tools\Geoip::registerGeoCodes([
+Geoip::registerGeoCodes([
   "RU"=>[
     'AU' => 'Австралия',
     'AT' => 'Австрия',
