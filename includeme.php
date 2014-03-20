@@ -19,9 +19,9 @@ function registerAutoloader($namespaceName, $rootDirectory){
     if (substr($className, 0, $namespaceNameLen+1) !== $namespaceName."\\"){
       return;
     }
-
-    $classFullName = (string)str_replace('\\', DIRECTORY_SEPARATOR, substr($className, 2));
+    $classFullName = (string)str_replace('\\', DIRECTORY_SEPARATOR, substr($className, $namespaceNameLen+1));
     $classLastName = array_slice(explode( DIRECTORY_SEPARATOR, $className), -1);
+
     if (class_exists("\\X\\Debug\\Logger") && class_exists("\\X\\Tools\\Time") && class_exists("\\X\\Tools\\Validators") && class_exists("\\X\\Debug\\Tracer")){
       \X\Debug\Logger::Add("Autoloader: " . $rootDirectory . $classFullName . '.php...');
     }
