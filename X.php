@@ -35,6 +35,14 @@ if (file_exists(__XDIR__ . '3rdparty/Twig/Autoloader.php')){
 
 class X extends \X\AbstractClasses\PrivateInstantiation{
 
+  const SIZE_1KB    =       1024;
+  const SIZE_10KB   =      10240;
+  const SIZE_100KB  =     102400;
+  const SIZE_1MB    =    1048576;
+  const SIZE_10MB   =   10485760;
+  const SIZE_100MB  =  104857600;
+  const SIZE_1GB    = 1073741824;
+
   public static function getScript(){
     return $_SERVER['SCRIPT_FILENAME'];
   }

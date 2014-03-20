@@ -2,11 +2,11 @@
 
 namespace X\Data\DB\Structure;
 
-use \X\Tools\Validators;
 use \X\Data\DB\Interfaces\IDB;
 use \X\Data\DB\Structure\Database;
 use \X\Data\DB\Structure\Table;
 use \X\Data\DB\Structure\Key;
+use X\Validators\Values;
 
 class Field {
 
@@ -28,7 +28,7 @@ class Field {
   private $driver;
 
   public function __construct(IDB &$driver, $name){
-    if (!Validators::varName($name)){
+    if (!Values::isSuitableForVarName($name)){
       throw new \exception("Bad field name '".$name."'!", self::ERR_BAD_FIELD_NAME);
     }
     $this->driver = &$driver;

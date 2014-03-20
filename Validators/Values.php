@@ -99,4 +99,8 @@ class Values extends PrivateInstantiation{
   public static function isSocket($var){
     return (is_resource($var) === true && @get_resource_type($var) === 'Socket');
   }
+
+  public static function isSuitableForVarName($name){
+    return !!preg_match("/^[a-zA-Z_\\x7f-\\xff][a-zA-Z0-9_\\x7f-\\xff]*$/", $name);
+  }
 } 

@@ -3,13 +3,12 @@
 namespace X\Data\DB;
 
 use \X\C;
-use \X\Tools\Validators;
 use \X\Data\DB\Interfaces\IDB;
 use \X\Data\DB\Structure\Database;
 use \X\Data\DB\Structure\Field;
 use \X\Debug\Logger;
 use \X\Tools\FileSystem;
-use \X\Tools\Values;
+use \X\Validators\Values;
 use \X\AbstractClasses\PrivateInstantiation;
 use \X\Data\DB\Structure\CRUDGenerator;
 
@@ -34,7 +33,7 @@ class DB extends PrivateInstantiation{
    * @throws \exception on any error
    */
   public static function setDriver($alias, $driver){
-    if (!Validators::varName($alias)){
+    if (!Values::isSuitableForVarName($alias)){
       throw \exception("Bad alias name for ".$alias, self::ERR_BAD_ALIAS_NAME);
     }
     $driver = strval($driver);
@@ -72,7 +71,7 @@ class DB extends PrivateInstantiation{
    * @throws \exception on any error
    */
   public static function setConnectionType($alias, $type){
-    if (!Validators::varName($alias)){
+    if (!Values::isSuitableForVarName($alias)){
       throw \exception("Bad alias name for ".$alias, self::ERR_BAD_ALIAS_NAME);
     }
     if (!in_array($type, self::$SUPPORTED_CONNECTION_TYPES)){
@@ -95,7 +94,7 @@ class DB extends PrivateInstantiation{
    * @param string $host host/ip name (will be tested during connection)
    */
   public static function setHost($alias, $host){
-    if (!Validators::varName($alias)){
+    if (!Values::isSuitableForVarName($alias)){
       throw \exception("Bad alias name for ".$alias, self::ERR_BAD_ALIAS_NAME);
     }
     self::$connections[$alias]['host']=$host;
@@ -106,7 +105,7 @@ class DB extends PrivateInstantiation{
    * @param string $login username (will be tested during connection)
    */
   public static function setLogin($alias, $login){
-    if (!Validators::varName($alias)){
+    if (!Values::isSuitableForVarName($alias)){
       throw \exception("Bad alias name for ".$alias, self::ERR_BAD_ALIAS_NAME);
     }
     self::$connections[$alias]['login']=$login;
@@ -117,7 +116,7 @@ class DB extends PrivateInstantiation{
    * @param string $password password for user (will be tested during connection)
    */
   public static function setPassword($alias, $password){
-    if (!Validators::varName($alias)){
+    if (!Values::isSuitableForVarName($alias)){
       throw \exception("Bad alias name for ".$alias, self::ERR_BAD_ALIAS_NAME);
     }
     self::$connections[$alias]["password"] = $password;
@@ -128,7 +127,7 @@ class DB extends PrivateInstantiation{
    * @param string $alias should meet file naming and php php class naming requirements
    */
   public static function setDatabase($alias, $db){
-    if (!Validators::varName($alias)){
+    if (!Values::isSuitableForVarName($alias)){
       throw \exception("Bad alias name for ".$alias, self::ERR_BAD_ALIAS_NAME);
     }
     self::$connections[$alias]['database']=$db;
@@ -147,6 +146,9 @@ class DB extends PrivateInstantiation{
     }
     $connection = &self::$connections[$alias];
     if (!array_key_exists("connection", $connection)){
+      if (!class_exists($connection['driver'])){
+        throw new \Exception("Driver for DB '".$alias."' wasn't set or invalid");
+      }
       $connection['connection']=
         (
         new $connection['driver'](
@@ -209,14 +211,14 @@ class DB extends PrivateInstantiation{
           $classFileContents = str_replace("{%TABLENAME%}",      $table->getName(),    $classFileContents);
           $classFileContents = str_replace("{%CLASSNAME%}",      $className,           $classFileContents);
 
-          FileSystem::lockedWrite($classFile, $classFileContents);
+          file_put_contents($classFile, $classFileContents);
         }
 
         if ($forceAbstracts || !file_exists($classFileAbstracts) || filemtime($classFileAbstracts)<$table->getLastModified()){
           if ((!file_exists($classPathAbstracts) || !is_dir($classPathAbstracts)) && !mkdir($classPathAbstracts, 0774, true)){
             throw new \Exception("Cannot create directory '".$classPathAbstracts."' for CRUD '".$className."'", self::ERR_CANNOT_CREATE_DIR);
           }
-          FileSystem::lockedWrite($classFileAbstracts, CRUDGenerator::generateClass($db, $table));
+          file_put_contents($classFileAbstracts, CRUDGenerator::generateClass($db, $table));
         }
       }
       Logger::add(" - creating CRUD files...OK");

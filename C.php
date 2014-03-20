@@ -11,6 +11,38 @@ use \X\Tools\FileSystem;
 
 class C extends \X\AbstractClasses\PrivateInstantiation{
 
+  private static $config=[
+    'db_dir' =>'.app/db/',
+    'db_namespace'=>'db',
+    'db_abstract'=>true
+  ];
+
+  public static function setDbAbstract($abstract){
+    self::$config["db_abstract"] = !!$abstract;
+  }
+
+  public static function getDbAbstract(){
+    return self::$config["db_abstract"];
+  }
+
+  public static function setDbDir($path){
+    self::helperCheckDir($path);
+    self::$config["db_dir"] = FileSystem::finalizeDirPath($path);
+  }
+
+  public static function getDbDir(){
+    self::checkDir(self::$config["db_dir"]);
+    return self::$config["db_dir"];
+  }
+
+  public static function setDbNamespace($name){
+    self::$config["db_namespace"] = FileSystem::finalizeDirPath($name);
+  }
+
+  public static function getDbNamespace(){
+    return self::$config["db_namespace"];
+  }
+
   public static function setDb($db, $options){
     foreach($options as $var=>$val){
       $var = "set".str_replace(" ", "", ucwords(strtolower(str_replace("_", " ", $var))));

@@ -3,14 +3,13 @@
 
 namespace X\data\DB\Structure;
 use \X\C;
-use \X\Tools\Validators;
 use \X\Data\DB\Interfaces\IDB;
 use \X\Data\DB\Structure\Database;
 use \X\Data\DB\Structure\Field;
 use \X\Debug\Logger;
 use \X\Tools\FileSystem;
-use \X\Tools\Values;
 use \X\AbstractClasses\PrivateInstantiation;
+use X\Tools\Strings;
 
 
 class CRUDGenerator extends PrivateInstantiation{
@@ -22,15 +21,15 @@ class CRUDGenerator extends PrivateInstantiation{
   private static function gGetByKey(Database &$db, Table &$table, Key &$key){
     $keyName = $key->getType()==Key::KEY_TYPE_PRIMARY ? "PK" : $key->getName();
     $fields = $key->getFields();
-    $cacheKey = "\"__getBy".$keyName."Key\".".Values::smartImplode($fields, ".", function(Field &$value){$value = "var_export(\$".$value->getAlias().", true)";});
+    $cacheKey = "\"__getBy".$keyName."Key\".".Strings::smartImplode($fields, ".", function(Field &$value){$value = "var_export(\$".$value->getAlias().", true)";});
     $getByKey = "/**"."\n".
                 " * @return null|".ucwords($table->getName())."\n".
                 " */"."\n".
-                "public static function getBy".$keyName."Key(".Values::smartImplode($fields, ", ", function(Field &$value){$value = "\$".$value->getAlias();})."){"."\n".
+                "public static function getBy".$keyName."Key(".Strings::smartImplode($fields, ", ", function(Field &$value){$value = "\$".$value->getAlias();})."){"."\n".
                 "\t\$cacheKey = ".$cacheKey.";"."\n".
                 "\tif (!Cache::enabled() || !(\$answer = Cache::groupGetItem('DB_".$db->getAlias()."_".$table->getName()."', \$cacheKey))){"."\n".
                 "\t\t\$answer=DB::connectionByAlias('".$db->getAlias()."')->getSimple(["."\n".
-                "\t\t\t'conditions'=>[".Values::smartImplode($fields, ",", function(Field &$value){$value = "'".$value->getName()."'=>\$".$value->getAlias();})."],"."\n".
+                "\t\t\t'conditions'=>[".Strings::smartImplode($fields, ",", function(Field &$value){$value = "'".$value->getName()."'=>\$".$value->getAlias();})."],"."\n".
                 "\t\t\t'instantiator'=>get_called_class().'::createFromRaw',"."\n".
                 "\t\t\t'limit'=>1,"."\n".
                 "\t\t]);"."\n".
@@ -150,7 +149,7 @@ class CRUDGenerator extends PrivateInstantiation{
   private static function gPretendReal($primaryFields){
     $pretendR = "public function pretendReal(){"."\n".
                 (is_array($primaryFields) && count($primaryFields) ?
-                "\t".Values::smartImplode($primaryFields, "\n\t", function(Field &$value){$value = "\$this->PRIMARY_".$value->getAlias()."=\$this->".$value->getAlias().";";})."\n":"").
+                "\t".Strings::smartImplode($primaryFields, "\n\t", function(Field &$value){$value = "\$this->PRIMARY_".$value->getAlias()."=\$this->".$value->getAlias().";";})."\n":"").
                 "}"."\n";
     return $pretendR;
   }
@@ -158,7 +157,7 @@ class CRUDGenerator extends PrivateInstantiation{
   private static function gInvalidate($primaryFields){
     $pretendR = "private function invalidate(){"."\n".
                 (is_array($primaryFields) && count($primaryFields) ?
-                "\t".Values::smartImplode($primaryFields, "\n\t", function(Field &$value){$value = "\$this->PRIMARY_".$value->getAlias()."=null;";})."\n":"").
+                "\t".Strings::smartImplode($primaryFields, "\n\t", function(Field &$value){$value = "\$this->PRIMARY_".$value->getAlias()."=null;";})."\n":"").
                 "}"."\n";
     return $pretendR;
   }
@@ -166,7 +165,7 @@ class CRUDGenerator extends PrivateInstantiation{
   private static function gCacheKey($primaryFields){
     $cachekey = "public function cacheKey(){"."\n".
                 (is_array($primaryFields) && count($primaryFields) ?
-                "\treturn ".Values::smartImplode($primaryFields, ".'&&'.", function(Field &$value){$value = "\$this->PRIMARY_".$value->getAlias()."";}).";"."\n" :
+                "\treturn ".Strings::smartImplode($primaryFields, ".'&&'.", function(Field &$value){$value = "\$this->PRIMARY_".$value->getAlias()."";}).";"."\n" :
                 "\treturn false;"."\n").
                 "}"."\n";
     return $cachekey;
@@ -175,7 +174,7 @@ class CRUDGenerator extends PrivateInstantiation{
   private static function gIsValid($primaryFields){
     $isvalid = "public function isValid(){"."\n".
                 (is_array($primaryFields) && count($primaryFields) ?
-                "\treturn ".Values::smartImplode($primaryFields, " && ", function(Field &$value){$value = "\$this->PRIMARY_".$value->getAlias()."!==null";}).";"."\n" :
+                "\treturn ".Strings::smartImplode($primaryFields, " && ", function(Field &$value){$value = "\$this->PRIMARY_".$value->getAlias()."!==null";}).";"."\n" :
                 "\treturn false;"."\n").
                 "}"."\n";
     return $isvalid;
@@ -184,7 +183,7 @@ class CRUDGenerator extends PrivateInstantiation{
   private static function gAsArray($fields){
     $asArray= "public function asArray(){"."\n".
               "\treturn ["."\n".
-              Values::smartImplode($fields, "", function(Field &$value){$value = "\t\t'".$value->getName()."'=>\$this->".$value->getAlias().",\n";}).
+              Strings::smartImplode($fields, "", function(Field &$value){$value = "\t\t'".$value->getName()."'=>\$this->".$value->getAlias().",\n";}).
               "\t];"."\n".
               "}";
     return $asArray;

@@ -6,7 +6,7 @@ use \X\Data\DB\Interfaces\IDB;
 use \X\Data\DB\Structure\Table;
 use \X\Data\DB\Structure\Field;
 use \X\Data\DB\Structure\Key;
-use \X\Tools\Validators;
+use X\Validators\Values;
 
 class Database {
 
@@ -27,10 +27,10 @@ class Database {
   private $driver;
 
   public function __construct(IDB &$driver, $name, $alias){
-    if (!Validators::varName($name)){
+    if (!Values::isSuitableForVarName($name)){
       throw new \Exception("Bad database name '".$name."'!", self::ERR_BAD_DATABASE_NAME);
     }
-    if (!Validators::varName($alias)){
+    if (!Values::isSuitableForVarName($alias)){
       throw new \Exception("Bad database alias '".$alias."'!", self::ERR_BAD_DATABASE_ALIAS);
     }
     $this->driver = &$driver;

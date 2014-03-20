@@ -4,7 +4,7 @@ namespace X\Data\DB;
 
 use \X\Data\DB\Iterator;
 use \X\Data\DB\Interfaces\IDB;
-use X\Tools\Validators;
+use X\Validators\Values;
 
 class Collection extends \ArrayObject
 {
@@ -32,7 +32,7 @@ class Collection extends \ArrayObject
       throw new \Exception("Resource (or query) provided for collection (".$res.") is not resource (query)!", self::BAD_QUERY_RESOURCE);
     }
 
-    if (Validators::callback($instantiator)){
+    if (Values::isCallback($instantiator)){
       $this->instantiator = $instantiator;
     }elseif($instantiator){
       throw new \Exception("Callback provided (".$instantiator.") for collection is not callable!", self::BAD_CALLBACK);
