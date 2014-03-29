@@ -3,6 +3,7 @@
 namespace X\Data\DB\Drivers;
 
 use X\Data\DB\Interfaces\ICRUD;
+use X\Tools\Strings;
 use \X\X;
 use \X\C;
 use \X\Debug\Logger;
@@ -12,8 +13,7 @@ use \X\Data\DB\Structure\Database;
 use \X\Data\DB\Structure\Table;
 use \X\Data\DB\Structure\Field;
 use \X\Data\DB\Structure\Key;
-use \X\Tools\Validators;
-use \X\Tools\Values;
+use \X\Validators\Values;
 use \X\Data\DB\Collection;
 use \X\Data\DB\CRUD;
 
@@ -66,6 +66,7 @@ class Mysql implements IDB{
 
     "varchar"    => "string",
     "char"       => "string",
+    "tinytext"   => "string",
     "text"       => "string",
     "mediumtext" => "string",
     "longtext"   => "string",
@@ -107,6 +108,10 @@ class Mysql implements IDB{
       throw new \Exception("Can't connect to MySQL ".($this->login ?: "default user")."@".($this->host ?: "default socket"), self::ERR_CANNOT_CONNECT);
     }
     return $this;
+  }
+
+  public function escape($string){
+    return mysql_real_escape_string($string, $this->connection);
   }
 
   public function getTables(){
@@ -229,7 +234,7 @@ class Mysql implements IDB{
   }
 
   public function dropDB($dbname) {
-    $this->query("DROP DATABASE IF EXISTS `".Validators::sanitizer($dbname, 'e')."`");
+    $this->query("DROP DATABASE IF EXISTS `".$this->escape($dbname)."`");
     return true;
   }
 
@@ -244,7 +249,7 @@ class Mysql implements IDB{
 
     if (is_array($value))
       if ($compare==IDB::SELECT_IN)
-        $val = Values::smartImplode($value, ",", function(&$val){$val = "'".mysql_real_escape_string($val, $this->connection)."'";});
+        $val = Strings::smartImplode($value, ",", function(&$val){$val = "'".mysql_real_escape_string($val, $this->connection)."'";});
       elseif ($compare==IDB::SELECT_BETWEEN && count($value)==2)
       {
         $val[0] = mysql_real_escape_string($value[0], $this->connection);
@@ -365,7 +370,7 @@ class Mysql implements IDB{
       $options['instantiator'] = explode("::",$options['instantiator']);
     }
 
-    if ($options['instantiator']!==false && !Validators::callback($options['instantiator'])){
+    if ($options['instantiator']!==false && !Values::isCallback($options['instantiator'])){
       if ($tableClass = \X\Debug\Tracer::getCallerClass()){
         $interfaces = class_implements($tableClass, true);
         if ($interfaces && !in_array("X\\Data\\DB\\CRUD", $interfaces)){
@@ -443,7 +448,7 @@ class Mysql implements IDB{
       $orderBy = '';
     }
 
-    $fieldsWeNeed = (!is_array($options['fields']) || !count($options['fields'])) ? '*' : Values::smartImplode($options['fields'], ", ", function(&$value){$value = "`".$value."`";});
+    $fieldsWeNeed = (!is_array($options['fields']) || !count($options['fields'])) ? '*' : Strings::smartImplode($options['fields'], ", ", function(&$value){$value = "`".$value."`";});
     $collection = new Collection('SELECT '.$fieldsWeNeed.' FROM `'.$options['table'].'` '.$where.' '.$orderBy.' '.($options['limit'] > 0 ? 'LIMIT '.$options['limit'] : '').';', $this, $options['instantiator']);
 
     if (!!$options['asArray']){
@@ -468,13 +473,13 @@ class Mysql implements IDB{
 
     if (!$object->isValid()){
       $sql = "INSERT INTO `".$object::TABLE_NAME."`";
-      $sql.=" (".Values::smartImplode($fieldNames, ",", function(&$value){$value='`'.$value.'`';}).") ".
+      $sql.=" (".Strings::smartImplode($fieldNames, ",", function(&$value){$value='`'.$value.'`';}).") ".
             "VALUES".
-            " (".Values::smartImplode($fieldNames, ",", function(&$value)use($data){$value=$data[$value]===null ? "NULL" : "'".mysql_real_escape_string($data[$value])."'";}).");";
+            " (".Strings::smartImplode($fieldNames, ",", function(&$value)use($data){$value=$data[$value]===null ? "NULL" : "'".mysql_real_escape_string($data[$value])."'";}).");";
     }else{
       $sql = "UPDATE `".$object::TABLE_NAME."` SET ";
       foreach($fieldNames as $name){
-        $sql.= '`'.$name.'`'."='".$data[$name]."'".($name != end($fieldNames) ? ",":"");
+        $sql.= '`'.$name.'`'."='".$this->escape($data[$name])."'".($name != end($fieldNames) ? ",":"");
       }
       $sql.= " WHERE ";
       $primaryFields = $object::getPrimaryFields();
