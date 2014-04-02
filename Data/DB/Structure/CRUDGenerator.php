@@ -103,6 +103,7 @@ class CRUDGenerator extends PrivateInstantiation{
       case 'varchar':
       case 'char':
       case 'text':
+      case 'tinytext':
       case 'mediumtext':
       case 'longtext':
       case 'tinyblob':
