@@ -32,8 +32,8 @@ class Field {
       throw new \exception("Bad field name '".$name."'!", self::ERR_BAD_FIELD_NAME);
     }
     $this->driver = &$driver;
-    $this->name = $name;
-    $this->alias = '_'.$name;
+    $this->name = strtolower($name);
+    $this->alias = '_'.$this->name;
   }
 
   public function generateSQLCreate(){
@@ -43,6 +43,11 @@ class Field {
   public function getName(){
     return $this->name;
   }
+
+  public function getCamelName(){
+    return str_replace(" ", "",ucwords(implode(" ",explode("_",$this->getName()))));
+  }
+
 
   public function getAlias(){
     return $this->alias;

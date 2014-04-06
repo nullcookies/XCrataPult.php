@@ -37,6 +37,10 @@ class Key {
     return $this->name;
   }
 
+  public function getCamelName(){
+    return str_replace(" ", "",ucwords(implode(" ",explode("_",$this->getName()))));
+  }
+
   public function addField(Field &$field){
     $this->fields[] = $field;
     return $this;
