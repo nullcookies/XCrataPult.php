@@ -3,6 +3,8 @@
 namespace X\Data\DB\Drivers;
 
 use X\Data\DB\Interfaces\ICRUD;
+use X\Data\DB\Structure\_AND;
+use X\Data\DB\Structure\_OR;
 use X\Tools\Strings;
 use \X\X;
 use \X\C;
@@ -243,77 +245,45 @@ class Mysql implements IDB{
     return mysql_query($sql, $this->connection);
   }
 
-  public function condition($fieldName, $compare, $value)
-  {
-    $where = "`".mysql_real_escape_string($fieldName,$this->connection)."` ";
+  public function collapseVars(&$subtree, $vars, $tableClass){
+    foreach ($subtree as &$item){
+      switch ($item["expr_type"]){
+        case "colref":
+          if (substr($item["no_quotes"]["parts"][0],0,2)=="?:" && substr($item["no_quotes"]["parts"][0],-1)==":"){
+            $valname = substr($item["no_quotes"]["parts"][0],2,-1);
+            if (array_key_exists($valname, $vars)){
+              $replacement = $vars[$valname];
+            }else{
+              $replacement=null;
+            }
 
-    if (is_array($value))
-      if ($compare==IDB::SELECT_IN)
-        $val = Strings::smartImplode($value, ",", function(&$val){$val = "'".mysql_real_escape_string($val, $this->connection)."'";});
-      elseif ($compare==IDB::SELECT_BETWEEN && count($value)==2)
-      {
-        $val[0] = mysql_real_escape_string($value[0], $this->connection);
-        $val[1] = mysql_real_escape_string($value[1], $this->connection);
+            $item["expr_type"]="const";
+            $item["base_expr"]= $replacement===null ? "NULL": is_numeric($replacement) ? $replacement : (is_bool($replacement) ? ($replacement ? "TRUE" : "FALSE") : "\"".$this->escape($replacement)."\"");
+            unset($item["no_quotes"]);
+          }elseif (!isset($tableClass) || array_key_exists($key, $tableClass::getFields())){
+            if (strpos(trim($item["base_expr"]), "`")!==0){
+              $item["base_expr"] ="`".$item["base_expr"]."`";
+            }
+          }
+          break;
+        case "const":
+          $p1 = strpos($item["base_expr"], "?:");
+          $p2 = strpos($item["base_expr"], ":", $p1+2);
+          if ($p1!==false && $p2!==false){
+            $valname = substr($item["base_expr"],$p1+2, $p2-$p1-2);
+          }
+
+          if (array_key_exists($valname, $vars)){
+            $replacement = $vars[$valname];
+          }else{
+            $replacement=null;
+          }
+
+          $item["expr_type"]="const";
+          $item["base_expr"]=str_replace("?:".$valname.":", $replacement===null ? "NULL": is_numeric($replacement) ? $replacement : (is_bool($replacement) ? ($replacement ? "TRUE" : "FALSE") : $this->escape($replacement)), $item["base_expr"]);
       }
-      else
-        $val = mysql_real_escape_string(implode("",$value), $this->connection);
-    else
-      $val = mysql_real_escape_string($value, $this->connection);
 
-    switch($compare)
-    {
-      case IDB::SELECT_LESS:
-        $where.="< '".$val."'";
-        break;
 
-      case IDB::SELECT_EQUAL_LESS:
-        $where.="<= '".$val."'";
-        break;
-
-      case IDB::SELECT_EQUAL_GREATER:
-        $where.=">= '".$val."'";
-        break;
-
-      case IDB::SELECT_GREATER:
-        $where.="> '".$val."'";
-        break;
-
-      case IDB::SELECT_STARTS:
-        $where.=" LIKE '".$val."%'";
-        break;
-
-      case IDB::SELECT_CONTAINS:
-        $where.=" LIKE '%".$val."%'";
-        break;
-
-      case IDB::SELECT_ENDS:
-        $where.=" LIKE '%".$val."'";
-        break;
-
-      case IDB::SELECT_IN:
-        $where.=" IN (".$val.")";
-        break;
-
-      case IDB::SELECT_BETWEEN:
-        $where.=" BETWEEN ".$val[0]." AND ".$val[1];
-        break;
-
-      case IDB::SELECT_NOT_EQUAL:
-      case IDB::SELECT_NOT_EQUAL_1:
-      default:
-        if ($value === null)
-          $where.="IS NOT NULL";
-        else
-          $where.="!= '".$val."'";
-        break;
-
-      case IDB::SELECT_EQUAL:
-      default:
-        if ($value === null)
-          $where.="IS NULL";
-        else
-          $where.="= '".$val."'";
-        break;
     }
     return $where;
   }
@@ -371,6 +341,7 @@ class Mysql implements IDB{
     }
 
     if ($options['instantiator']!==false && !Values::isCallback($options['instantiator'])){
+      echo 1;
       if ($tableClass = \X\Debug\Tracer::getCallerClass()){
         $interfaces = class_implements($tableClass, true);
         if ($interfaces && !in_array("X\\Data\\DB\\CRUD", $interfaces)){
@@ -387,53 +358,24 @@ class Mysql implements IDB{
       $options['table']=$options['instantiator'][0]::TABLE_NAME;
     }
 
+    if (!$tableClass && $options["className"]){
+      $tableClass = $options["className"];
+    }
+
     if ($options['table']===null){
       throw new \exception("Table wasn't specified for select-query", self::ERR_GET_NO_TABLE);
     }
 
     $answer=null;
-    if (!is_array($options['conditions']) || !count($options['conditions']))
+    if (!is_array($options['conditions']) || !count($options['conditions'])){
       $options['conditions']=null;
+    }
 
     $options['limit'] = intval($options['limit']);
 
-    $where = Array();
-    if ($options['conditions']){
-      foreach($options['conditions'] as $field=>$condition){
-        if (!is_array($condition)){
-          $compare = IDB::SELECT_EQUAL;
-          $value = $condition;
-        }else if (array_key_exists('value',$condition)){
-          $compare = array_key_exists('compare',$condition) ? $condition['compare'] : IDB::SELECT_EQUAL;
-          $value = $condition['value'];
-        }else if (Values::isAssoc($condition)){
-          $compare=[];
-          $value=[];
-          foreach($condition as $condCompare=>$condValue){
-            $compare[] = $condCompare;
-            $value[] = $condValue;
-          }
-        }else{
-          $compare = IDB::SELECT_IN;
-          $value = array_values($condition);
-        }
-
-        if (!is_array($compare)){
-          $where[]=$this->condition($field, $compare, $value);
-        }else{
-          for ($i=0; $i<count($compare); $i++){
-            $where[]=$this->condition($field, $compare[$i], $value[$i]);
-          }
-        }
-      }
-    }
-
-    if (count($where))
-      $where = "WHERE ".implode($where, " AND ");
-    else
-      $where = '';
     $orderBy = Array();
     foreach ($options['order'] as $key=>$val){
+      $key = strtolower($key);
       if ($val=='*'){
         $orderBy[]="RAND()";
       }elseif (is_int($key) && (!isset($tableClass) || (!array_key_exists($key, $tableClass::getFields()) && array_key_exists($val,$tableClass::getFields())))){
@@ -448,13 +390,31 @@ class Mysql implements IDB{
       $orderBy = '';
     }
 
-    $fieldsWeNeed = (!is_array($options['fields']) || !count($options['fields'])) ? '*' : Strings::smartImplode($options['fields'], ", ", function(&$value){$value = "`".$value."`";});
-    $collection = new Collection('SELECT '.$fieldsWeNeed.' FROM `'.$options['table'].'` '.$where.' '.$orderBy.' '.($options['limit'] > 0 ? 'LIMIT '.$options['limit'] : '').';', $this, $options['instantiator']);
+    $fields=[];
+    if (!is_array($options['fields']) || !count($options['fields']) || !$tableClass){
+      $fieldsWeNeed = '*';
+    }else{
+      $fieldsWeNeed = Strings::smartImplode($options['fields'], ", ", function(&$value)use($tableClass,&$fields){ if ($tableClass && array_key_exists(strtolower($value),$tableClass::getFields())){$fields[]=$value; $value = "`".$value."`";}else{$value="NULL";}});
+    }
 
+    $where='';
+    $wherevars = [];
+
+    if (is_array($options["conditions"]) && strlen(trim($options["conditions"][0]))){
+      $where = "WHERE ".$options["conditions"][0];
+      $wherevars = $options["conditions"][1];
+    }
+    $sqlExpr = 'SELECT '.$fieldsWeNeed.' FROM `'.$options['table'].'` '.$where.' '.$orderBy.' '.($options['limit'] > 0 ? 'LIMIT '.$options['limit'] : '').';';
+    $parsed = (new \PHPSQLParser($sqlExpr))->parsed;
+    if ($wherevars && $where && $parsed["WHERE"]){
+      $this->collapseVars($parsed["WHERE"], $wherevars, $tableClass);
+    }
+    $sqlExpr = (new \PHPSQLCreator())->create($parsed);
+    $collection = new Collection($sqlExpr, $this, $options['instantiator']);
     if (!!$options['asArray']){
       $answer = Array();
       while($instance = $collection->Next()){
-        $answer[]=$instance->asArray();
+        $answer[]=$instance->asArray($fields);
       }
       return $answer;
     }

@@ -19,7 +19,7 @@ class CRUDGenerator extends PrivateInstantiation{
   }
 
   private static function gGetByKey(Database &$db, Table &$table, Key &$key){
-    $keyName = $key->getType()==Key::KEY_TYPE_PRIMARY ? "PK" : $key->getName();
+    $keyName = $key->getType()==Key::KEY_TYPE_PRIMARY ? "PK" : $key->getCamelName();
     $fields = $key->getFields();
     $cacheKey = "\"__getBy".$keyName."Key\".".Strings::smartImplode($fields, ".", function(Field &$value){$value = "var_export(\$".$value->getAlias().", true)";});
     $getByKey = "/**"."\n".
@@ -29,8 +29,9 @@ class CRUDGenerator extends PrivateInstantiation{
                 "\t\$cacheKey = ".$cacheKey.";"."\n".
                 "\tif (!Cache::enabled() || !(\$answer = Cache::groupGetItem('DB_".$db->getAlias()."_".$table->getName()."', \$cacheKey))){"."\n".
                 "\t\t\$answer=DB::connectionByAlias('".$db->getAlias()."')->getSimple(["."\n".
-                "\t\t\t'conditions'=>[".Strings::smartImplode($fields, ",", function(Field &$value){$value = "'".$value->getName()."'=>\$".$value->getAlias();})."],"."\n".
+                "\t\t\t'conditions'=>[\"".Strings::smartImplode($fields, " AND ", function(Field &$value){$value = $value->getName()." = ?:".$value->getName().":";})."\", [".Strings::smartImplode($fields, " , ", function(Field &$value){$value = "'".$value->getName()."' => \$".$value->getAlias();})."]],"."\n".
                 "\t\t\t'instantiator'=>get_called_class().'::createFromRaw',"."\n".
+                "\t\t\t'className'=>get_called_class(),"."\n".
                 "\t\t\t'limit'=>1,"."\n".
                 "\t\t]);"."\n".
                 "\t\tif (!\$answer->EOF()){"."\n".
@@ -53,7 +54,7 @@ class CRUDGenerator extends PrivateInstantiation{
                 " *"."\n".
                 " * @return ".$field->getPHPType()."\n".
                 " */"."\n".
-                "public function get".ucwords($field->getName())."(){"."\n".
+                "public function get".$field->getCamelName()."(){"."\n".
                 "\treturn \$this->".$field->getAlias().";"."\n".
                 "}"."\n";
     return $getter;
@@ -64,7 +65,9 @@ class CRUDGenerator extends PrivateInstantiation{
                 "\t\$className = get_called_class();"."\n".
                 "\t\$classObj = new \$className();"."\n";
     foreach($table->getFields() as $field){
-      $creator.="\t\$classObj->set".ucfirst($field->getName())."(\$raw['".$field->getName()."']);"."\n";
+      $creator.="\tif (array_key_exists('".$field->getName()."', \$raw)){"."\n";
+      $creator.="\t\t\$classObj->set".$field->getCamelName()."(\$raw['".$field->getName()."']);"."\n";
+      $creator.="\t}"."\n";
     }
     $creator .= "\t\$classObj->pretendReal();"."\n";
     $creator .= "\t\$classObj->cache();"."\n".
@@ -81,7 +84,7 @@ class CRUDGenerator extends PrivateInstantiation{
                 " *"."\n".
                 " * @return \\".$namespaceName."\\".$className."\n".
                 " */"."\n".
-                "public function set".ucwords($field->getName())."(\$val){"."\n";
+                "public function set".$field->getCamelName()."(\$val){"."\n";
     switch($field->getType()){
       case 'boolean':
         $setter.= "\t\$this->".$field->getAlias()." = !!\$val;"."\n";
@@ -182,10 +185,21 @@ class CRUDGenerator extends PrivateInstantiation{
   }
 
   private static function gAsArray($fields){
-    $asArray= "public function asArray(){"."\n".
-              "\treturn ["."\n".
-              Strings::smartImplode($fields, "", function(Field &$value){$value = "\t\t'".$value->getName()."'=>\$this->".$value->getAlias().",\n";}).
-              "\t];"."\n".
+    $asArray= "public function asArray(\$fieldsNeeded=[]){"."\n".
+              "\tif(is_array(\$fieldsNeeded) && count(\$fieldsNeeded)){"."\n".
+              "\t\t\$answer=[];"."\n".
+              "\t\tforeach(\$fieldsNeeded as \$field){"."\n".
+              "\t\t\t\$field = strtolower(\$field);"."\n".
+              "\t\t\tif(array_key_exists(\$field, self::\$Fields)){"."\n".
+              "\t\t\t\t\$answer[\$field]=\$this->{'_'.\$field};"."\n".
+              "\t\t\t}"."\n".
+              "\t\t}"."\n".
+              "\t\treturn \$answer;"."\n".
+              "\t}else{"."\n".
+              "\t\treturn ["."\n".
+              Strings::smartImplode($fields, "", function(Field &$value){$value = "\t\t\t'".$value->getName()."'=>\$this->".$value->getAlias().",\n";}).
+              "\t\t];"."\n".
+              "\t}"."\n".
               "}";
     return $asArray;
   }
@@ -244,11 +258,111 @@ class CRUDGenerator extends PrivateInstantiation{
       $selectors[] = " * @param \$val";
       $selectors[] = " * @return Collection";
       $selectors[] = " */";
-      $selectors[] = "public static function getBy".ucwords($field->getName())."(\$val){";
+      $selectors[] = "public static function getBy".$field->getCamelName()."(\$val, \$limit=0, \$asArray=false, \$fields=[]){";
       $selectors[] = "\treturn DB::connectionByAlias('".$db->getAlias()."')->getSimple([";
       $selectors[] = "\t\t\t'table'=>'".$table->getName()."',";
       $selectors[] = "\t\t\t'instantiator'=>get_called_class().'::createFromRaw',";
-      $selectors[] = "\t\t\t'conditions'=>['".$field->getName()."'=>\$val],";
+      $selectors[] = "\t\t\t'className'=>get_called_class(),";
+      $selectors[] = "\t\t\t'conditions'=>['".$field->getName()."=?:val:',['val'=>\$val]],";
+      $selectors[] = "\t\t\t'limit'=>\$limit,";
+      $selectors[] = "\t\t\t'asArray'=>\$asArray,";
+      $selectors[] = "\t\t\t'fields'=>\$fields,";
+      $selectors[] = "\t\t]);";
+      $selectors[] = "}";
+
+      $selectors[] = "/**";
+      $selectors[] = " * @param \$val";
+      $selectors[] = " * @return Collection";
+      $selectors[] = " */";
+      $selectors[] = "public static function getBy".$field->getCamelName()."_startsWith(\$val, \$limit=0, \$asArray=false, \$fields=[]){";
+      $selectors[] = "\treturn DB::connectionByAlias('".$db->getAlias()."')->getSimple([";
+      $selectors[] = "\t\t\t'table'=>'".$table->getName()."',";
+      $selectors[] = "\t\t\t'instantiator'=>get_called_class().'::createFromRaw',";
+      $selectors[] = "\t\t\t'className'=>get_called_class(),";
+      $selectors[] = "\t\t\t'conditions'=>['".$field->getName()." LIKE \"%?:val:\"',['val'=>\$val]],";
+      $selectors[] = "\t\t\t'limit'=>\$limit,";
+      $selectors[] = "\t\t\t'asArray'=>\$asArray,";
+      $selectors[] = "\t\t\t'fields'=>\$fields,";
+      $selectors[] = "\t\t]);";
+      $selectors[] = "}";
+
+      $selectors[] = "/**";
+      $selectors[] = " * @param \$val";
+      $selectors[] = " * @return Collection";
+      $selectors[] = " */";
+      $selectors[] = "public static function getBy".$field->getCamelName()."_endsWith(\$val, \$limit=0, \$asArray=false, \$fields=[]){";
+      $selectors[] = "\treturn DB::connectionByAlias('".$db->getAlias()."')->getSimple([";
+      $selectors[] = "\t\t\t'table'=>'".$table->getName()."',";
+      $selectors[] = "\t\t\t'instantiator'=>get_called_class().'::createFromRaw',";
+      $selectors[] = "\t\t\t'className'=>get_called_class(),";
+      $selectors[] = "\t\t\t'conditions'=>['".$field->getName()." LIKE \"?:val:%\"',['val'=>\$val]],";
+      $selectors[] = "\t\t\t'limit'=>\$limit,";
+      $selectors[] = "\t\t\t'asArray'=>\$asArray,";
+      $selectors[] = "\t\t\t'fields'=>\$fields,";
+      $selectors[] = "\t\t]);";
+      $selectors[] = "}";
+
+      $selectors[] = "/**";
+      $selectors[] = " * @param \$val";
+      $selectors[] = " * @return Collection";
+      $selectors[] = " */";
+      $selectors[] = "public static function getBy".$field->getCamelName()."_contains(\$val, \$limit=0, \$asArray=false, \$fields=[]){";
+      $selectors[] = "\treturn DB::connectionByAlias('".$db->getAlias()."')->getSimple([";
+      $selectors[] = "\t\t\t'table'=>'".$table->getName()."',";
+      $selectors[] = "\t\t\t'instantiator'=>get_called_class().'::createFromRaw',";
+      $selectors[] = "\t\t\t'className'=>get_called_class(),";
+      $selectors[] = "\t\t\t'conditions'=>['".$field->getName()." LIKE \"%?:val:%\"',['val'=>\$val]],";
+      $selectors[] = "\t\t\t'limit'=>\$limit,";
+      $selectors[] = "\t\t\t'asArray'=>\$asArray,";
+      $selectors[] = "\t\t\t'fields'=>\$fields,";
+      $selectors[] = "\t\t]);";
+      $selectors[] = "}";
+
+      $selectors[] = "/**";
+      $selectors[] = " * @param \$val";
+      $selectors[] = " * @return Collection";
+      $selectors[] = " */";
+      $selectors[] = "public static function getBy".$field->getCamelName()."_greater(\$val, \$limit=0, \$asArray=false, \$fields=[]){";
+      $selectors[] = "\treturn DB::connectionByAlias('".$db->getAlias()."')->getSimple([";
+      $selectors[] = "\t\t\t'table'=>'".$table->getName()."',";
+      $selectors[] = "\t\t\t'instantiator'=>get_called_class().'::createFromRaw',";
+      $selectors[] = "\t\t\t'className'=>get_called_class(),";
+      $selectors[] = "\t\t\t'conditions'=>['".$field->getName()." > \"%?:val:%\"',['val'=>\$val]],";
+      $selectors[] = "\t\t\t'limit'=>\$limit,";
+      $selectors[] = "\t\t\t'asArray'=>\$asArray,";
+      $selectors[] = "\t\t\t'fields'=>\$fields,";
+      $selectors[] = "\t\t]);";
+      $selectors[] = "}";
+
+      $selectors[] = "/**";
+      $selectors[] = " * @param \$val";
+      $selectors[] = " * @return Collection";
+      $selectors[] = " */";
+      $selectors[] = "public static function getBy".$field->getCamelName()."_less(\$val, \$limit=0, \$asArray=false, \$fields=[]){";
+      $selectors[] = "\treturn DB::connectionByAlias('".$db->getAlias()."')->getSimple([";
+      $selectors[] = "\t\t\t'table'=>'".$table->getName()."',";
+      $selectors[] = "\t\t\t'instantiator'=>get_called_class().'::createFromRaw',";
+      $selectors[] = "\t\t\t'className'=>get_called_class(),";
+      $selectors[] = "\t\t\t'conditions'=>['".$field->getName()." < \"%?:val:%\"',['val'=>\$val]],";
+      $selectors[] = "\t\t\t'limit'=>\$limit,";
+      $selectors[] = "\t\t\t'asArray'=>\$asArray,";
+      $selectors[] = "\t\t\t'fields'=>\$fields,";
+      $selectors[] = "\t\t]);";
+      $selectors[] = "}";
+
+      $selectors[] = "/**";
+      $selectors[] = " * @param \$val";
+      $selectors[] = " * @return Collection";
+      $selectors[] = " */";
+      $selectors[] = "public static function getBy".$field->getCamelName()."_between(\$val1, \$val1, \$limit=0, \$asArray=false, \$fields=[]){";
+      $selectors[] = "\treturn DB::connectionByAlias('".$db->getAlias()."')->getSimple([";
+      $selectors[] = "\t\t\t'table'=>'".$table->getName()."',";
+      $selectors[] = "\t\t\t'instantiator'=>get_called_class().'::createFromRaw',";
+      $selectors[] = "\t\t\t'className'=>get_called_class(),";
+      $selectors[] = "\t\t\t'conditions'=>['".$field->getName()." BETWEEN \"%?:val1:%\" AND \"%?:val2:%\"',['val1'=>\$val1, 'val2'=>\$val2]],";
+      $selectors[] = "\t\t\t'limit'=>\$limit,";
+      $selectors[] = "\t\t\t'asArray'=>\$asArray,";
+      $selectors[] = "\t\t\t'fields'=>\$fields,";
       $selectors[] = "\t\t]);";
       $selectors[] = "}";
 
