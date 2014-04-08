@@ -38,11 +38,11 @@ class Geoip {
       $answer["country_code"] = $data['cc'];
       $answer["country"]  = !empty($data['cc']) ? self::$geoCodes[$lang][$data['cc']] : '';
       $answer["region"]   = !empty($data['region']) ? iconv('windows-1251','utf-8',$data['region']) : '';
-      $answer["city_loc"] = !empty($data['city']) ? iconv('windows-1251', 'utf-8', $data['city']) : '';
+      $answer["city_local"]=!empty($data['city']) ? iconv('windows-1251', 'utf-8', $data['city']) : '';
       if ($lang=="EN"){
-        $answer["city"]     = array_key_exists($answer["city_loc"], self::$locToEn) ? self::$locToEn[$answer["city_loc"]] : self::rus2translit($answer["city_loc"]);
+        $answer["city"]     = array_key_exists($answer["city_local"], self::$locToEn) ? self::$locToEn[$answer["city_local"]] : self::rus2translit($answer["city_local"]);
       }else{
-        $answer["city"]     = $answer["city_loc"];
+        $answer["city"]     = $answer["city_local"];
       }
       $answer["lat"]      = $data["lat"];
       $answer["lng"]      = $data["lng"];
