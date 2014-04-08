@@ -10,7 +10,7 @@ class SharedMemoryBlock{
   public function __construct($blockName, $redisConnection=null){
     $this->blockName = $blockName;
     if (!$redisConnection){
-      $this->link = &Xredis::getInstance();
+      $this->link = &Cache::getInstance();
     }
   }
 

@@ -12,7 +12,7 @@ class Mutex{
   }
 
   public function lock($wait=0, $ttl=0){
-    if (Xredis::getInstance()->lock($this->key, $ttl, $wait)){
+    if (Cache::getInstance()->lock($this->key, $ttl, $wait)){
       $this->locked=true;
     }else{
       $this->locked=false;
@@ -22,7 +22,7 @@ class Mutex{
 
   public function unlock(){
     if ($this->locked){
-      Xredis::getInstance()->unlock($this->key);
+      Cache::getInstance()->unlock($this->key);
     }
     $this->locked=false;
   }

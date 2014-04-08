@@ -27,7 +27,7 @@ class CRUDGenerator extends PrivateInstantiation{
                 " */"."\n".
                 "public static function getBy".$keyName."Key(".Strings::smartImplode($fields, ", ", function(Field &$value){$value = "\$".$value->getAlias();})."){"."\n".
                 "\t\$cacheKey = ".$cacheKey.";"."\n".
-                "\tif (!Cache::enabled() || !(\$answer = Cache::groupGetItem('DB_".$db->getAlias()."_".$table->getName()."', \$cacheKey))){"."\n".
+                "\tif (!Cache::getInstance()->enabled() || !(\$answer = Cache::getInstance()->groupGetItem('DB_".$db->getAlias()."_".$table->getName()."', \$cacheKey))){"."\n".
                 "\t\t\$answer=DB::connectionByAlias('".$db->getAlias()."')->getSimple(["."\n".
                 "\t\t\t'conditions'=>[\"".Strings::smartImplode($fields, " AND ", function(Field &$value){$value = $value->getName()." = ?:".$value->getName().":";})."\", [".Strings::smartImplode($fields, " , ", function(Field &$value){$value = "'".$value->getName()."' => \$".$value->getAlias();})."]],"."\n".
                 "\t\t\t'instantiator'=>get_called_class().'::createFromRaw',"."\n".
@@ -36,8 +36,8 @@ class CRUDGenerator extends PrivateInstantiation{
                 "\t\t]);"."\n".
                 "\t\tif (!\$answer->EOF()){"."\n".
                 "\t\t\t\$answer=\$answer->First();"."\n".
-                "\t\t\tif (Cache::enabled()){"."\n".
-                "\t\t\t\tCache::groupSetItem('DB_".$db->getAlias()."_".$table->getName()."', \$cacheKey, \$answer);"."\n".
+                "\t\t\tif (Cache::getInstance()->enabled()){"."\n".
+                "\t\t\t\tCache::getInstance()->groupSetItem('DB_".$db->getAlias()."_".$table->getName()."', \$cacheKey, \$answer);"."\n".
                 "\t\t\t}"."\n".
                 "\t\t}else{"."\n".
                 "\t\t\t\$answer=null;"."\n".

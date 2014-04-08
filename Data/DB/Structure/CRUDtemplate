@@ -5,7 +5,7 @@ namespace {%NAMESPACE%}\abstracts;
 use \X\Data\DB\Collection;
 use \X\Data\DB\CRUD;
 use \X\Data\DB\DB;
-use \X\Data\Cache\Cache;
+use \X\Data\Cache;
 
 /**
  * Class {%CLASSNAME%} represents table {%DATABASE_ALIAS%}/{%TABLENAME%}.
@@ -40,8 +40,8 @@ const TABLE_NAME = '{%TABLENAME%}';
     if (!$this->cacheKey()){
       return false;
     }
-    if (Cache::enabled() && $this->isValid()){
-      return Cache::getDriver()->groupRemoveItem('DB_{%DATABASE_ALIAS%}_{%TABLENAME%}', $this->cacheKey());
+    if (Cache::getInstance()->enabled() && $this->isValid()){
+      return Cache::getInstance()->groupRemoveItem('DB_{%DATABASE_ALIAS%}_{%TABLENAME%}', $this->cacheKey());
     }
   }
 
@@ -49,8 +49,8 @@ const TABLE_NAME = '{%TABLENAME%}';
     if (!$this->cacheKey()){
       return false;
     }
-    if (Cache::enabled() && $this->isValid()){
-      return Cache::getDriver()->groupSetItem('DB_{%DATABASE_ALIAS%}_{%TABLENAME%}', $this->cacheKey(), $this);
+    if (Cache::getInstance()->enabled() && $this->isValid()){
+      return Cache::getInstance()->groupSetItem('DB_{%DATABASE_ALIAS%}_{%TABLENAME%}', $this->cacheKey(), $this);
     }
   }
 

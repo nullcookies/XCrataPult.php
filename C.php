@@ -68,6 +68,10 @@ class C extends \X\AbstractClasses\PrivateInstantiation{
     return array_key_exists("template_cache_folder", self::$config) ? self::checkDir(self::$config["template_cache_folder"]) : null;
   }
 
+  public static function setCacheHost($host){
+    \X\Data\Cache::getInstance($host);
+  }
+
   public static function set($options){
     if (!is_array($options)){
       throw new \exception("Options should be an array.");

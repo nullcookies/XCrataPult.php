@@ -1,36 +1,37 @@
 <?php
+namespace X\Data;
+if (!defined('__XDIR__')) die();
 
-namespace X\Data\Cache\Drivers;
-
-// TODO: ensure that locks will have TTL short enough to prevent permanent blockage
-// TODO: Add Exceptions
-
-use \X\AbstractClasses\Singleton;
-use \X\Data\Cache\Interfaces\ICache;
+use X\C;
 use X\Debug\Logger;
-use \X\X;
 
-/**
- * @required  Redis >= 2.0
- */
-class Xredis implements ICache{
+class Cache{
   private $redisObject = null;
-  private $hosts = [];
 
-  public function connect(){
-    if ($this->redisObject!==null){
-      return;
+  private static $instance=null;
+
+  public static function &getInstance($host=null){
+    if (!self::$instance){
+      $called_class = get_called_class();
+      if ($host!=null){
+        self::$instance = new $called_class($host);
+      }elseif (self::$instance==null){
+        self::$instance = new $called_class("/var/run/redis/redis.sock"); //default for XCrataPult.server
+      }
     }
+    return self::$instance;
+  }
+
+  private function __construct($host){
     if (!class_exists("\\Redis")){
       throw new \RuntimeException("Please, install 'phpredis'");
     }
 
     $this->redisObject = new \Redis();
+
     if ($this->redisObject){
       try{
-        foreach ($this->hosts as $host){
-          $this->redisObject->pconnect($host);
-        }
+        $this->redisObject->connect($host);
         if (function_exists('igbinary_serialize') && defined('\\Redis::SERIALIZER_IGBINARY')){
           $this->redisObject->setOption(\Redis::OPT_SERIALIZER, \Redis::SERIALIZER_IGBINARY);
         }else{
@@ -38,17 +39,11 @@ class Xredis implements ICache{
         }
       }catch(\RedisException $e){
         $this->redisObject = null;
+        throw $e;
       }catch(\Exception $e){
         $this->redisObject = null;
+        throw $e;
       }
-    }
-    return $this->enabled();
-  }
-
-  public function setHost($host){
-    $this->hosts[]=$host;
-    if ($this->enabled()){
-      $this->redisObject->connect($host);
     }
   }
 
@@ -57,7 +52,6 @@ class Xredis implements ICache{
   }
 
   public function __get($name){
-    $this->connect();
     if ($this->exists($name)) {
       return $this->get($name);
     }else{
@@ -66,7 +60,6 @@ class Xredis implements ICache{
   }
 
   public function __set($name, $val){
-    $this->connect();
     if ($val === null && ($this->exists($name) !== false)){
       $this->remove($name);
     }elseif($val !== null){
@@ -75,7 +68,6 @@ class Xredis implements ICache{
   }
 
   public function set($name, $val, $ttl = null){
-    $this->connect();
     if ($val === null && ($this->redisObject->exists($name) !== false)){
       $this->remove($name);
     }elseif ($val !== null){
@@ -90,47 +82,39 @@ class Xredis implements ICache{
   }
 
   public function get($name){
-    $this->connect();
+    die("123123");
     return $this->redisObject->get($name);
   }
 
   public function exists($name){
-    $this->connect();
     return $this->redisObject->exists($name);
   }
 
   public function remove($name){
-    $this->connect();
     $this->redisObject->del($name);
   }
 
   public function arraySize($arr){
-    $this->connect();
     return $this->redisObject->lSize($arr);
   }
 
   public function arrayGetItem($arr, $index){
-    $this->connect();
     return $this->redisObject->lGet($arr, $index);
   }
 
   public function arraySetItem($arr, $index, $value, $ttl=null){
-    $this->connect();
     return $this->redisObject->lSet($arr, $index, $value);
   }
 
   public function arrayRemoveItem($arr, $value, $count){
-    $this->connect();
     return $this->redisObject->lRem($arr, $value, $count);
   }
 
   public function arrayDelete($arr){
-    $this->connect();
     $this->redisObject->del($arr);
   }
 
   public function arrayGet($arr){
-    $this->connect();
     $answer = Array();
     while ($a = $this->redisObject->lPop($arr)){
       $answer[] = $a;
@@ -139,42 +123,42 @@ class Xredis implements ICache{
   }
 
   public function groupSize($hash){
-    $this->connect();
     return $this->redisObject->hLen($hash);
   }
 
   public function groupGetItem($hash, $key){
-    $this->connect();
     return $this->redisObject->hGet($hash, $key);
   }
 
   public function groupSetItem($hash, $key, $value, $ttl=null){
-    $this->connect();
     return $this->redisObject->hSet($hash, $key, $value);
   }
 
+  public function groupIncItem($hash, $key, $value=1){
+    return $this->redisObject->hIncrBy($hash, $key, $value);
+  }
+
+  public function groupDecItem($hash, $key, $value=1){
+    return $this->redisObject->hIncrBy($hash, $key, -$value);
+  }
+
   public function groupRemoveItem($hash, $key){
-    $this->connect();
     $this->redisObject->hDel($hash, $key);
   }
 
   public function groupDelete($hash){
-    $this->connect();
     $this->redisObject->del($hash);
   }
 
   public function groupGet($hash){
-    $this->connect();
-    $this->redisObject->hGetAll($hash);
+    return $this->redisObject->hGetAll($hash);
   }
 
   public function queryPush($qry, $value){
-    $this->connect();
     $this->redisObject->rPush($qry, $value);
   }
 
   public function queryPop($qry, $blocking = false){
-    $this->connect();
     if ($blocking){
       $answer = $this->redisObject->blPop($qry, $blocking);
       return $answer[1];
@@ -184,12 +168,10 @@ class Xredis implements ICache{
   }
 
   public function stackPush($stack, $value){
-    $this->connect();
     $this->queryPush($stack, $value);
   }
 
   public function stackPop($stack, $blocking = false){
-    $this->connect();
     if ($blocking){
       $answer = $this->redisObject->brPop($stack, $blocking);
       return $answer[1];
@@ -198,39 +180,35 @@ class Xredis implements ICache{
   }
 
   public function Status(){
-    $this->connect();
     return $this->redisObject->info();
   }
 
-  public function lock($lockName, $ttl = 1, $timeWait = 1){
-    $this->connect();
-    $timeLeft = min(10, abs(intval($timeWait)));
-    $ttl      = min(10, abs(intval($ttl)));
-    while (!$this->redisObject->setnx("LOCK_" . $lockName, \x\Tools\Time::microTime() + $ttl)) {
-      if (doubleval($this->get("LOCK_" . $lockName)) <= \x\Tools\Time::microTime()) {
-        $this->set("LOCK_" . $lockName, \x\Tools\Time::microTime() + $ttl);
+  public function lock($lockName, $ttl = 1, $timeWait = 0){
+    $timeWaitTo = min(10, abs(intval($timeWait))) + time();
+    $ttlTo      = $ttl ? (min(10, abs(intval($ttl))) + time()) : 2147483646;
+    while (!$this->redisObject->setnx("LOCK_" . $lockName, $ttlTo)) {
+
+      if (intval($this->get("LOCK_" . $lockName)) <= time()) {
+        $this->set("LOCK_" . $lockName, $ttlTo);
         return true;
       }
-      usleep(10);
-      $timeLeft -= 10;
-      if ($timeLeft < 0)
+      usleep(100);
+      if ($timeWait==0 || $timeWaitTo < time()){
         return false;
+      }
     }
     return true;
   }
 
   public function unlock($lockName){
-    $this->connect();
     $this->redisObject->del("LOCK_" . $lockName);
   }
 
-  public function __isset($name) {
-    $this->connect();
+  public function __isset($name){
     return $this->exists($name);
   }
 
-  public function __unset($name) {
-    $this->connect();
+  public function __unset($name){
     $this->remove($name);
   }
 }
