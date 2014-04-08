@@ -20,8 +20,7 @@ class Collection extends \ArrayObject
   const BAD_CALLBACK = 801;
   const BAD_QUERY_RESOURCE = 802;
 
-  public function __construct($res, IDB &$driver, $instantiator=null)
-  {
+  public function __construct($res, IDB &$driver, $instantiator=null){
     if (!is_resource($res)){
       if (trim($res)){
         $res = $driver->query($res);

@@ -12,6 +12,7 @@ use \X\Validators\Values;
 use \X\AbstractClasses\PrivateInstantiation;
 use \X\Data\DB\Structure\CRUDGenerator;
 
+
 class DB extends PrivateInstantiation{
 
   const ERR_BAD_INTERFACE = 100;
