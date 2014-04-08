@@ -62,4 +62,8 @@ class Strings {
 
     return strtr($string, $converter);
   }
+
+  public static function offset($val, $minLength=2, $fillChar='0'){
+    return str_repeat($fillChar, $minLength-strlen($val)).$val;
+  }
 } 
