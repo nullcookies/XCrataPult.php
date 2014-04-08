@@ -2,7 +2,6 @@
 
 namespace X;
 
-use \X\Render\L10n;
 use \X\Render\Page;
 use \X\Data\DB\DB;
 use \X\Data\Cache\Cache;
@@ -12,8 +11,7 @@ use \X\Tools\FileSystem;
 class C extends \X\AbstractClasses\PrivateInstantiation{
 
   private static $config=[
-    'db_dir' =>'.app/db/',
-    'db_namespace'=>'db',
+    'db_namespace' =>'db',
     'db_abstract'=>true
   ];
 
@@ -25,22 +23,16 @@ class C extends \X\AbstractClasses\PrivateInstantiation{
     return self::$config["db_abstract"];
   }
 
-  public static function setDbDir($path){
-    self::helperCheckDir($path);
-    self::$config["db_dir"] = FileSystem::finalizeDirPath($path);
-  }
-
   public static function getDbDir(){
-    self::checkDir(self::$config["db_dir"]);
-    return self::$config["db_dir"];
+    return self::checkDir(self::getAppDir().self::$config["db_namespace"]);
   }
 
   public static function setDbNamespace($name){
-    self::$config["db_namespace"] = FileSystem::finalizeDirPath($name);
+    self::$config["db_namespace"] = $name;
   }
 
   public static function getDbNamespace(){
-    return self::$config["db_namespace"];
+    return "app\\".FileSystem::finalizeDirPath(self::$config["db_namespace"]);
   }
 
   public static function setDb($db, $options){
@@ -48,6 +40,32 @@ class C extends \X\AbstractClasses\PrivateInstantiation{
       $var = "set".str_replace(" ", "", ucwords(strtolower(str_replace("_", " ", $var))));
       DB::$var($db, $val);
     }
+  }
+
+  public static function getAppDir(){
+    return self::checkDir(self::$config["app_dir"]);
+  }
+
+  public static function setAppDir($path){
+    self::$config["app_dir"] = self::checkDir($path);
+
+    registerAutoloader("app", self::$config["app_dir"]);
+  }
+
+  public static function setTemplateFolder($path){
+    self::$config["template_folder"] = self::checkDir($path);
+  }
+
+  public static function setTemplateCacheFolder($path){
+    self::$config["template_cache_folder"] = self::checkDir($path);
+  }
+
+  public static function getTemplateFolder(){
+    return self::checkDir(self::$config["template_folder"]);
+  }
+
+  public static function getTemplateCacheFolder(){
+    return array_key_exists("template_cache_folder", self::$config) ? self::checkDir(self::$config["template_cache_folder"]) : null;
   }
 
   public static function set($options){
@@ -59,9 +77,13 @@ class C extends \X\AbstractClasses\PrivateInstantiation{
       $var = "set".str_replace(" ", "", ucwords(strtolower(str_replace("_", " ", $var))));
       if (strpos($var, ".")!==false){
         list($var, $subvar) = explode(".", $var);
-        self::$var($subvar, $val);
+        if (method_exists(get_called_class(),$var)){
+          self::$var($subvar, $val);
+        }
       }else{
-        self::$var($val);
+        if (method_exists(get_called_class(),$var)){
+          self::$var($val);
+        }
       }
     }
   }
@@ -87,7 +109,7 @@ class C extends \X\AbstractClasses\PrivateInstantiation{
     Logger::add("Loading config from ".$path." ... set");
   }
 
-  public static function checkDir(&$path){
+  public static function checkDir($path){
     if ($path[0]!='/'){
       $path = X::getScriptDir().$path;
     }
@@ -97,5 +119,6 @@ class C extends \X\AbstractClasses\PrivateInstantiation{
     }elseif (!is_dir($path)){
       throw new \exception("Path specified is not a directory [".$path."]");
     }
+    return $path;
   }
 }
