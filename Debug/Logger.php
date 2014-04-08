@@ -3,6 +3,7 @@ namespace X\Debug;
 if (!defined('__XDIR__')) die();
 
 use \X\AbstractClasses\Singleton;
+use X\Tools\Strings;
 use \X\Tools\Values;
 use \X\Tools\Time;
 
@@ -41,8 +42,8 @@ final class Logger extends Singleton{
   }
 
   static public function get($html=false){
-    Logger::Add("Memory used (peak): " . Values::Grades(memory_get_peak_usage(true), 1024, 'B,KB,MB,GB'));
-    Logger::Add("Memory used (now): " . Values::Grades(memory_get_usage(true), 1024, 'B,KB,MB,GB'));
+    Logger::Add("Memory used (peak): " . Strings::Grades(memory_get_peak_usage(true), 1024, 'B,KB,MB,GB'));
+    Logger::Add("Memory used (now): " . Strings::Grades(memory_get_usage(true), 1024, 'B,KB,MB,GB'));
     Logger::Add("Sending logs");
     if (!$html){
       return implode("\n", self::x()->debugLog);
