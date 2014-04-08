@@ -100,4 +100,37 @@ class FileSystem extends PrivateInstantiation{
     }
     return $answer;
   }
+
+  public static function downloadFile($URL, $to){
+    if ($f = fopen($URL, 'r')){
+      $res = file_put_contents($to, $f);
+    }else{
+      $res = false;
+    }
+    return $res;
+  }
+
+  public static function deleteIfExists($path){
+    if (file_exists($path) && !is_dir($path)){
+      unlink($path);
+    }
+
+    // TODO: add if DIR
+  }
+
+  public static function unZIP($file, $path=''){
+    if ($path==''){
+      $path = self::finalizeDirPath(dirname($file));
+    }
+
+    $zip = new \ZipArchive();
+    $res = $zip->open($file);
+    if ($res === TRUE) {
+      $zip->extractTo($path);
+      $zip->close();
+      return true;
+    }else{
+      return false;
+    }
+  }
 }
