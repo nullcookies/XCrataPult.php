@@ -103,4 +103,8 @@ class Values extends PrivateInstantiation{
   public static function isSuitableForVarName($name){
     return !!preg_match("/^[a-zA-Z_\\x7f-\\xff][a-zA-Z0-9_\\x7f-\\xff]*$/", $name);
   }
+
+  public static function unHTML($string){
+    return htmlspecialchars($string);
+  }
 } 
