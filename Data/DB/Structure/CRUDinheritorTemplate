@@ -22,4 +22,41 @@ class {%CLASSNAME%} extends \{%NAMESPACE%}\abstracts\{%CLASSNAME%}{
     return parent::create();
   }
 
+  public static function hook_contructor_before(&$className){
+    // if you need to do anything
+    // before object will be constructed
+    // do it here.
+
+    // ATTENTION: this is a static function which is triggered before $className object creation;
+  }
+
+  public function hook_constructor_after(){
+    // if you need to do anything with the object
+    // right after its constructor has finished its routine
+    // do it here.
+  }
+
+  public function hook_createFromRaw_before(&$raw){
+    // if you need to do anything with raw data
+    // received either from database or from cache
+    // before it will be used to generate object state
+    // do it here.
+  }
+
+  public function hook_createFromRaw_after(){
+    // if you need to do anything with object
+    // after its state was set from raw data
+    // do it here.
+  }
+
+  public function hook_asArray_after(&$answer){
+    // if you need to do anything with answer
+    // that has been created in asArray method
+    // do it here.
+
+    // it is obligatory if you have added new fields
+    // otherwise they will not be cached,
+    // since cache function gets object state from asArray method;
+  }
+
 }

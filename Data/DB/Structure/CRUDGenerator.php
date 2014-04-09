@@ -64,11 +64,13 @@ class CRUDGenerator extends PrivateInstantiation{
     $creator  = "public static function createFromRaw(\$raw){"."\n".
                 "\t\$className = get_called_class();"."\n".
                 "\t\$classObj = new \$className();"."\n";
+    $creator .= "\t\$classObj->hook_createFromRaw_before(\$raw);"."\n";
     foreach($table->getFields() as $field){
       $creator.="\tif (array_key_exists('".$field->getName()."', \$raw)){"."\n";
       $creator.="\t\t\$classObj->set".$field->getCamelName()."(\$raw['".$field->getName()."']);"."\n";
       $creator.="\t}"."\n";
     }
+    $creator .= "\t\$classObj->hook_createFromRaw_after();"."\n";
     $creator .= "\t\$classObj->pretendReal();"."\n";
     $creator .= "\t\$classObj->cache();"."\n".
                 "\treturn \$classObj;"."\n".
@@ -186,20 +188,21 @@ class CRUDGenerator extends PrivateInstantiation{
 
   private static function gAsArray($fields){
     $asArray= "public function asArray(\$fieldsNeeded=[]){"."\n".
+              "\t\$answer=[];"."\n".
               "\tif(is_array(\$fieldsNeeded) && count(\$fieldsNeeded)){"."\n".
-              "\t\t\$answer=[];"."\n".
               "\t\tforeach(\$fieldsNeeded as \$field){"."\n".
               "\t\t\t\$field = strtolower(\$field);"."\n".
               "\t\t\tif(array_key_exists(\$field, self::\$Fields)){"."\n".
-              "\t\t\t\t\$answer[\$field]=\$this->{'_'.\$field};"."\n".
+              "\t\t\t\t\$answer[\$field]=call_user_func([\$this, self::\$Fields[\$field]['getter']]);"."\n".
               "\t\t\t}"."\n".
               "\t\t}"."\n".
-              "\t\treturn \$answer;"."\n".
               "\t}else{"."\n".
-              "\t\treturn ["."\n".
-              Strings::smartImplode($fields, "", function(Field &$value){$value = "\t\t\t'".$value->getName()."'=>\$this->".$value->getAlias().",\n";}).
-              "\t\t];"."\n".
+              "\t\tforeach(self::\$Fields as \$fieldName=>\$fieldData){"."\n".
+              "\t\t\t\$answer[\$fieldName]=call_user_func([\$this, \$fieldData['getter']]);"."\n".
+              "\t\t}"."\n".
               "\t}"."\n".
+              "\t\$this->hook_asArray_after(\$answer);"."\n".
+              "\treturn \$answer;"."\n".
               "}";
     return $asArray;
   }
@@ -367,6 +370,8 @@ class CRUDGenerator extends PrivateInstantiation{
       $selectors[] = "}";
 
       $fields[]= "\t'" . $field->getName() . "'=>[";
+      $fields[]= "\t\t'camelName'=>'".$field->getCamelName()."',";
+      $fields[]= "\t\t'getter'=>'get".$field->getCamelName()."',";
       $fields[]= "\t\t'type'=>'".$field->getType()."',";
       $fields[]= "\t\t'unsigned'=>'".$field->getType()."',";
       $fields[]= "\t\t'default'=>".(($field->getNull() && $field->getDefault()===null) ? 'null' : "'".$field->getDefault()."'").",";

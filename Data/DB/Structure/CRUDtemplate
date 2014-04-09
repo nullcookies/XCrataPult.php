@@ -22,7 +22,10 @@ use \X\Data\Cache;
  */
 abstract class {%CLASSNAME%} extends CRUD{
 
-const TABLE_NAME = '{%TABLENAME%}';
+  use \X\Traits\TControlledMethodCalls;
+  use \X\Traits\TCacheableObject;
+
+  const TABLE_NAME = '{%TABLENAME%}';
   protected $className;
   protected $listeners=[];
 
@@ -62,9 +65,10 @@ const TABLE_NAME = '{%TABLENAME%}';
 {%SETTERS%}
 {%AUTOINCREMENT%}
 
-protected function __construct(){
-  $this->className = get_called_class();
-}
+  protected function __construct(){
+    $this->className = get_called_class();
+    $this->hook_constructor_after();
+  }
 
 {%SELECTORS%}
   public static function getAll($asArray=false){
@@ -128,5 +132,13 @@ protected function __construct(){
   public static function getField($field){
     return array_key_exists($field, static::$Fields) ? static::$Fields[$field] : null;
   }
+
+  public static function hook_contructor_before(){}
+  public function hook_constructor_after(){}
+
+  public function hook_createFromRaw_before(&$rawFields){}
+  public function hook_createFromRaw_after(){}
+
+  public function hook_asArray_after(&$answer){}
 
 }
