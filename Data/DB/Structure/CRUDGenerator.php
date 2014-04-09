@@ -28,6 +28,7 @@ class CRUDGenerator extends PrivateInstantiation{
                 "public static function getBy".$keyName."Key(".Strings::smartImplode($fields, ", ", function(Field &$value){$value = "\$".$value->getAlias();})."){"."\n".
                 "\t\$cacheKey = ".$cacheKey.";"."\n".
                 "\tif (!Cache::getInstance()->enabled() || !(\$answer = Cache::getInstance()->groupGetItem('DB_".$db->getAlias()."_".$table->getName()."', \$cacheKey))){"."\n".
+                "\t\tLogger::add('DB_".$db->getAlias()."_".$table->getName().": no key '.\$cacheKey.' in cache. Loading from DB');"."\n".
                 "\t\t\$answer=DB::connectionByAlias('".$db->getAlias()."')->getSimple(["."\n".
                 "\t\t\t'conditions'=>[\"".Strings::smartImplode($fields, " AND ", function(Field &$value){$value = $value->getName()." = ?:".$value->getName().":";})."\", [".Strings::smartImplode($fields, " , ", function(Field &$value){$value = "'".$value->getName()."' => \$".$value->getAlias();})."]],"."\n".
                 "\t\t\t'instantiator'=>get_called_class().'::createFromRaw',"."\n".
@@ -42,6 +43,8 @@ class CRUDGenerator extends PrivateInstantiation{
                 "\t\t}else{"."\n".
                 "\t\t\t\$answer=null;"."\n".
                 "\t\t}"."\n".
+                "\t}else{"."\n".
+                "\t\tLogger::add('DB_".$db->getAlias()."_".$table->getName().": key '.\$cacheKey.' found in cache. Loading from cache');"."\n".
                 "\t}"."\n".
                 "\treturn \$answer;"."\n".
                 "}"."\n";
