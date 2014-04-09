@@ -373,7 +373,7 @@ class CRUDGenerator extends PrivateInstantiation{
       $fields[]= "\t\t'camelName'=>'".$field->getCamelName()."',";
       $fields[]= "\t\t'getter'=>'get".$field->getCamelName()."',";
       $fields[]= "\t\t'type'=>'".$field->getType()."',";
-      $fields[]= "\t\t'unsigned'=>'".$field->getType()."',";
+      $fields[]= "\t\t'unsigned'=>".($field->getUnsigned() ? "true":"false").",";
       $fields[]= "\t\t'default'=>".(($field->getNull() && $field->getDefault()===null) ? 'null' : "'".$field->getDefault()."'").",";
       $fields[]= "\t\t'autoincrement'=>".($field->getAutoIncrement() ? "true":"false").",";
       $fields[]= "\t\t'null'=>".($field->getNull() ? "true":"false").",";
