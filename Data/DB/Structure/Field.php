@@ -45,9 +45,12 @@ class Field {
   }
 
   public function getCamelName(){
-    return str_replace(" ", "",ucwords(implode(" ",explode("_",$this->getName()))));
+    return self::s_getCamelName($this->getName());
   }
 
+  public static function s_getCamelName($name){
+    return str_replace(" ", "",ucwords(implode(" ",explode("_",$name))));
+  }
 
   public function getAlias(){
     return $this->alias;
