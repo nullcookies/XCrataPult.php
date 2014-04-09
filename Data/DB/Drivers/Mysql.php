@@ -250,6 +250,7 @@ class Mysql implements IDB{
       switch ($item["expr_type"]){
         case "colref":
           if (substr($item["no_quotes"]["parts"][0],0,2)=="?:" && substr($item["no_quotes"]["parts"][0],-1)==":"){
+
             $valname = substr($item["no_quotes"]["parts"][0],2,-1);
             if (array_key_exists($valname, $vars)){
               $replacement = $vars[$valname];
@@ -258,7 +259,7 @@ class Mysql implements IDB{
             }
 
             $item["expr_type"]="const";
-            $item["base_expr"]= $replacement===null ? "NULL": is_numeric($replacement) ? $replacement : (is_bool($replacement) ? ($replacement ? "TRUE" : "FALSE") : "\"".$this->escape($replacement)."\"");
+            $item["base_expr"]= ($replacement===null ? "NULL": (is_numeric($replacement) ? $replacement : (is_bool($replacement) ? ($replacement ? "TRUE" : "FALSE") : "\"".$this->escape($replacement)."\"")));
             unset($item["no_quotes"]);
           }elseif (!isset($tableClass) || array_key_exists($key, $tableClass::getFields())){
             if (strpos(trim($item["base_expr"]), "`")!==0){
@@ -280,7 +281,7 @@ class Mysql implements IDB{
           }
 
           $item["expr_type"]="const";
-          $item["base_expr"]=str_replace("?:".$valname.":", $replacement===null ? "NULL": is_numeric($replacement) ? $replacement : (is_bool($replacement) ? ($replacement ? "TRUE" : "FALSE") : $this->escape($replacement)), $item["base_expr"]);
+          $item["base_expr"]=str_replace("?:".$valname.":", $replacement===null ? "NULL": is_numeric($replacement) ? $replacement : (is_bool($replacement) ? ($replacement ? "TRUE" : "FALSE") : "'".$this->escape($replacement)."'"), $item["base_expr"]);
       }
 
 
@@ -404,6 +405,7 @@ class Mysql implements IDB{
       $where = "WHERE ".$options["conditions"][0];
       $wherevars = $options["conditions"][1];
     }
+
     $sqlExpr = 'SELECT '.$fieldsWeNeed.' FROM `'.$options['table'].'` '.$where.' '.$orderBy.' '.($options['limit'] > 0 ? 'LIMIT '.$options['limit'] : '').';';
     $parsed = (new \PHPSQLParser($sqlExpr))->parsed;
     if ($wherevars && $where && $parsed["WHERE"]){
