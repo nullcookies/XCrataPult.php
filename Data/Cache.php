@@ -10,6 +10,10 @@ class Cache{
 
   private static $instance=null;
 
+  /**
+   * @param string $host Redis host
+   * @return Cache
+   */
   public static function &getInstance($host=null){
     if (!self::$instance){
       $called_class = get_called_class();
