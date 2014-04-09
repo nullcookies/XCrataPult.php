@@ -6,6 +6,7 @@ use \X\Data\DB\Collection;
 use \X\Data\DB\CRUD;
 use \X\Data\DB\DB;
 use \X\Data\Cache;
+use \X\Debug\Logger;
 
 /**
  * Class {%CLASSNAME%} represents table {%DATABASE_ALIAS%}/{%TABLENAME%}.
@@ -71,6 +72,7 @@ abstract class {%CLASSNAME%} extends CRUD{
   }
 
 {%SELECTORS%}
+
   public static function getAll($asArray=false){
     return static::get([], $asArray);
   }
