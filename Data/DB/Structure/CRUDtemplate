@@ -65,7 +65,7 @@ abstract class {%CLASSNAME%} extends CRUD{
 
   protected function __construct(){
     $this->className = get_called_class();
-    $this->hook_constructor_before();
+    $this->hook_constructor_after();
   }
 
 {%SELECTORS%}
