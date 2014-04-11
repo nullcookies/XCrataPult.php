@@ -65,7 +65,7 @@ abstract class {%CLASSNAME%} extends CRUD{
 
   protected function __construct(){
     $this->className = get_called_class();
-    $this->hook_constructor_after();
+    $this->hook_constructor_before();
   }
 
 {%SELECTORS%}
@@ -132,7 +132,7 @@ abstract class {%CLASSNAME%} extends CRUD{
     return array_key_exists($field, static::$Fields) ? static::$Fields[$field] : null;
   }
 
-  public static function hook_contructor_before(&$className){}
+  public static function hook_constructor_before(&$className){}
   public function hook_constructor_after(){}
 
   public function hook_createFromRaw_before(&$rawFields){}
