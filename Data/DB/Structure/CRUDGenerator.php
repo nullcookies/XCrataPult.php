@@ -65,16 +65,14 @@ class CRUDGenerator extends PrivateInstantiation{
 
   private static function gCreateFromRaw(Table $table, $primaryFields){
     $creator  = "public static function &createFromRaw(\$raw){"."\n".
-                "\techo '<br><br> createFromRaw'.get_called_class().'<br>';"."\n".
                 "\t\$className = get_called_class();"."\n".
-                "\t\$classObj = \$className::create();"."\n";
-    $creator .= "\t\$classObj->hook_createFromRaw_before(\$raw);"."\n";
+                "\t\$classObj = \$className::create();"."\n".
+                "\t\$classObj->hook_createFromRaw_before(\$raw);"."\n";
     foreach($table->getFields() as $field){
       $creator.="\tif (array_key_exists('".$field->getName()."', \$raw)){"."\n";
       $creator.="\t\t\$classObj->set".$field->getCamelName()."(\$raw['".$field->getName()."']);"."\n";
       $creator.="\t}"."\n";
     }
-    $creator .= "\techo \$className.'->hook_createFromRaw_after();<br>';"."\n";
     $creator .= "\t\$classObj->hook_createFromRaw_after();"."\n";
     $creator .= "\t\$classObj->pretendReal();"."\n";
     $creator .= "\t\$classObj->cache();"."\n".
