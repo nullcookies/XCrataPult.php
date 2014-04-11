@@ -17,8 +17,8 @@ abstract class CRUD implements ICRUD{
   protected $UserFieldsInterface = [];
 
   public static function create(){
-    static::hook_contructor_before();
     $classname = get_called_class();
+    static::hook_contructor_before($classname);
     return new $classname();
   }
 
