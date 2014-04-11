@@ -23,9 +23,6 @@ use \X\Debug\Logger;
  */
 abstract class {%CLASSNAME%} extends CRUD{
 
-  use \X\Traits\TControlledMethodCalls;
-  use \X\Traits\TCacheableObject;
-
   const TABLE_NAME = '{%TABLENAME%}';
   protected $className;
   protected $listeners=[];
@@ -135,12 +132,13 @@ abstract class {%CLASSNAME%} extends CRUD{
     return array_key_exists($field, static::$Fields) ? static::$Fields[$field] : null;
   }
 
-  public static function hook_contructor_before(){}
+  public static function hook_contructor_before(&$className){}
   public function hook_constructor_after(){}
 
   public function hook_createFromRaw_before(&$rawFields){}
   public function hook_createFromRaw_after(){}
 
+  public function hook_asArray_before(){}
   public function hook_asArray_after(&$answer){}
 
 }

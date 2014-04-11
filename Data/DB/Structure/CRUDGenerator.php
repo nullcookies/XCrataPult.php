@@ -27,7 +27,7 @@ class CRUDGenerator extends PrivateInstantiation{
                 " */"."\n".
                 "public static function getBy".$keyName."Key(".Strings::smartImplode($fields, ", ", function(Field &$value){$value = "\$".$value->getAlias();})."){"."\n".
                 "\t\$cacheKey = ".$cacheKey.";"."\n".
-                "\tif (!Cache::getInstance()->enabled() || !(\$answer = Cache::getInstance()->groupGetItem('DB_".$db->getAlias()."_".$table->getName()."', \$cacheKey))){"."\n".
+                "\tif (!Cache::enabled() || !(\$answer = Cache::getInstance()->groupGetItem('DB_".$db->getAlias()."_".$table->getName()."', \$cacheKey))){"."\n".
                 "\t\tLogger::add('DB_".$db->getAlias()."_".$table->getName().": no key '.\$cacheKey.' in cache. Loading from DB');"."\n".
                 "\t\t\$answer=DB::connectionByAlias('".$db->getAlias()."')->getSimple(["."\n".
                 "\t\t\t'conditions'=>[\"".Strings::smartImplode($fields, " AND ", function(Field &$value){$value = $value->getName()." = ?:".$value->getName().":";})."\", [".Strings::smartImplode($fields, " , ", function(Field &$value){$value = "'".$value->getName()."' => \$".$value->getAlias();})."]],"."\n".
@@ -37,7 +37,7 @@ class CRUDGenerator extends PrivateInstantiation{
                 "\t\t]);"."\n".
                 "\t\tif (!\$answer->EOF()){"."\n".
                 "\t\t\t\$answer=\$answer->First();"."\n".
-                "\t\t\tif (Cache::getInstance()->enabled()){"."\n".
+                "\t\t\tif (Cache::enabled()){"."\n".
                 "\t\t\t\tCache::getInstance()->groupSetItem('DB_".$db->getAlias()."_".$table->getName()."', \$cacheKey, \$answer);"."\n".
                 "\t\t\t}"."\n".
                 "\t\t}else{"."\n".
@@ -64,15 +64,17 @@ class CRUDGenerator extends PrivateInstantiation{
   }
 
   private static function gCreateFromRaw(Table $table, $primaryFields){
-    $creator  = "public static function createFromRaw(\$raw){"."\n".
+    $creator  = "public static function &createFromRaw(\$raw){"."\n".
+                "\techo '<br><br> createFromRaw'.get_called_class().'<br>';"."\n".
                 "\t\$className = get_called_class();"."\n".
-                "\t\$classObj = new \$className();"."\n";
+                "\t\$classObj = \$className::create();"."\n";
     $creator .= "\t\$classObj->hook_createFromRaw_before(\$raw);"."\n";
     foreach($table->getFields() as $field){
       $creator.="\tif (array_key_exists('".$field->getName()."', \$raw)){"."\n";
       $creator.="\t\t\$classObj->set".$field->getCamelName()."(\$raw['".$field->getName()."']);"."\n";
       $creator.="\t}"."\n";
     }
+    $creator .= "\techo \$className.'->hook_createFromRaw_after();<br>';"."\n";
     $creator .= "\t\$classObj->hook_createFromRaw_after();"."\n";
     $creator .= "\t\$classObj->pretendReal();"."\n";
     $creator .= "\t\$classObj->cache();"."\n".
@@ -191,6 +193,7 @@ class CRUDGenerator extends PrivateInstantiation{
 
   private static function gAsArray($fields){
     $asArray= "public function asArray(\$fieldsNeeded=[]){"."\n".
+              "\t\$this->hook_asArray_before();"."\n".
               "\t\$answer=[];"."\n".
               "\tif(is_array(\$fieldsNeeded) && count(\$fieldsNeeded)){"."\n".
               "\t\tforeach(\$fieldsNeeded as \$field){"."\n".

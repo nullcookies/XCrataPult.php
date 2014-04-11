@@ -51,8 +51,12 @@ class Cache{
     }
   }
 
-  public function enabled(){
+  public function alive(){
     return $this->redisObject!==null;
+  }
+
+  public static function enabled(){
+    return self::$instance!==null && self::getInstance()->alive();
   }
 
   public function __get($name){
@@ -86,7 +90,6 @@ class Cache{
   }
 
   public function get($name){
-    die("123123");
     return $this->redisObject->get($name);
   }
 
