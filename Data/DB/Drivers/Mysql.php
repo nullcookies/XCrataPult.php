@@ -281,7 +281,7 @@ class Mysql implements IDB{
           }
 
           $item["expr_type"]="const";
-          $item["base_expr"]=str_replace("?:".$valname.":", $replacement===null ? "NULL": is_numeric($replacement) ? $replacement : (is_bool($replacement) ? ($replacement ? "TRUE" : "FALSE") : "'".$this->escape($replacement)."'"), $item["base_expr"]);
+          $item["base_expr"]=str_replace("?:".$valname.":", $replacement===null ? "NULL": is_numeric($replacement) ? $replacement : (is_bool($replacement) ? ($replacement ? "TRUE" : "FALSE") : $this->escape($replacement)), $item["base_expr"]);
       }
 
 
