@@ -18,7 +18,7 @@ abstract class CRUD implements ICRUD{
 
   public static function create(){
     $classname = get_called_class();
-    static::hook_contructor_before($classname);
+    static::hook_constructor_before($classname);
     return new $classname();
   }
 
