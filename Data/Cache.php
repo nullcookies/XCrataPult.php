@@ -109,7 +109,11 @@ class Cache{
     return $this->redisObject->lGet($arr, $index);
   }
 
-  public function arraySetItem($arr, $index, $value, $ttl=null){
+  public function arrayPush($arr, $value){
+    return $this->redisObject->lPush($arr, $value);
+  }
+
+  public function arraySetItem($arr, $index, $value){
     return $this->redisObject->lSet($arr, $index, $value);
   }
 
@@ -127,6 +131,14 @@ class Cache{
       $answer[] = $a;
     }
     return $answer;
+  }
+
+  public function arrayGetAll($arr){
+    if ($len=$this->redisObject->lLen($arr)){
+      return $this->redisObject->lRange($arr, 0,$len);
+    }else{
+      return [];
+    }
   }
 
   public function groupSize($hash){

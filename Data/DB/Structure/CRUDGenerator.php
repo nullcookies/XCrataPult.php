@@ -25,7 +25,7 @@ class CRUDGenerator extends PrivateInstantiation{
     $getByKey = "/**"."\n".
                 " * @return null|".ucwords($table->getName())."\n".
                 " */"."\n".
-                "public static function getBy".$keyName."Key(".Strings::smartImplode($fields, ", ", function(Field &$value){$value = "\$".$value->getAlias();})."){"."\n".
+                "public static function getBy".$keyName."Key(".Strings::smartImplode($fields, ", ", function(Field &$value){$value = "\$".$value->getAlias();}).", \$ttl=null){"."\n".
                 "\t\$cacheKey = ".$cacheKey.";"."\n".
                 "\tif (!Cache::enabled() || !(\$answer = Cache::getInstance()->groupGetItem('DB_".$db->getAlias()."_".$table->getName()."', \$cacheKey))){"."\n".
                 "\t\tLogger::add('DB_".$db->getAlias()."_".$table->getName().": no key '.\$cacheKey.' in cache. Loading from DB');"."\n".
@@ -34,6 +34,7 @@ class CRUDGenerator extends PrivateInstantiation{
                 "\t\t\t'instantiator'=>get_called_class().'::createFromRaw',"."\n".
                 "\t\t\t'className'=>get_called_class(),"."\n".
                 "\t\t\t'limit'=>1,"."\n".
+                "\t\t\t'cache_ttl'=>(\$ttl===null) ? C::getDbCacheTtl() : intval(\$ttl),"."\n".
                 "\t\t]);"."\n".
                 "\t\tif (!\$answer->EOF()){"."\n".
                 "\t\t\t\$answer=\$answer->First();"."\n".
@@ -265,7 +266,7 @@ class CRUDGenerator extends PrivateInstantiation{
       $selectors[] = " * @param \$val";
       $selectors[] = " * @return Collection";
       $selectors[] = " */";
-      $selectors[] = "public static function getBy".$field->getCamelName()."(\$val, \$limit=0, \$asArray=false, \$fields=[]){";
+      $selectors[] = "public static function getBy".$field->getCamelName()."(\$val, \$limit=0, \$asArray=false, \$fields=[], \$ttl=null){";
       $selectors[] = "\treturn DB::connectionByAlias('".$db->getAlias()."')->getSimple([";
       $selectors[] = "\t\t\t'table'=>'".$table->getName()."',";
       $selectors[] = "\t\t\t'instantiator'=>get_called_class().'::createFromRaw',";
@@ -274,6 +275,7 @@ class CRUDGenerator extends PrivateInstantiation{
       $selectors[] = "\t\t\t'limit'=>\$limit,";
       $selectors[] = "\t\t\t'asArray'=>\$asArray,";
       $selectors[] = "\t\t\t'fields'=>\$fields,";
+      $selectors[] = "\t\t\t'cache_ttl'=>(\$ttl===null) ? C::getDbCacheTtl() : intval(\$ttl),";
       $selectors[] = "\t\t]);";
       $selectors[] = "}";
 
@@ -281,7 +283,7 @@ class CRUDGenerator extends PrivateInstantiation{
       $selectors[] = " * @param \$val";
       $selectors[] = " * @return Collection";
       $selectors[] = " */";
-      $selectors[] = "public static function getBy".$field->getCamelName()."_startsWith(\$val, \$limit=0, \$asArray=false, \$fields=[]){";
+      $selectors[] = "public static function getBy".$field->getCamelName()."_startsWith(\$val, \$limit=0, \$asArray=false, \$fields=[], \$ttl=null){";
       $selectors[] = "\treturn DB::connectionByAlias('".$db->getAlias()."')->getSimple([";
       $selectors[] = "\t\t\t'table'=>'".$table->getName()."',";
       $selectors[] = "\t\t\t'instantiator'=>get_called_class().'::createFromRaw',";
@@ -290,6 +292,7 @@ class CRUDGenerator extends PrivateInstantiation{
       $selectors[] = "\t\t\t'limit'=>\$limit,";
       $selectors[] = "\t\t\t'asArray'=>\$asArray,";
       $selectors[] = "\t\t\t'fields'=>\$fields,";
+      $selectors[] = "\t\t\t'cache_ttl'=>(\$ttl===null) ? C::getDbCacheTtl() : intval(\$ttl),";
       $selectors[] = "\t\t]);";
       $selectors[] = "}";
 
@@ -297,7 +300,7 @@ class CRUDGenerator extends PrivateInstantiation{
       $selectors[] = " * @param \$val";
       $selectors[] = " * @return Collection";
       $selectors[] = " */";
-      $selectors[] = "public static function getBy".$field->getCamelName()."_endsWith(\$val, \$limit=0, \$asArray=false, \$fields=[]){";
+      $selectors[] = "public static function getBy".$field->getCamelName()."_endsWith(\$val, \$limit=0, \$asArray=false, \$fields=[], \$ttl=null){";
       $selectors[] = "\treturn DB::connectionByAlias('".$db->getAlias()."')->getSimple([";
       $selectors[] = "\t\t\t'table'=>'".$table->getName()."',";
       $selectors[] = "\t\t\t'instantiator'=>get_called_class().'::createFromRaw',";
@@ -306,6 +309,7 @@ class CRUDGenerator extends PrivateInstantiation{
       $selectors[] = "\t\t\t'limit'=>\$limit,";
       $selectors[] = "\t\t\t'asArray'=>\$asArray,";
       $selectors[] = "\t\t\t'fields'=>\$fields,";
+      $selectors[] = "\t\t\t'cache_ttl'=>(\$ttl===null) ? C::getDbCacheTtl() : intval(\$ttl),";
       $selectors[] = "\t\t]);";
       $selectors[] = "}";
 
@@ -313,7 +317,7 @@ class CRUDGenerator extends PrivateInstantiation{
       $selectors[] = " * @param \$val";
       $selectors[] = " * @return Collection";
       $selectors[] = " */";
-      $selectors[] = "public static function getBy".$field->getCamelName()."_contains(\$val, \$limit=0, \$asArray=false, \$fields=[]){";
+      $selectors[] = "public static function getBy".$field->getCamelName()."_contains(\$val, \$limit=0, \$asArray=false, \$fields=[], \$ttl=null){";
       $selectors[] = "\treturn DB::connectionByAlias('".$db->getAlias()."')->getSimple([";
       $selectors[] = "\t\t\t'table'=>'".$table->getName()."',";
       $selectors[] = "\t\t\t'instantiator'=>get_called_class().'::createFromRaw',";
@@ -322,6 +326,7 @@ class CRUDGenerator extends PrivateInstantiation{
       $selectors[] = "\t\t\t'limit'=>\$limit,";
       $selectors[] = "\t\t\t'asArray'=>\$asArray,";
       $selectors[] = "\t\t\t'fields'=>\$fields,";
+      $selectors[] = "\t\t\t'cache_ttl'=>(\$ttl===null) ? C::getDbCacheTtl() : intval(\$ttl),";
       $selectors[] = "\t\t]);";
       $selectors[] = "}";
 
@@ -329,7 +334,7 @@ class CRUDGenerator extends PrivateInstantiation{
       $selectors[] = " * @param \$val";
       $selectors[] = " * @return Collection";
       $selectors[] = " */";
-      $selectors[] = "public static function getBy".$field->getCamelName()."_greater(\$val, \$limit=0, \$asArray=false, \$fields=[]){";
+      $selectors[] = "public static function getBy".$field->getCamelName()."_greater(\$val, \$limit=0, \$asArray=false, \$fields=[], \$ttl=null){";
       $selectors[] = "\treturn DB::connectionByAlias('".$db->getAlias()."')->getSimple([";
       $selectors[] = "\t\t\t'table'=>'".$table->getName()."',";
       $selectors[] = "\t\t\t'instantiator'=>get_called_class().'::createFromRaw',";
@@ -338,6 +343,7 @@ class CRUDGenerator extends PrivateInstantiation{
       $selectors[] = "\t\t\t'limit'=>\$limit,";
       $selectors[] = "\t\t\t'asArray'=>\$asArray,";
       $selectors[] = "\t\t\t'fields'=>\$fields,";
+      $selectors[] = "\t\t\t'cache_ttl'=>(\$ttl===null) ? C::getDbCacheTtl() : intval(\$ttl),";
       $selectors[] = "\t\t]);";
       $selectors[] = "}";
 
@@ -345,7 +351,7 @@ class CRUDGenerator extends PrivateInstantiation{
       $selectors[] = " * @param \$val";
       $selectors[] = " * @return Collection";
       $selectors[] = " */";
-      $selectors[] = "public static function getBy".$field->getCamelName()."_less(\$val, \$limit=0, \$asArray=false, \$fields=[]){";
+      $selectors[] = "public static function getBy".$field->getCamelName()."_less(\$val, \$limit=0, \$asArray=false, \$fields=[], \$ttl=null){";
       $selectors[] = "\treturn DB::connectionByAlias('".$db->getAlias()."')->getSimple([";
       $selectors[] = "\t\t\t'table'=>'".$table->getName()."',";
       $selectors[] = "\t\t\t'instantiator'=>get_called_class().'::createFromRaw',";
@@ -354,6 +360,7 @@ class CRUDGenerator extends PrivateInstantiation{
       $selectors[] = "\t\t\t'limit'=>\$limit,";
       $selectors[] = "\t\t\t'asArray'=>\$asArray,";
       $selectors[] = "\t\t\t'fields'=>\$fields,";
+      $selectors[] = "\t\t\t'cache_ttl'=>(\$ttl===null) ? C::getDbCacheTtl() : intval(\$ttl),";
       $selectors[] = "\t\t]);";
       $selectors[] = "}";
 
@@ -361,7 +368,7 @@ class CRUDGenerator extends PrivateInstantiation{
       $selectors[] = " * @param \$val";
       $selectors[] = " * @return Collection";
       $selectors[] = " */";
-      $selectors[] = "public static function getBy".$field->getCamelName()."_between(\$val1, \$val1, \$limit=0, \$asArray=false, \$fields=[]){";
+      $selectors[] = "public static function getBy".$field->getCamelName()."_between(\$val1, \$val1, \$limit=0, \$asArray=false, \$fields=[], \$ttl=null){";
       $selectors[] = "\treturn DB::connectionByAlias('".$db->getAlias()."')->getSimple([";
       $selectors[] = "\t\t\t'table'=>'".$table->getName()."',";
       $selectors[] = "\t\t\t'instantiator'=>get_called_class().'::createFromRaw',";
@@ -370,6 +377,7 @@ class CRUDGenerator extends PrivateInstantiation{
       $selectors[] = "\t\t\t'limit'=>\$limit,";
       $selectors[] = "\t\t\t'asArray'=>\$asArray,";
       $selectors[] = "\t\t\t'fields'=>\$fields,";
+      $selectors[] = "\t\t\t'cache_ttl'=>(\$ttl===null) ? C::getDbCacheTtl() : intval(\$ttl),";
       $selectors[] = "\t\t]);";
       $selectors[] = "}";
 

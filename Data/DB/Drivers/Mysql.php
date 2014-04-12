@@ -33,6 +33,7 @@ class Mysql implements IDB{
   private $host =null;
   private $login =null;
   private $pass =null;
+  private $charset = null;
 
   /**
    * @var Database
@@ -93,6 +94,7 @@ class Mysql implements IDB{
     if (!$this->dbname && !$dbname){
       throw new \Exception("There is no database name specified!", self::ERR_NO_DBNAME);
     }
+    Logger::add("Constructing instance of ".get_called_class()." for DB ".$dbname);
 
     $this->dbname = $dbname;
     $this->alias = $alias ?: $this->database;
@@ -100,25 +102,33 @@ class Mysql implements IDB{
     $this->host   = $host  ?: $this->host  ?: ini_get("mysql.default_host");
     $this->login  = $login ?: $this->login ?: ini_get("mysql.default_user");
     $this->pass   = $pass  ?: $this->pass  ?: ini_get("mysql.default_password");
+  }
 
+  public function lazyConnect(){
+    if ($this->connection){
+      return;
+    }
     Logger::add("MySQL: Connecting to ".($this->login ?: "default user")."@".($this->host ?: "default socket")." ...");
-
-    if ($this->connection=mysql_pconnect($this->host, $this->login, $this->pass)){
+    if ($this->connection=mysql_connect($this->host, $this->login, $this->pass)){
       Logger::add("MySQL: Connecting to ".($this->login ?: "default user")."@".($this->host ?: "default socket")." ...OK");
       self::chooseDB($this->dbname, $this->alias);
     }else{
       throw new \Exception("Can't connect to MySQL ".($this->login ?: "default user")."@".($this->host ?: "default socket"), self::ERR_CANNOT_CONNECT);
     }
-    return $this;
+    if($this->charset){
+      $this->setCharset($this->charset);
+    }
   }
 
   public function escape($string){
+    $this->lazyConnect();
     return mysql_real_escape_string($string, $this->connection);
   }
 
   public function getTables(){
-    self::chooseDB("information_schema");
+    $this->lazyConnect();
 
+    self::chooseDB("information_schema");
     $tables = [];
     foreach (new Collection("SELECT TABLE_NAME as name, UNIX_TIMESTAMP(CREATE_TIME) as time FROM TABLES WHERE TABLE_SCHEMA = '".$this->dbname."'", $this) as $a){
       $tables[]=$a;
@@ -129,6 +139,8 @@ class Mysql implements IDB{
   }
 
   public function getTableKeys($tableName){
+    $this->lazyConnect();
+
     $keys = [];
     foreach(new Collection("SELECT k.*, t.* FROM information_schema.table_constraints t JOIN information_schema.key_column_usage k USING ( constraint_name, table_schema, table_name ) WHERE k.TABLE_NAME = '".$tableName."' AND t.table_schema =  '".$this->dbname."'", $this) as $key){
 
@@ -170,6 +182,8 @@ class Mysql implements IDB{
   }
 
   public function getTableFields($tableName){
+    $this->lazyConnect();
+
     $fields = [];
     foreach(new Collection("SHOW COLUMNS FROM `".$tableName."`", $this) as $field){
       Logger::add("- - table '".$tableName."'... field '".$field['Field']."'");
@@ -236,11 +250,13 @@ class Mysql implements IDB{
   }
 
   public function dropDB($dbname) {
+    $this->lazyConnect();
     $this->query("DROP DATABASE IF EXISTS `".$this->escape($dbname)."`");
     return true;
   }
 
   public function query($sql) {
+    $this->lazyConnect();
     Logger::add("MySQL query: ".$sql);
     return mysql_query($sql, $this->connection);
   }
@@ -290,6 +306,7 @@ class Mysql implements IDB{
   }
 
   public function getNext($resource, $asArray=true, $assoc=true){
+    $this->lazyConnect();
     if ($asArray){
       return mysql_fetch_array($resource, $assoc ? MYSQL_ASSOC : MYSQL_NUM);
     }else{
@@ -298,18 +315,22 @@ class Mysql implements IDB{
   }
 
   public function numRows($resource) {
+    $this->lazyConnect();
     return mysql_num_rows($resource);
   }
 
   public function dataSeek($resource, $position) {
+    $this->lazyConnect();
     return mysql_data_seek($resource, $position);
   }
 
   public function freeResource($resource) {
+    $this->lazyConnect();
     return mysql_free_result($resource);
   }
 
   public function errno($resource = null) {
+    $this->lazyConnect();
     if ($resource===null){
       return mysql_errno();
     }else{
@@ -318,6 +339,7 @@ class Mysql implements IDB{
   }
 
   public function error($resource = null) {
+    $this->lazyConnect();
     if ($resource===null){
       return mysql_error();
     }else{
@@ -333,16 +355,15 @@ class Mysql implements IDB{
       'order'=>[],
       'table'=>null,
       'instantiator'=>null,
-      'fields'=>[]
+      'fields'=>[],
+      'cache_ttl'=>C::getDbCacheTtl()
     ];
     $options = array_merge($defaults, $options);
-
     if (strpos($options['instantiator'], "::")){
       $options['instantiator'] = explode("::",$options['instantiator']);
     }
 
     if ($options['instantiator']!==false && !Values::isCallback($options['instantiator'])){
-      echo 1;
       if ($tableClass = \X\Debug\Tracer::getCallerClass()){
         $interfaces = class_implements($tableClass, true);
         if ($interfaces && !in_array("X\\Data\\DB\\CRUD", $interfaces)){
@@ -412,7 +433,11 @@ class Mysql implements IDB{
       $this->collapseVars($parsed["WHERE"], $wherevars, $tableClass);
     }
     $sqlExpr = (new \PHPSQLCreator())->create($parsed);
-    $collection = new Collection($sqlExpr, $this, $options['instantiator']);
+    if (($ttl = intval($options["cache_ttl"]))>0){
+      $cacheKey = md5($sqlExpr.$options["instantiator"]);
+    }
+
+    $collection = new Collection($sqlExpr, $this, $options['instantiator'], $ttl ? $cacheKey : null, $ttl);
     if (!!$options['asArray']){
       $answer = Array();
       while($instance = $collection->Next()){
@@ -425,6 +450,7 @@ class Mysql implements IDB{
   }
 
   public function store(ICRUD &$object){
+
     foreach($object->getFields() as $fieldName=>$fieldRules){
       $fieldNames[]=$fieldName;
       $data[$fieldName]=$object->{'get'.ucwords($fieldName)}();
@@ -491,8 +517,12 @@ class Mysql implements IDB{
   }
 
   public function setCharset($charset){
-    $charset = mysql_real_escape_string($charset, $this->connection);
-    $this->query("SET NAMES '".$charset."'");
+    if ($this->connection){
+      $charset = $this->escape($charset);
+      $this->query("SET NAMES '".$charset."'");
+    }else{
+      $this->charset = $charset;
+    }
   }
 
   public function generateSQLCreateFromField(Field $field){

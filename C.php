@@ -12,8 +12,19 @@ class C extends \X\AbstractClasses\PrivateInstantiation{
 
   private static $config=[
     'db_namespace' =>'db',
-    'db_abstract'=>true
+    'db_abstract'=>true,
+    'db_cache_ttl'=>3600,
+    'db_cache_maxrows'=>10000,
+    'cache_tech_prefix'=>"_X_:"
   ];
+
+  public static function setCacheTechPrefix($prefix){
+    self::$config["cache_tech_prefix"] = $prefix;
+  }
+
+  public static function getCacheTechPrefix(){
+    return self::$config["cache_tech_prefix"];
+  }
 
   public static function setDbAbstract($abstract){
     self::$config["db_abstract"] = !!$abstract;
@@ -40,6 +51,26 @@ class C extends \X\AbstractClasses\PrivateInstantiation{
       $var = "set".str_replace(" ", "", ucwords(strtolower(str_replace("_", " ", $var))));
       DB::$var($db, $val);
     }
+  }
+
+  public static function setDbCacheTtl($ttl){
+    if (($ttl=intval($ttl))>=0){
+      self::$config["db_cache_ttl"]=$ttl;
+    }
+  }
+
+  public static function getDbCacheTtl(){
+    return intval(self::$config["db_cache_ttl"]);
+  }
+
+  public static function setDbCacheMaxrows($maxrows){
+    if (($maxrows = intval($maxrows))>=0){
+      self::$config["db_cache_maxrows"]=$maxrows;
+    }
+  }
+
+  public static function getDbCacheMaxrows(){
+    return intval(self::$config["db_cache_maxrows"]);
   }
 
   public static function getAppDir(){

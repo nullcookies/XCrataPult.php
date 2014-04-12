@@ -2,33 +2,43 @@
 
 namespace X\Data\DB;
 
+use X\C;
+use X\Data\Cache;
+use X\Data\CacheList;
 use \X\Data\DB\Iterator;
 use \X\Data\DB\Interfaces\IDB;
+use X\Debug\Logger;
 use X\Validators\Values;
+use X\X;
 
-class Collection extends \ArrayObject
-{
-  private $eof = false;
-  private $res = null;
-  private $row = 0;
-  private $count = 0;
-  private $lastRow = null;
-  private $instantiator = null;
-  private $iterator = null;
-  private $driver = null;
+class Collection extends \ArrayObject{
+  protected $eof = false;
+  protected $res = null;
+  protected $row = 0;
+  protected $count = 0;
+  protected $rowCache = [];
+  protected $lastRow = null;
+  protected $instantiator = null;
+  protected $iterator = null;
+  protected $driver = null;
 
   const BAD_CALLBACK = 801;
   const BAD_QUERY_RESOURCE = 802;
 
-  public function __construct($res, IDB &$driver, $instantiator=null){
-    if (!is_resource($res)){
-      if (trim($res)){
-        $res = $driver->query($res);
-      }
-    }
+  public function __construct($res, IDB &$driver, $instantiator=null, $cacheKey=null, $cacheTTL=0){
 
-    if (!is_resource($res) || $driver->errno()){
-      throw new \Exception("Resource (or query) provided for collection (".$res.") is not resource (query)!", self::BAD_QUERY_RESOURCE);
+    Logger::add("new Collection created for ".$res);
+
+    if ($cacheKey && $cacheTTL && Cache::enabled()){
+      Logger::add("Collection is cacheable");
+      if ((Cache::getInstance()->get(C::getCacheTechPrefix()."ARR_".$cacheKey))<time()){
+        Logger::add("NO VALID cache was found for Collection");
+        Cache::getInstance()->arrayDelete($cacheKey);
+      }else{
+        Logger::add("FOUND cache for Collection");
+        $this->rowCache = Cache::getInstance()->arrayGetAll($cacheKey);
+        Logger::add("Collection was fetched from the cache");
+      }
     }
 
     if (Values::isCallback($instantiator)){
@@ -37,16 +47,45 @@ class Collection extends \ArrayObject
       throw new \Exception("Callback provided (".$instantiator.") for collection is not callable!", self::BAD_CALLBACK);
     }
 
-    $this->driver = &$driver;
+    if (count($this->rowCache)){
+      Logger::add(count($this->rowCache)." element(s) in cache (".$cacheKey.") of Collection");
+      $this->count = count($this->rowCache);
+    }else{
+      if (!is_resource($res)){
+        if (trim($res)){
+          $res = $driver->query($res);
+        }
+      }
 
-    $this->res   = $res;
-    $this->count = $this->driver->numRows($res);
+      if (!is_resource($res) || $driver->errno()){
+        throw new \Exception("Resource (or query) provided for collection (".$res.") is not resource (query)!", self::BAD_QUERY_RESOURCE);
+      }
 
+      $this->driver = &$driver;
+      $this->res   = $res;
+      $this->count = $this->driver->numRows($res);
+      Logger::add($this->count." element(s) were fetched from DB");
+      if ($cacheKey && $cacheTTL && Cache::enabled() && ($this->count <= C::getDbCacheMaxrows())){
+        Logger::add("Caching Collection");
+        $i=0;
+        foreach($this as $answer){
+          $this->rowCache[]=$answer;
+          Cache::getInstance()->arrayPush($cacheKey, $answer);
+          Logger::add((++$i)." element(s) cached");
+        }
+        Cache::getInstance()->set(C::getCacheTechPrefix()."ARR_".$cacheKey, time()+$cacheTTL);
+      }
+    }
+    Logger::add("Collection is ready!");
+    $this->num = 0;
+    $this->lastRow= null;
     $this->eof = ($this->count == 0);
   }
 
   public function __destruct(){
-    $this->driver->freeResource($this->res);
+    if ($this->res){
+      $this->driver->freeResource($this->res);
+    }
   }
 
   public function row($num = null){
@@ -54,26 +93,20 @@ class Collection extends \ArrayObject
       $num = $this->row;
     }
 
-    if ($num === $this->row && $this->lastRow !== null){
-      return $this->instantiator!==null ? call_user_func($this->instantiator, $this->lastRow) : $this->lastRow; // todo: codedup
+    if ($num<0 || $num >= $this->count) {
+      $this->lastRow = false;
+    }elseif (array_key_exists($num, $this->rowCache)){
+      $this->lastRow = $this->rowCache[$num];
+    }else{
+      $this->driver->dataSeek($this->res, $num);
+      $data = $this->driver->getNext($this->res);
+      $this->lastRow = $this->rowCache[$num] = $this->instantiator!==null ? call_user_func($this->instantiator, $data) : $data;
     }
 
-    if ($num >= $this->count) {
-      $this->eof = true;
-      return $this->lastRow = false;
-    }
+    $this->row = $num;
+    $this->eof = $this->lastRow===false;
 
-    if ($num < 0){
-      return false;
-    }
-
-    $this->driver->dataSeek($this->res, $num);
-
-    $this->lastRow = $this->driver->getNext($this->res);
-    $this->row     = $num;
-
-    $this->eof = is_array($this->lastRow) ? false : true;
-    return $this->instantiator!==null ? call_user_func($this->instantiator, $this->lastRow) : $this->lastRow;
+    return $this->lastRow;
   }
 
   public function reset(){
