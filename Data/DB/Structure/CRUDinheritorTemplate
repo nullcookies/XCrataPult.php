@@ -12,6 +12,67 @@ namespace {%NAMESPACE%};
  * ! IT WILL _NOT_ BE REWRITTEN AFTER SCHEMA UPDATE !
  * !    AUTOMATICALLY UNTIL YOU WILL DELETE IT      !
  *
+
+PLEASE NOTE:
+
+The CRUD Object may be constructed from scratch with the RAWDATA fetched from Database. Or
+it may be deserialized from Cache. You are to know it because it changes the way hooks
+automatically fire.
+
+Keep it in mind: if you have math to do inside the hooks, finish it with saving results in
+Object's properties. Then they will be serialized and cached. Otherwise check that you do
+same math inside __wakeup() method to restore all custom properties of deserialized Object.
+
+       [IN CASE IF YOU ASKS FOR CRUD OBJECT VIA ITS PRIMARY OR UNIQUE KEY]
+                                      |
+                                      |
+           *----- YES -----[Object is in cache?]---- NO ------*
+           |                                                  |
+           V                                                  V
+*----------------------------------*      *------------------------------------------*
+|Object is being fetched from Cache|      |The DBDriver makes request to the database|
+*----------------------------------*      |and gets the RAWDATA ($raw).              |
+           |                              *------------------------------------------*
+           |                                                  |
+           V                                                  V
+   [Object]->__wakeup()                        {%CLASSNAME%}::createFromRaw($raw)
+           |                                                  |
+           |                                                  V
+           |                                   {%CLASSNAME%}::create()
+           |                                                  |
+           |                                                  V
+           |                                   {%CLASSNAME%}::hook_constructor_before($classname)
+           |                                                  |
+           |                                                  V
+           |                                   new {%CLASSNAME%}()
+           |                                                  |
+           |                                                  V
+           |                                   [Object]->hook_constructor_after()
+           |                                                  |
+           |                                                  | New instance of the {%CLASSNAME%} is created
+           |                                                  | and its properties are filled with the RAWDATA.
+           |                                                  | From now on we have the [Object]
+           |                                                  V
+           |                                   [Object]->hook_createFromRaw_after()
+           |                                                  |
+           |                                                  V
+           |                                   [Object]->cache()
+           |                                                  |
+           |                                                  V
+           |                                   [Object]->__sleep()
+           |                                                  |
+           |                                                  V
+           |                                   [The serialized Object is cached]
+           |                                   [ in Redis with its PK as index ]
+           |                                                  |
+           *----------------------*---------------------------*
+                                  |
+                                  |
+                                  |
+                                  V
+                   [Now you can use your Object]
+
+
  */
 class {%CLASSNAME%} extends \{%NAMESPACE%}\abstracts\{%CLASSNAME%}{
 
@@ -22,7 +83,7 @@ class {%CLASSNAME%} extends \{%NAMESPACE%}\abstracts\{%CLASSNAME%}{
     return parent::create();
   }
 
-  public static function hook_contructor_before(&$className){
+  public static function hook_constructor_before(&$className){
     // if you need to do anything
     // before object will be constructed
     // do it here.
@@ -49,14 +110,20 @@ class {%CLASSNAME%} extends \{%NAMESPACE%}\abstracts\{%CLASSNAME%}{
     // do it here.
   }
 
+  public function hook_asArray_before(){
+    // if you need to do anything before asArray method
+    // do it here.
+
+  }
+
   public function hook_asArray_after(&$answer){
     // if you need to do anything with answer
     // that has been created in asArray method
     // do it here.
 
-    // it is obligatory if you have added new fields
-    // otherwise they will not be cached,
-    // since cache function gets object state from asArray method;
+    // use registerProperty method from CRUD class
+    // to add new fields. They will be automatically
+    // used in asArray method.
   }
 
 }
