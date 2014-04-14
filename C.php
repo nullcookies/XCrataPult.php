@@ -15,8 +15,66 @@ class C extends \X\AbstractClasses\PrivateInstantiation{
     'db_abstract'=>true,
     'db_cache_ttl'=>3600,
     'db_cache_maxrows'=>10000,
-    'cache_tech_prefix'=>"_X_:"
+    'cache_tech_prefix'=>"_X_:",
+
+    'cmf_cookie_free_subdomain'=>'cf',
+    'cmf_x_media_folder'=>'x_media',
+
+    'session_ttl'=>3600,
+    'session_https'=>false,
+    'session_http_only'=>true,
+    'session_path'=>'/',
+    'session_domain'=>null,
+    'session_ip_check'=>true
   ];
+
+  public static function setSessionIpCheck($check){
+    self::$config["session_ip_check"] = !!$check;
+  }
+
+  public static function getSessionIpCheck(){
+    return self::$config["session_ip_check"];
+  }
+
+  public static function setSessionTtl($tti){
+    self::$config["session_ttl"]=intval($ttl);
+  }
+
+  public static function getSessionTtl(){
+    return self::$config["session_ttl"];
+  }
+
+  public static function setSessionHttps($https){
+    self::$config["session_https"] = !!$https;
+  }
+
+  public static function getSessionHttps(){
+    return self::$config["session_https"];
+  }
+
+  public static function setSessionHttpOnly($httpOnly){
+    self::$config["session_http_only"] = !!$httpOnly;
+  }
+
+  public static function getSessionHttpOnly(){
+    return self::$config["session_http_only"];
+  }
+
+  public static function setSessionPath($path){
+    self::$config["session_path"] = $parh;
+  }
+
+  public static function getSessionPath(){
+    return self::$config["session_path"];
+  }
+
+  public static function setSessionDomain($domain){
+    self::$config["session_domain"] = $domain;
+  }
+
+  public static function getSessionDomain(){
+    return self::$config["session_domain"] ?: X::getHost();
+  }
 
   public static function setCacheTechPrefix($prefix){
     self::$config["cache_tech_prefix"] = $prefix;
