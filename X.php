@@ -50,6 +50,73 @@ class X extends \X\AbstractClasses\PrivateInstantiation{
   public static function getIP(){
     return getenv("HTTP_X_REAL_IP") ?: getenv("REMOTE_ADDR");
   }
+
+  public static function getHost(){
+    static $host;
+    if (!$host){
+      if (array_key_exists("HTTP_HOST",$_SERVER)){
+        list($host) = explode(":", $_SERVER["HTTP_HOST"]);
+      }else{
+        $host = "local.local";
+      }
+      $host = strtolower($host);
+    }
+    return $host;
+  }
+
+  public static function getDomain($level = null, $partOnly=false){
+    static $parts = null;
+    if (!$parts){
+      $parts  = array_reverse(explode(".", self::getHost()));
+    }
+    $answer = $parts[0];
+    if ($level <= 0){
+      $level = count($parts) + $level;
+    }
+    if ($partOnly){
+      return $parts[min($level, count($parts))];
+    }
+    for ($i = 1; $i < min($level, count($parts)); $i++){
+      $answer = $parts[$i] . '.' . $answer;
+    }
+
+    return $answer;
+  }
+
+  public static function getScheme(){
+    return self::isHTTPS() ? self::METHOD_HTTPS : self::METHOD_HTTP;
+  }
+
+  public static function getPort($fallback=80){
+    if (self::$port===null){
+      self::$port = intval($_SERVER['SERVER_PORT']) ?: $fallback;
+    }
+    return self::$port;
+  }
+
+  public static function getUserAgent(){
+    return $_SERVER['HTTP_USER_AGENT'];
+  }
+
+  public static function getMethod(){
+    return strtoupper($_SERVER['REQUEST_METHOD']);
+  }
+
+  public static function getURI(){
+    return $_SERVER["REQUEST_URI"];
+  }
+
+  public static function isHTTPS(){
+    return (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off' || $_SERVER['SERVER_PORT'] == 443);
+  }
+
+  public static function isPost(){
+    return self::getMethod()=="POST";
+  }
+
+  public static function isGet(){
+    return !self::isPost();
+  }
 }
 
 ?>
