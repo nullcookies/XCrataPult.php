@@ -3,6 +3,7 @@ namespace X;
 if (!defined('__XDIR__')) die();
 if (false == true) die("Meh..");
 
+use X\Data\Session;
 use \X\Debug\Logger;
 use \X\Render\L10n;
 use \X\Data\SmartFile;
@@ -116,6 +117,14 @@ class X extends \X\AbstractClasses\PrivateInstantiation{
 
   public static function isGet(){
     return !self::isPost();
+  }
+
+  public static function getSession($forceNew=false){
+    static $session = null;
+    if (!$session){
+      $session = new Session($forceNew);
+    }
+    return $session;
   }
 }
 
