@@ -27,6 +27,8 @@ require_once(__XDIR__.'3rdparty/PHPSQLParser/PHPSQLParser.php');
 require_once(__XDIR__.'3rdparty/PHPSQLParser/PHPSQLCreator.php');
 
 class X extends \X\AbstractClasses\PrivateInstantiation{
+  const METHOD_HTTP = "HTTP";
+  const METHOD_HTTPS = "HTTPS";
 
   const SIZE_1KB    =       1024;
   const SIZE_10KB   =      10240;
