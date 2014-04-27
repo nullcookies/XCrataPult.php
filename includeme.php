@@ -40,3 +40,4 @@ function registerAutoloader($namespaceName, $rootDirectory){
 }
 
 registerAutoloader("X", __XDIR__);
+X::isOk();

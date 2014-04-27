@@ -4,7 +4,7 @@
  *
  * Date: 27.04.14
  * Time: 0:24
- * 
+ *
  * Made to be used with XCrataPult.php
  */
 

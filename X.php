@@ -23,6 +23,12 @@ if (file_exists(__XDIR__ . '3rdparty/Imagine/Autoloader.php')){
   }
 }
 
+Logger::add("Loading 'Afigenius' Autoloader");
+if (file_exists(__XDIR__ . '3rdparty/Afigenius/Autoloader.php')){
+  require_once(__XDIR__ . '3rdparty/Afigenius/Autoloader.php');
+  Logger::add("'Afi' Autoloader loaded");
+}
+
 require_once(__XDIR__.'3rdparty/PHPSQLParser/PHPSQLParser.php');
 require_once(__XDIR__.'3rdparty/PHPSQLParser/PHPSQLCreator.php');
 
@@ -127,6 +133,10 @@ class X extends \X\AbstractClasses\PrivateInstantiation{
       $session = new Session($forceNew);
     }
     return $session;
+  }
+
+  public static function isOk(){
+
   }
 }
 
