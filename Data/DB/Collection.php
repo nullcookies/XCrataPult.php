@@ -64,15 +64,22 @@ class Collection extends \ArrayObject{
       $this->driver = &$driver;
       $this->res   = $res;
       $this->count = $this->driver->numRows($res);
+      $this->num = 0;
+      $this->lastRow= null;
+      $this->eof = ($this->count == 0);
+
       Logger::add($this->count." element(s) were fetched from DB");
       if ($cacheKey && $cacheTTL && Cache::enabled() && ($this->count <= C::getDbCacheMaxrows())){
         Logger::add("Caching Collection");
         $i=0;
+        $rowCacheTmp=[];
         foreach($this as $answer){
-          $this->rowCache[]=$answer;
+          print_r($answer);
+          $rowCacheTmp[]=$answer;
           Cache::getInstance()->arrayPush($cacheKey, $answer);
           Logger::add((++$i)." element(s) cached");
         }
+        $this->rowCache=$rowCacheTmp;
         Cache::getInstance()->set(C::getCacheTechPrefix()."ARR_".$cacheKey, time()+$cacheTTL);
       }
     }
