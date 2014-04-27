@@ -21,4 +21,25 @@ class Geo {
     $uri="geo/by-countryname/".urlencode($name);
     return Base::request($uri);
   }
+
+  public static function getCountryDataById($id){
+    $id = trim($id);
+    $uri="geo/by-countryid/".$id;
+    return Base::request($uri);
+  }
+
+  public static function getCountryNameById($id, $lang='ru'){
+    return self::getCountryDataById($id)["country_".$lang];
+  }
+
+  public static function getCountryList(){
+    $uri = "geo/countrylist/";
+    return Base::request($uri);
+  }
+
+  public static function getCityListByCountryId($id){
+    $id = intval($id);
+    $uri = "geo/citylist-by-countryid/".$id;
+    return Base::request($uri)["cities"];
+  }
 } 
