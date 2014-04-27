@@ -9,6 +9,7 @@ class Cache{
   private $redisObject = null;
 
   private static $instance=null;
+  private static $tried=false;
 
   /**
    * @param string $host Redis host
@@ -56,6 +57,10 @@ class Cache{
   }
 
   public static function enabled(){
+    if (self::$tried==false){
+      self::getInstance();
+      self::$tried=true;
+    }
     return self::$instance!==null && self::getInstance()->alive();
   }
 
