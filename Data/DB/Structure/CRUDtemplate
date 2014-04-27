@@ -72,7 +72,7 @@ abstract class {%CLASSNAME%} extends CRUD{
 {%SELECTORS%}
 
   public static function getAll($asArray=false){
-    return static::get([], $asArray);
+    return static::get(null, null, 0, $asArray);
   }
 
 {%PRETENDREAL%}
