@@ -36,9 +36,10 @@ class Base {
     }
 
     $answer = file_get_contents(self::HOST.$req);
+    $answer = json_decode($answer, JSON_OBJECT_AS_ARRAY);
     if (Cache::enabled()){
       Cache::getInstance()->set($cacheHash, $answer, 3600*24);
     }
-    return json_decode($answer, JSON_OBJECT_AS_ARRAY);
+    return $answer;
   }
 } 
