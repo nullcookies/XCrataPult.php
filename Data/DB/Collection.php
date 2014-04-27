@@ -74,7 +74,6 @@ class Collection extends \ArrayObject{
         $i=0;
         $rowCacheTmp=[];
         foreach($this as $answer){
-          print_r($answer);
           $rowCacheTmp[]=$answer;
           Cache::getInstance()->arrayPush($cacheKey, $answer);
           Logger::add((++$i)." element(s) cached");
