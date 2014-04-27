@@ -15,4 +15,10 @@ class Geo {
     $fields=["city_".$lang];
     return Base::request($uri, [], $fields)["city_".$lang];
   }
+
+  public static function getCountryDataByName($name){
+    $name = trim($name);
+    $uri="geo/by-countryname/".urlencode($name);
+    return Base::request($uri);
+  }
 } 
