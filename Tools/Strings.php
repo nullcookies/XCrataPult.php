@@ -21,6 +21,19 @@ class Strings {
     return implode($delimiter, $values);
   }
 
+  public static function smartKImplode($values, $delimiter, $callback){
+    $array = [];
+    if (is_array($values)){
+      foreach($values as $key=>$val){
+        $array[]=call_user_func_array($callback, [$key, $val]);
+      }
+    }else{
+      return $callback($values);
+    }
+
+    return implode($delimiter, $array);
+  }
+
   public static function Grades($val, $divider, $names, $dec=2, $prefix=''){
     if (!is_array($names)){
       $names = explode(",", $names);
