@@ -57,22 +57,22 @@ class Values extends PrivateInstantiation{
     json_decode($data);
     return (json_last_error() == JSON_ERROR_NONE);
   }
-  public static function is_unsigned_float($val){
+  public static function isUnsignedFloat($val){
     $val=str_replace(" ","",trim($val));
     return eregi("^([0-9])+([\.|,]([0-9])*)?$",$val);
   }
 
-  public static function is_unsigned_integer($val){
+  public static function isUnsignedInteger($val){
     $val=str_replace(" ","",trim($val));
     return eregi("^([0-9])+$",$val);
   }
 
-  public static function is_signed_float($val){
+  public static function isSignedFloat($val){
     $val=str_replace(" ","",trim($val));
     return eregi("^-?([0-9])+([\.|,]([0-9])*)?$",$val);
   }
 
-  public static function is_signed_integer($val){
+  public static function isSignedInteger($val){
     $val=str_replace(" ","",trim($val));
     return eregi("^-?([0-9])+$",$val);
   }
@@ -102,6 +102,10 @@ class Values extends PrivateInstantiation{
 
   public static function isSuitableForVarName($name){
     return !!preg_match("/^[a-zA-Z_\\x7f-\\xff][a-zA-Z0-9_\\x7f-\\xff]*$/", $name);
+  }
+
+  public static function isAlphanum($string){
+    return !preg_match('/[^a-z0-9]/i', $string);
   }
 
   public static function unHTML($string){
