@@ -20,7 +20,7 @@ class C extends \X\AbstractClasses\PrivateInstantiation{
     'cmf_cookie_free_subdomain'=>'cf',
     'cmf_x_media_folder'=>'x_media',
 
-    'session_ttl'=>3600,
+    'session_ttl'=>86400,
     'session_https'=>false,
     'session_http_only'=>true,
     'session_path'=>'/',
@@ -36,7 +36,7 @@ class C extends \X\AbstractClasses\PrivateInstantiation{
     return self::$config["session_ip_check"];
   }
 
-  public static function setSessionTtl($tti){
+  public static function setSessionTtl($ttl){
     self::$config["session_ttl"]=intval($ttl);
   }
 
