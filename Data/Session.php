@@ -15,11 +15,11 @@ class Session {
 
   public function __construct($forseNew=false){
     session_set_cookie_params(C::getSessionTtl(), C::getSessionPath(), C::getSessionDomain(), C::getSessionHttps(), C::getSessionHttpOnly());
-
     session_start();
-    if ($forseNew){
+    if ($forseNew || ($this->get("xSESSTTL", 0) && $this->get("xSESSTTL")<time())){
       $this->invalidate();
     }
+    $this->set("xSESSTTL", time()+C::getSessionTtl());
   }
 
   public function newID($invalidatePrevious=true){
