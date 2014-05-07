@@ -6,7 +6,7 @@
  * Time: 16:03
  */
 
-namespace X\Data;
+namespace X\Data\Persistent;
 
 
 use X\C;

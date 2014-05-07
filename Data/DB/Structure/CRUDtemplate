@@ -5,7 +5,7 @@ namespace {%NAMESPACE%}\abstracts;
 use \X\Data\DB\Collection;
 use \X\Data\DB\CRUD;
 use \X\Data\DB\DB;
-use \X\Data\Cache;
+use \X\Data\Persistent\Cache;
 use \X\Debug\Logger;
 use \X\C;
 

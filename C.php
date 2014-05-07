@@ -4,7 +4,7 @@ namespace X;
 
 use \X\Render\Page;
 use \X\Data\DB\DB;
-use \X\Data\Cache\Cache;
+use \X\Data\Persistent\Cache;
 use \X\Debug\Logger;
 use \X\Tools\FileSystem;
 

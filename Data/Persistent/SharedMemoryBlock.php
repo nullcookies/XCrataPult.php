@@ -1,5 +1,5 @@
 <?php
-namespace X\Data;
+namespace X\Data\Persistent;
 if (!defined('__XDIR__')) die();
 
 class SharedMemoryBlock{

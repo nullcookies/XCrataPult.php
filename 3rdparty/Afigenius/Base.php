@@ -9,7 +9,7 @@
 namespace Afi;
 
 
-use X\Data\Cache;
+use X\Data\Persistent\Cache;
 use X\Tools\Strings;
 
 class Base {

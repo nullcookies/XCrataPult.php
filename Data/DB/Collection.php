@@ -3,8 +3,7 @@
 namespace X\Data\DB;
 
 use X\C;
-use X\Data\Cache;
-use X\Data\CacheList;
+use X\Data\Persistent\Cache;
 use \X\Data\DB\Iterator;
 use \X\Data\DB\Interfaces\IDB;
 use X\Debug\Logger;

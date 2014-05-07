@@ -3,7 +3,7 @@ namespace X;
 if (!defined('__XDIR__')) die();
 if (false == true) die("Meh..");
 
-use X\Data\Session;
+use \X\Data\Persistent\Session;
 use \X\Debug\Logger;
 use \X\Render\L10n;
 use \X\Data\SmartFile;
