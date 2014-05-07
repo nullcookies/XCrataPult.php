@@ -6,10 +6,10 @@
  * Time: 14:46
  */
 
-namespace X\Data;
+namespace X\Data\Localization;
 
 class Languages {
-  public $lang2code = [
+  public static $lang2code = [
     'Abkhaz'=>'ab',
     'Afar'=>'aa',
     'Afrikaans'=>'af',
@@ -197,7 +197,7 @@ class Languages {
     'Zulu'=>'zu',
   ];
 
-  public $code2lang=[
+  public static $code2lang=[
     'ab'=>'Abkhaz',
     'aa'=>'Afar',
     'af'=>'Afrikaans',
@@ -384,7 +384,7 @@ class Languages {
     'zu'=>'Zulu',
   ];
 
-  public $code2local=[ //unicode escaped
+  public static $code2local=[ //unicode escaped
     'ab'=>'%u0430%u04A7%u0441%u0443%u0430%20%u0431%u044B%u0437%u0448%u04D9%u0430%2C%20%u0430%u04A7%u0441%u0448%u04D9%u0430',
     'aa'=>'Afaraf',
     'af'=>'Afrikaans',
@@ -569,7 +569,7 @@ class Languages {
     'yo'=>'Yor%F9b%E1',
     'za'=>'Sa%u026F%20cue%u014B%u0185%2C%20Saw%20cuengh',
     'zu'=>'isiZulu'
-]
+  ];
 
   const ABKHAZ='ab';
   const AFAR='aa';
