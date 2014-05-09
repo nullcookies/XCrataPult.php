@@ -43,7 +43,7 @@ class PluralString {
    * ..20 - interval with undefined start
    * _3 - ends (N % 10) with 3 (43, 63, 1993)
    * _3..5 - ends with 3, 4, or 5
-   * * - default
+   * x - default
    *
    * @param array $rules
    */
@@ -54,7 +54,7 @@ class PluralString {
     foreach($rules as $condition=>$expression){
       if (Values::isSignedInteger($condition)){
         $this->rulesExact[$condition] = $expression;
-      }elseif($condition=='*'){
+      }elseif($condition=='x'){
         $this->default = $expression;
       }elseif($condition[0]=='_'){
         $ncondition=substr($condition,1);
@@ -65,14 +65,14 @@ class PluralString {
           if(substr($condition, 0, 2)=='..'){
             $ncondition = substr($ncondition, 2);
             if (Values::isSignedInteger($ncondition)){
-              $this->rulesEndingIntervals['*'][$ncondition] = $expression;
+              $this->rulesEndingIntervals['x'][$ncondition] = $expression;
             }else{
               throw new \InvalidArgumentException("Condition '".$condition."' cannot be parsed.");
             }
           }elseif(substr($ncondition, -2)=='..'){
             $ncondition = substr($ncondition, 0, -2);
             if (Values::isSignedInteger($ncondition)){
-              $this->rulesEndingIntervals[$ncondition]['*'] = $expression;
+              $this->rulesEndingIntervals[$ncondition]['x'] = $expression;
             }else{
               throw new \InvalidArgumentException("Condition '".$condition."' cannot be parsed.");
             }
@@ -93,14 +93,14 @@ class PluralString {
         if(substr($condition, 0, 2)=='..'){
           $ncondition = substr($condition, 2);
           if (Values::isSignedInteger($ncondition)){
-            $this->rulesIntervals['*'][$ncondition] = $expression;
+            $this->rulesIntervals['x'][$ncondition] = $expression;
           }else{
             throw new \InvalidArgumentException("Condition '".$condition."' cannot be parsed.");
           }
         }elseif(substr($condition, -2)=='..'){
           $ncondition = substr($condition, 0, -2);
           if (Values::isSignedInteger($ncondition)){
-            $this->rulesIntervals[$ncondition]['*'] = $expression;
+            $this->rulesIntervals[$ncondition]['x'] = $expression;
           }else{
             throw new \InvalidArgumentException("Condition '".$condition."' cannot be parsed.");
           }
@@ -136,9 +136,9 @@ class PluralString {
       return (new PlaceholdersString($this->rulesExact[$number]))->render($number);
     }
     foreach($this->rulesIntervals as $start=>$end){
-      if ($number>=$start || $start=='*'){
+      if ($number>=$start || $start=='x'){
         foreach($end as $max=>$expression){
-          if ($number<=$max || $max=='*'){
+          if ($number<=$max || $max=='x'){
             return (new PlaceholdersString($expression))->render($number);
           }
         }
@@ -149,9 +149,9 @@ class PluralString {
       return (new PlaceholdersString($this->rulesEndingExact[$ending]))->render($number);
     }
     foreach($this->rulesEndingIntervals as $start=>$end){
-      if ($ending>=$start || $start=='*'){
+      if ($ending>=$start || $start=='x'){
         foreach($end as $max=>$expression){
-          if ($ending<=$max || $max=='*'){
+          if ($ending<=$max || $max=='x'){
             return (new PlaceholdersString($expression))->render($number);
           }
         }
