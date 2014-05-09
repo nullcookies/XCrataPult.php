@@ -10,7 +10,8 @@ namespace X\Data\SmartObjects;
 
 class PlaceholdersString {
   private $expression;
-  public function __construct($expression, $defaults=[]){
+
+  public function __construct($expression){
     $this->expression = $expression;
   }
 
