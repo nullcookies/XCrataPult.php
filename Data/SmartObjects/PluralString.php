@@ -43,6 +43,7 @@ class PluralString {
    * <20 - interval with undefined start
    * .3 - ends (N % 10) with 3 (43, 63, 1993)
    * .3..5 - ends with 3, 4, or 5
+   * * - default
    *
    * @param array $rules
    */
@@ -88,6 +89,7 @@ class PluralString {
    * 2. interval
    * 3. ending exact match
    * 4. ending interval match
+   * 5. default
    *
    * @param int $number
    * @return string
