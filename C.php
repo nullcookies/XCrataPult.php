@@ -2,6 +2,7 @@
 
 namespace X;
 
+use X\Data\Localization\Localization;
 use \X\Render\Page;
 use \X\Data\DB\DB;
 use \X\Data\Persistent\Cache;
@@ -158,7 +159,12 @@ class C extends \X\AbstractClasses\PrivateInstantiation{
   }
 
   public static function setCacheHost($host){
-    \X\Data\Cache::getInstance($host);
+    Cache::getInstance($host);
+  }
+
+  public static function setL10n($param, $val){
+    $setter='set'.ucwords($param);
+    Localization::$setter($val);
   }
 
   public static function set($options){
