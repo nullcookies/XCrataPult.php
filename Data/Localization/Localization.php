@@ -61,7 +61,7 @@ class Localization{
       $root = &self::$dictionary[$language];
       $path = explode(".", $path);
       for($i=0; $i<count($path); $i++){
-        if (array_key_exists($path[$i], $root)){
+        if (is_array($root) && array_key_exists($path[$i], $root)){
           $root = &$root[$path[$i]];
           if ($i>=count($path)-1){ //target reached
             $answer = $root;
