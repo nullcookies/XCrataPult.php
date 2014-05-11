@@ -18,12 +18,12 @@ use \x\x;
 class Localization{
   private static $languages = [];
   private static $dictionary = [];
-  private static $path='';
+  private static $paths=[];
   private static $currentLanguage=null;
   private static $displayKeys=false;
 
   public static function setFolder($path){
-    self::$path = C::checkDir($path);
+    self::$paths[] = C::checkDir($path);
   }
 
   public static function setLanguages($languages){
@@ -34,8 +34,8 @@ class Localization{
     }
   }
 
-  public static function addLanguage($code, $name){
-    self::$languages[$code]  = $name;
+  public static function addLanguage($code, $name=null){
+    self::$languages[$code]  = $name?:Languages::$code2local[$code];
     self::$dictionary[$code] = [];
     if (self::$currentLanguage===null){
       self::$currentLanguage = $code; // first registered language is current by default
@@ -125,7 +125,10 @@ class Localization{
     return array_key_exists($code, self::$dictionary);
   }
 
-  private static function gobbleDir($path, $code){
+  private static function gobbleDir($path, $code, $base=null){
+    if ($base===null){
+      $base = $path;
+    }
     $files = FileSystem::dirList($path, '*');
     if (!$files){
       return;
@@ -133,9 +136,9 @@ class Localization{
     foreach ($files as $file){
       Logger::add("Language file: " . $file . " (loading)");
       if (is_dir($file)){
-        self::gobbleDir($file, $code);
+        self::gobbleDir($file, $code, $base);
       }else{
-        if (self::fromFile($code, $file)){
+        if (self::fromFile($code, $file, $base)){
           Logger::add("Language file: " . $file . " (OK)");
         }else{
           Logger::add("Language file: " . $file . " (ERROR)");
@@ -145,26 +148,29 @@ class Localization{
   }
 
   private static function loadFromConfig($code){
-    if (!self::$path){
+    if (!self::$paths){
       throw new \InvalidArgumentException("Localization folder is not configured (l10n.folder). Language ".$code." was not added.");
     }
 
-    $base   = FileSystem::finalizeDirPath(self::$path);
-    $files  = Array();
+    foreach(self::$paths as $base){
+      $base   = FileSystem::finalizeDirPath($base).$code;
+      $files  = Array();
 
-    if (!is_dir($base.$code)){
-      throw new \InvalidArgumentException("Language folder: ".$base.$code. " doesn't exists.");
+      if (!is_dir($base)){
+        Logger::add("Language folder: ".$base. " doesn't exists.");
+        continue;
+      }
+
+      self::gobbleDir($base, $code);
     }
-
-    self::gobbleDir($base . $folder, $code);
 
     return true;
   }
 
-  private static function fromFile($code, $filename){
+  private static function fromFile($code, $filename, $base){
     $ext = explode(".", $filename);
     $ext = array_pop($ext);
-    $path = str_replace(self::$path.$code, '', str_replace('.'.$ext, '', $filename));
+    $path = str_replace($base, '', str_replace('.'.$ext, '', $filename));
     switch($ext){
       case 'ini':$data = parse_ini_file($filename, true);break;
       case 'yml':$data = yaml_parse_file($filename, 0, $ndocs, ["!pl"=>function($data){return new PluralString($data);},"!ps"=>function($data){return new PlaceholdersString($data);}]);break;
