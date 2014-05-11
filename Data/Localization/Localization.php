@@ -195,7 +195,7 @@ class Localization{
     }
 
     if ($data && is_array($data)) {
-      $root = array_merge($root, $data);
+      $root = array_replace_recursive($root, $data);
       return true;
     }
   }
