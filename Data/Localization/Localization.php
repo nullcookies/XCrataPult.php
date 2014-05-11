@@ -20,6 +20,7 @@ class Localization{
   private static $dictionary = [];
   private static $path='';
   private static $currentLanguage=null;
+  private static $displayKeys=false;
 
   public static function setFolder($path){
     self::$path = C::checkDir($path);
@@ -54,16 +55,39 @@ class Localization{
     }
   }
 
+  public static function displayUnknownKeys($displayKeys=true){
+    self::$displayKeys=$displayKeys;
+  }
+
+  public static function hasKey($path){
+    $language = $language ?: self::$currentLanguage;
+    if (array_key_exists($language, self::$dictionary)){
+      $root = &self::$dictionary[$language];
+      $path_ = explode(".", $path);
+      for($i=0; $i<count($path_); $i++){
+        if (is_array($root) && array_key_exists($path_[$i], $root)){
+          $root = &$root[$path_[$i]];
+          if ($i>=count($path_)-1){
+            return true;
+          }
+        }else{
+          break;
+        }
+      }
+    }
+    return false;
+  }
+
   public static function get($path, $data=[]){
     $language = $language ?: self::$currentLanguage;
     if (array_key_exists($language, self::$dictionary)){
       //TODO: check cache
       $root = &self::$dictionary[$language];
-      $path = explode(".", $path);
-      for($i=0; $i<count($path); $i++){
-        if (is_array($root) && array_key_exists($path[$i], $root)){
-          $root = &$root[$path[$i]];
-          if ($i>=count($path)-1){ //target reached
+      $path_ = explode(".", $path);
+      for($i=0; $i<count($path_); $i++){
+        if (is_array($root) && array_key_exists($path_[$i], $root)){
+          $root = &$root[$path_[$i]];
+          if ($i>=count($path_)-1){ //target reached
             $answer = $root;
             //TODO: cache answer
             if (is_string($answer) || is_array($answer)){
@@ -79,7 +103,7 @@ class Localization{
       //TODO: cache null;
     }
 
-    return $default;
+    return self::$displayKeys ? $path : null;
   }
 
   public static function getCurrentLanguageCode(){
