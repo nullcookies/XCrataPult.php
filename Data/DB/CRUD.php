@@ -13,11 +13,26 @@ abstract class CRUD implements ICRUD{
 
   protected static $Fields = [];
   protected static $PrimaryFields = [];
-  protected $UserFields = [];
-  protected $UserFieldsInterface = [];
+  protected static $UserFields = [];
+  protected static $UserFieldsInterface = [];
+
+  static protected $mutated = false;
+
+  public static function mutation(){
+
+  }
+
+  public static function mutate(){
+    if (static::$mutated){
+      return;
+    }
+    static::mutation();
+    static::$mutated=true;
+  }
 
   public static function create(){
     $classname = get_called_class();
+    static::mutate();
     static::hook_constructor_before($classname);
     return new $classname();
   }
@@ -32,17 +47,17 @@ abstract class CRUD implements ICRUD{
         'camelName'=>$camelName,
         'getter'=>'get'.$camelName
       ];
-      $this->UserFields[$name]=null;
-      $this->UserFieldsInterface[$camelName]=['sanitizer'=>$sanitizerFunction, 'name'=>$name];
+      static::$UserFields[$name]=null;
+      static::$UserFieldsInterface[$camelName]=['sanitizer'=>$sanitizerFunction, 'name'=>$name];
     }
   }
 
   public function __call($method, $args){
-    if (in_array($type=substr($method, 0, 3), ['set','get']) && array_key_exists($camelName=substr($method,3), $this->UserFieldsInterface)){
+    if (in_array($type=substr($method, 0, 3), ['set','get']) && array_key_exists($camelName=substr($method,3), static::$UserFieldsInterface)){
       if ($type=="set" && count($args)==1){
-        $this->UserFields[$this->UserFieldsInterface[$camelName]['name']] = is_callable($sanitizerFunction=$this->UserFieldsInterface[$camelName]['sanitizer']) ? call_user_func($sanitizerFunction, $val) : $args[0];
+        static::$UserFields[static::$UserFieldsInterface[$camelName]['name']] = is_callable($sanitizerFunction=static::$UserFieldsInterface[$camelName]['sanitizer']) ? call_user_func($sanitizerFunction, $val) : $args[0];
       }elseif($type=="get"){
-        return $this->UserFields[$this->UserFieldsInterface[$camelName]['name']];
+        return static::$UserFields[static::$UserFieldsInterface[$camelName]['name']];
       }
     }
   }

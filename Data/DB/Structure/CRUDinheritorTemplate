@@ -83,6 +83,14 @@ class {%CLASSNAME%} extends \{%NAMESPACE%}\abstracts\{%CLASSNAME%}{
     return parent::create();
   }
 
+  public static function mutation(){
+    // this method will be called ONCE! in this class life
+    // before any of static methods will be triggered
+    // including 'hook_constructor_before'
+
+    // it is strongly recommended to place 'registerProperty' calls here
+  }
+
   public static function hook_constructor_before(&$className){
     // if you need to do anything
     // before object will be constructed

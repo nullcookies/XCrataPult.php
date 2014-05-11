@@ -57,6 +57,7 @@ abstract class {%CLASSNAME%} extends CRUD{
   }
 
   public static function &connection(){
+    static::mutate();
     return DB::connectionByAlias('{%DATABASE_ALIAS%}');
   }
 
@@ -90,10 +91,12 @@ abstract class {%CLASSNAME%} extends CRUD{
   }
 
   public static function getFields(){
+    static::mutate();
     return static::$Fields;
   }
 
   public static function getPrimaryFields(){
+    static::mutate();
     return static::$PrimaryFields;
   }
 
@@ -130,6 +133,7 @@ abstract class {%CLASSNAME%} extends CRUD{
   }
 
   public static function getField($field){
+    static::mutate();
     return array_key_exists($field, static::$Fields) ? static::$Fields[$field] : null;
   }
 

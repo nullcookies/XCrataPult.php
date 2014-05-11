@@ -26,6 +26,7 @@ class CRUDGenerator extends PrivateInstantiation{
                 " * @return null|".ucwords($table->getName())."\n".
                 " */"."\n".
                 "public static function getBy".$keyName."Key(".Strings::smartImplode($fields, ", ", function(Field &$value){$value = "\$".$value->getAlias();}).", \$ttl=null){"."\n".
+                "\tself::mutate();"."\n".
                 "\t\$cacheKey = ".$cacheKey.";"."\n".
                 "\tif (!Cache::enabled() || !(\$answer = Cache::getInstance()->groupGetItem('DB_".$db->getAlias()."_".$table->getName()."', \$cacheKey))){"."\n".
                 "\t\tLogger::add('DB_".$db->getAlias()."_".$table->getName().": no key '.\$cacheKey.' in cache. Loading from DB');"."\n".
