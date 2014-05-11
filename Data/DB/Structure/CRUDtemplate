@@ -79,7 +79,7 @@ abstract class {%CLASSNAME%} extends CRUD{
 {%CREATEFROMRAW%}
 {%ASARRAY%}
 
-  public static function get($where, $fields, $limit=0, $asArray=false, $order=Array()){
+  public static function get($where=null, $fields=null, $limit=0, $asArray=false, $order=Array()){
     return static::connection()->getSimple([
       'conditions'=>[$where, $fields],
       'asArray'=>$asArray,
