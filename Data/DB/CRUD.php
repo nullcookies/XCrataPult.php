@@ -37,7 +37,7 @@ abstract class CRUD implements ICRUD{
     return new $classname();
   }
 
-  protected function registerProperty($name, $sanitizerFunction=null){
+  protected static function registerProperty($name, $sanitizerFunction=null){
     $name = strtolower($name);
     if (Values::isSuitableForVarName($name) && !array_key_exists($name, self::$Fields)){
       $camelName = Field::s_getCamelName($name);
