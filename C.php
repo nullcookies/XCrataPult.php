@@ -3,7 +3,6 @@
 namespace X;
 
 use X\Data\Localization\Localization;
-use \X\Render\Page;
 use \X\Data\DB\DB;
 use \X\Data\Persistent\Cache;
 use \X\Debug\Logger;
@@ -26,7 +25,9 @@ class C extends \X\AbstractClasses\PrivateInstantiation{
     'session_http_only'=>true,
     'session_path'=>'/',
     'session_domain'=>null,
-    'session_ip_check'=>true
+    'session_ip_check'=>true,
+
+    'template_folders'=>[]
   ];
 
   public static function setSessionIpCheck($check){
@@ -142,16 +143,18 @@ class C extends \X\AbstractClasses\PrivateInstantiation{
     registerAutoloader("app", self::$config["app_dir"]);
   }
 
-  public static function setTemplateFolder($path){
-    self::$config["template_folder"] = self::checkDir($path);
+  public static function setTemplateFolders($path){
+    foreach(explode(",", $path) as $folder){
+      self::$config["template_folders"][] = self::checkDir($folder);
+    }
   }
 
   public static function setTemplateCacheFolder($path){
     self::$config["template_cache_folder"] = self::checkDir($path);
   }
 
-  public static function getTemplateFolder(){
-    return self::checkDir(self::$config["template_folder"]);
+  public static function getTemplateFolders(){
+    return array_unique(self::$config["template_folders"]);
   }
 
   public static function getTemplateCacheFolder(){
@@ -165,6 +168,30 @@ class C extends \X\AbstractClasses\PrivateInstantiation{
   public static function setL10n($param, $val){
     $setter='set'.ucwords($param);
     Localization::$setter($val);
+  }
+
+  public static function setThumbnailsPath($path){
+    self::$config["thumbnails_path"] = self::checkDir($path);
+  }
+
+  public static function getThumbnailsPath(){
+    return self::$config["thumbnails_path"];
+  }
+
+  public static function setFavicon($path){
+    self::$config["favicon_path"] = self::checkFile($path);
+  }
+
+  public static function getFavicon(){
+    return self::$config["favicon_path"];
+  }
+
+  public static function setSiteIcon($path){
+    self::$config["siteicon_path"] = self::checkFile($path);
+  }
+
+  public static function getSiteIcon($path){
+    return self::$config["siteicon_path"];
   }
 
   public static function set($options){
@@ -217,6 +244,17 @@ class C extends \X\AbstractClasses\PrivateInstantiation{
       throw new \exception("No such path [".$path."]");
     }elseif (!is_dir($path)){
       throw new \exception("Path specified is not a directory [".$path."]");
+    }
+    return $path;
+  }
+
+  public static function checkFile($path){
+    if ($path[0]!='/'){
+      $path = X::getScriptDir().$path;
+    }
+    $path = str_replace("\\", DIRECTORY_SEPARATOR, $path);
+    if (!file_exists($path)){
+      throw new \exception("No such path [".$path."]");
     }
     return $path;
   }
