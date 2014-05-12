@@ -9,6 +9,7 @@ use \X\Render\L10n;
 use \X\Data\SmartFile;
 use \X\Data\SmartArray;
 use \X\Data\SmartCookie;
+use X_CMF\Client\Request;
 
 Logger::add("Loading 3rdParty libs");
 
@@ -54,6 +55,31 @@ class X extends \X\AbstractClasses\PrivateInstantiation{
       $appdir = dirname(self::getScript()).DIRECTORY_SEPARATOR;
     }
     return $appdir;
+  }
+
+  public static function getScriptURI(){
+    static $appuri;
+    if (!$appuri){
+      $appuri = dirname($_SERVER["DOCUMENT_URI"])."/";
+      if ($appuri=="//"){
+        $appuri="/";
+      }
+    }
+    return $appuri;
+  }
+
+  public static function URI2path($uri){
+    if (substr($uri, 0, strlen(self::getScriptURI()))==self::getScriptURI()){
+      $uri = substr($uri, strlen(self::getScriptURI()));
+    }
+    return self::getScriptDir().$uri;
+  }
+
+  public static function path2URI($path){
+    if (substr($path, 0, strlen(self::getScriptDir()))==self::getScriptDir()){
+      $path = substr($path, strlen(self::getScriptDir()));
+    }
+    return self::getScriptURI().$path;
   }
 
   public static function getIP(){
