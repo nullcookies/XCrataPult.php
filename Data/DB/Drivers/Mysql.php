@@ -452,18 +452,22 @@ class Mysql implements IDB{
   public function store(ICRUD &$object){
 
     foreach($object->getFields() as $fieldName=>$fieldRules){
-      $fieldNames[]=$fieldName;
-      $data[$fieldName]=$object->{'get'.ucwords($fieldName)}();
-      if ($data[$fieldName]===null && !$fieldRules['null']){
-        $data[$fieldName]=$fieldRules['default'];
+      if (!array_key_exists('userfield',$fieldRules)){
+        $fieldNames[]=$fieldName;
+        $data[$fieldName]=$object->{'get'.ucwords($fieldName)}();
+        if ($data[$fieldName]===null && !$fieldRules['null']){
+          $data[$fieldName]=$fieldRules['default'];
+        }
       }
     }
 
     if (!$object->isValid()){
       $sql = "INSERT INTO `".$object::TABLE_NAME."`";
+
       $sql.=" (".Strings::smartImplode($fieldNames, ",", function(&$value){$value='`'.$value.'`';}).") ".
             "VALUES".
             " (".Strings::smartImplode($fieldNames, ",", function(&$value)use($data){$value=$data[$value]===null ? "NULL" : "'".mysql_real_escape_string($data[$value])."'";}).");";
+      die($sql);
     }else{
       $sql = "UPDATE `".$object::TABLE_NAME."` SET ";
       foreach($fieldNames as $name){

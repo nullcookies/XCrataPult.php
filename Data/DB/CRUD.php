@@ -45,7 +45,8 @@ abstract class CRUD implements ICRUD{
         'name'=>$name,
         'type'=>'string',
         'camelName'=>$camelName,
-        'getter'=>'get'.$camelName
+        'getter'=>'get'.$camelName,
+        'userfield'=>true
       ];
       static::$UserFields[$name]=null;
       static::$UserFieldsInterface[$camelName]=['sanitizer'=>$sanitizerFunction, 'name'=>$name];
