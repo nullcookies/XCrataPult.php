@@ -13,7 +13,7 @@ class C extends \X\AbstractClasses\PrivateInstantiation{
   private static $config=[
     'db_namespace' =>'db',
     'db_abstract'=>true,
-    'db_cache_ttl'=>3600,
+    'db_cache_ttl'=>0,
     'db_cache_maxrows'=>10000,
     'cache_tech_prefix'=>"_X_:",
 
