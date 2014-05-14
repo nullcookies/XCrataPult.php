@@ -48,11 +48,11 @@ abstract class {%CLASSNAME%} extends CRUD{
   }
 
   protected function cache(){
-    if (!$this->cacheKey()){
+    if (!$this->cacheKey() || !C::getDbCacheTtl()){
       return false;
     }
     if (Cache::getInstance()->enabled() && $this->isValid()){
-      return Cache::getInstance()->groupSetItem('DB_{%DATABASE_ALIAS%}_{%TABLENAME%}', $this->cacheKey(), $this);
+      return Cache::getInstance()->groupSetItem('DB_{%DATABASE_ALIAS%}_{%TABLENAME%}', $this->cacheKey(), $this, C::getDbCacheTtl());
     }
   }
 
