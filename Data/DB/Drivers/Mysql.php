@@ -454,7 +454,7 @@ class Mysql implements IDB{
     foreach($object->getFields() as $fieldName=>$fieldRules){
       if (!array_key_exists('userfield',$fieldRules)){
         $fieldNames[]=$fieldName;
-        $data[$fieldName]=$object->{'get'.ucwords($fieldName)}();
+        $data[$fieldName]=$object->{$fieldRules["getter"]}();
         if ($data[$fieldName]===null && !$fieldRules['null']){
           $data[$fieldName]=$fieldRules['default'];
         }
@@ -467,7 +467,6 @@ class Mysql implements IDB{
       $sql.=" (".Strings::smartImplode($fieldNames, ",", function(&$value){$value='`'.$value.'`';}).") ".
             "VALUES".
             " (".Strings::smartImplode($fieldNames, ",", function(&$value)use($data){$value=$data[$value]===null ? "NULL" : "'".mysql_real_escape_string($data[$value])."'";}).");";
-      die($sql);
     }else{
       $sql = "UPDATE `".$object::TABLE_NAME."` SET ";
       foreach($fieldNames as $name){
@@ -482,10 +481,11 @@ class Mysql implements IDB{
       $sql.= ";";
     }
     $res = $this->query($sql);
+
     if (!$res){
       throw new \Exception("SQL FAILED: >>".$sql."<< WITH ERROR ".mysql_error($this->connection));
     }
-    if ($res && $id = mysql_insert_id($this->connection)){
+    if ($res && ($id = mysql_insert_id($this->connection))){
       $object->autoincrement($id);
     }
     return $res;
