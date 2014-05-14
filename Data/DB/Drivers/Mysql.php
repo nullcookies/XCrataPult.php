@@ -274,6 +274,10 @@ class Mysql implements IDB{
               $replacement=null;
             }
 
+            if (is_array($replacement)){
+              throw new \InvalidArgumentException("Replacement in condition shouldn't be an array");
+            }
+
             $item["expr_type"]="const";
             $item["base_expr"]= ($replacement===null ? "NULL": (is_numeric($replacement) ? $replacement : (is_bool($replacement) ? ($replacement ? "TRUE" : "FALSE") : "\"".$this->escape($replacement)."\"")));
             unset($item["no_quotes"]);
@@ -429,6 +433,7 @@ class Mysql implements IDB{
 
     $sqlExpr = 'SELECT '.$fieldsWeNeed.' FROM `'.$options['table'].'` '.$where.' '.$orderBy.' '.($options['limit'] > 0 ? 'LIMIT '.$options['limit'] : '').';';
     $parsed = (new \PHPSQLParser($sqlExpr))->parsed;
+
     if ($wherevars && $where && $parsed["WHERE"]){
       $this->collapseVars($parsed["WHERE"], $wherevars, $tableClass);
     }
@@ -466,7 +471,7 @@ class Mysql implements IDB{
 
       $sql.=" (".Strings::smartImplode($fieldNames, ",", function(&$value){$value='`'.$value.'`';}).") ".
             "VALUES".
-            " (".Strings::smartImplode($fieldNames, ",", function(&$value)use($data){$value=$data[$value]===null ? "NULL" : "'".mysql_real_escape_string($data[$value])."'";}).");";
+            " (".Strings::smartImplode($fieldNames, ",", function(&$value)use($data){$value=$data[$value]===null ? "NULL" : "'".$this->escape($data[$value])."'";}).");";
     }else{
       $sql = "UPDATE `".$object::TABLE_NAME."` SET ";
       foreach($fieldNames as $name){
