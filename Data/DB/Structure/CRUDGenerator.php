@@ -94,7 +94,7 @@ class CRUDGenerator extends PrivateInstantiation{
                 "public function set".$field->getCamelName()."(\$val){"."\n";
     switch($field->getType()){
       case 'boolean':
-        $setter.= "\t\$this->".$field->getAlias()." = !!\$val;"."\n";
+        $setter.= "\t\$this->".$field->getAlias()." = ".($field->getNull() ? "(\$val===null) ? null : ":"")."!!\$val;"."\n";
         break;
       case 'bit':
       case 'tinyint':
@@ -102,13 +102,13 @@ class CRUDGenerator extends PrivateInstantiation{
       case 'smallint':
       case 'bigint':
       case 'serial':
-        $setter.= "\t\$this->".$field->getAlias()." = intval(\$val);"."\n";
+        $setter.= "\t\$this->".$field->getAlias()." = ".($field->getNull() ? "(\$val===null) ? null : ":"")."intval(\$val);"."\n";
         break;
       case 'float':
       case 'double':
       case 'decimal':
       case 'real':
-        $setter.= "\t\$this->".$field->getAlias()." = doubleval(\$val);"."\n";
+        $setter.= "\t\$this->".$field->getAlias()." = ".($field->getNull() ? "(\$val===null) ? null : ":"")."doubleval(\$val);"."\n";
         break;
       case 'varchar':
       case 'char':
@@ -120,7 +120,7 @@ class CRUDGenerator extends PrivateInstantiation{
       case 'mediumblob':
       case 'blob':
       case 'longblob':
-        $setter.= "\t\$this->".$field->getAlias()." = (string)\$val;"."\n";
+        $setter.= "\t\$this->".$field->getAlias()." = ".($field->getNull() ? "(\$val===null) ? null : ":"")."(string)\$val;"."\n";
         break;
       case 'enum':
         $setter.= "\tif (".($field->getNull() ? "\$val!==null && ":"")."!in_array(\$val, ['".implode("','", $field->getRange())."'])){"."\n".
@@ -137,17 +137,17 @@ class CRUDGenerator extends PrivateInstantiation{
                   "\t\$this->".$field->getAlias()." = \$val;"."\n";
         break;
       case 'date':
-        $setter.= "\t\$this->".$field->getAlias()." = is_int(\$val) ? date('Y-m-d', \$val) : \$val;";
+        $setter.= "\t\$this->".$field->getAlias()." = ".($field->getNull() ? "(\$val===null) ? null : ":"")."is_int(\$val) ? date('Y-m-d', \$val) : \$val;";
         break;
       case 'time':
-        $setter.= "\t\$this->".$field->getAlias()." = is_int(\$val) ? date('H:i:s', \$val) : \$val;";
+        $setter.= "\t\$this->".$field->getAlias()." = ".($field->getNull() ? "(\$val===null) ? null : ":"")."is_int(\$val) ? date('H:i:s', \$val) : \$val;";
         break;
       case 'year':
-        $setter.= "\t\$this->".$field->getAlias()." = (\$val>2155 || \$val<1901) ? date('Y', \$val) : \$val;";
+        $setter.= "\t\$this->".$field->getAlias()." = ".($field->getNull() ? "(\$val===null) ? null : ":"")."(\$val>2155 || \$val<1901) ? date('Y', \$val) : \$val;";
         break;
       case 'datetime':
       case 'timestamp':
-        $setter.= "\t\$this->".$field->getAlias()." = is_int(\$val) ? date('Y-m-d H:i:s', \$val) : \$val;";
+        $setter.= "\t\$this->".$field->getAlias()." = ".($field->getNull() ? "(\$val===null) ? null : ":"")."is_int(\$val) ? date('Y-m-d H:i:s', \$val) : \$val;";
         break;
 
     }

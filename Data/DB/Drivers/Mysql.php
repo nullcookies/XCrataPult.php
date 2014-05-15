@@ -370,7 +370,7 @@ class Mysql implements IDB{
     if ($options['instantiator']!==false && !Values::isCallback($options['instantiator'])){
       if ($tableClass = \X\Debug\Tracer::getCallerClass()){
         $interfaces = class_implements($tableClass, true);
-        if ($interfaces && !in_array("X\\Data\\DB\\CRUD", $interfaces)){
+        if ($interfaces && !in_array("X\\Data\\DB\\Interfaces\\ICRUD", $interfaces)){
           if ($options['table']===null){
             $options['table']=$tableClass::TABLE_NAME;
           }
@@ -475,7 +475,9 @@ class Mysql implements IDB{
     }else{
       $sql = "UPDATE `".$object::TABLE_NAME."` SET ";
       foreach($fieldNames as $name){
-        $sql.= '`'.$name.'`'."='".$this->escape($data[$name])."'".($name != end($fieldNames) ? ",":"");
+        $null = ($data[$name]===null) && ($object->getFields()[$name]["null"]);
+
+        $sql.= '`'.$name.'`'."= ".($null ? "NULL" : "'".$this->escape($data[$name])."'").($name != end($fieldNames) ? ",":"");
       }
       $sql.= " WHERE ";
       $primaryFields = $object::getPrimaryFields();
