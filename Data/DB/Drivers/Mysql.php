@@ -303,8 +303,9 @@ class Mysql implements IDB{
           $item["expr_type"]="const";
           $item["base_expr"]=str_replace("?:".$valname.":", $replacement===null ? "NULL": is_numeric($replacement) ? $replacement : (is_bool($replacement) ? ($replacement ? "TRUE" : "FALSE") : $this->escape($replacement)), $item["base_expr"]);
       }
-
-
+      if (array_key_exists("sub_tree", $item) && $item["sub_tree"]){
+        $this->collapseVars($item["sub_tree"], $vars, $tableClass);
+      }
     }
     return $where;
   }
@@ -441,7 +442,6 @@ class Mysql implements IDB{
     if (($ttl = intval($options["cache_ttl"]))>0){
       $cacheKey = md5($sqlExpr.$options["instantiator"]);
     }
-
     $collection = new Collection($sqlExpr, $this, $options['instantiator'], $ttl ? $cacheKey : null, $ttl);
     if (!!$options['asArray']){
       $answer = Array();
