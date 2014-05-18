@@ -118,6 +118,7 @@ abstract class {%CLASSNAME%} extends CRUD{
   		$this->invalidateCache();
   	}
     $this->pretendReal();
+    return $this;
   }
 
   public function delete(){
