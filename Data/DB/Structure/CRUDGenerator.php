@@ -137,17 +137,17 @@ class CRUDGenerator extends PrivateInstantiation{
                   "\t\$this->".$field->getAlias()." = \$val;"."\n";
         break;
       case 'date':
-        $setter.= "\t\$this->".$field->getAlias()." = ".($field->getNull() ? "(\$val===null) ? null : ":"")."is_int(\$val) ? date('Y-m-d', \$val) : \$val;";
+        $setter.= "\t\$this->".$field->getAlias()." = ".($field->getNull() ? "(\$val===null) ? null : ":"")."is_int(\$val) ? date('Y-m-d', \$val) : \$val;\n";
         break;
       case 'time':
-        $setter.= "\t\$this->".$field->getAlias()." = ".($field->getNull() ? "(\$val===null) ? null : ":"")."is_int(\$val) ? date('H:i:s', \$val) : \$val;";
+        $setter.= "\t\$this->".$field->getAlias()." = ".($field->getNull() ? "(\$val===null) ? null : ":"")."is_int(\$val) ? date('H:i:s', \$val) : \$val;\n";
         break;
       case 'year':
-        $setter.= "\t\$this->".$field->getAlias()." = ".($field->getNull() ? "(\$val===null) ? null : ":"")."(\$val>2155 || \$val<1901) ? date('Y', \$val) : \$val;";
+        $setter.= "\t\$this->".$field->getAlias()." = ".($field->getNull() ? "(\$val===null) ? null : ":"")."(\$val>2155 || \$val<1901) ? date('Y', \$val) : \$val;\n";
         break;
       case 'datetime':
       case 'timestamp':
-        $setter.= "\t\$this->".$field->getAlias()." = ".($field->getNull() ? "(\$val===null) ? null : ":"")."is_int(\$val) ? date('Y-m-d H:i:s', \$val) : \$val;";
+        $setter.= "\t\$this->".$field->getAlias()." = ".($field->getNull() ? "(\$val===null) ? null : ":"")."is_int(\$val) ? date('Y-m-d H:i:s', \$val) : \$val;\n";
         break;
 
     }
