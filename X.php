@@ -30,6 +30,12 @@ if (file_exists(__XDIR__ . '3rdparty/Afigenius/Autoloader.php')){
   Logger::add("'Afi' Autoloader loaded");
 }
 
+Logger::add("Loading 'PHPExcel' Autoloader");
+if (file_exists(__XDIR__ . '3rdparty/PHPExcel/PHPExcel.php')){
+  require_once(__XDIR__ . '3rdparty/PHPExcel/PHPExcel.php');
+  Logger::add("'PHPExcel' Autoloader loaded");
+}
+
 require_once(__XDIR__.'3rdparty/PHPSQLParser/PHPSQLParser.php');
 require_once(__XDIR__.'3rdparty/PHPSQLParser/PHPSQLCreator.php');
 
