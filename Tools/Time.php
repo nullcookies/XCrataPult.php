@@ -18,5 +18,15 @@ final class Time extends PrivateInstantiation{
   static public function microDelta($base){
     return bcsub(self::microTime(), $base, 4);
   }
+
+  /**
+   * Finds a timestamp of 0 seconds in latest Monday of specified week.
+   *
+   * @param null $weekTime timestamp anywhere inside a week Monday of which you want to find. null means current week.
+   * @return int 00:00:00 of Monday
+   */
+  static public function mondayToTime($weekTime=null){
+    return strtotime('last monday', strtotime('tomorrow', $weekTime?:time()));
+  }
 }
 ?>
