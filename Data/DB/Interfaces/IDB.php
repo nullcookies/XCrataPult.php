@@ -5,6 +5,7 @@ namespace X\Data\DB\Interfaces;
 use X\Data\DB\Collection;
 use \X\Data\DB\Structure\Database;
 use \X\Data\DB\Structure\Field;
+use X\Data\DB\Structure\Key;
 use \X\Data\DB\Structure\Table;
 use \X\Data\DB\CRUD;
 
@@ -57,6 +58,11 @@ Interface IDB{
    */
   public function getDatabase();
   public function getTables();
+
+  /**
+   * @param $tableName
+   * @return Key[]
+   */
   public function getTableKeys($tableName);
   public function getTableFields($tableName);
 
