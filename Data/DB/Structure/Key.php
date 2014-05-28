@@ -3,9 +3,6 @@
 namespace X\Data\DB\Structure;
 
 use \X\Data\DB\Interfaces\IDB;
-use \X\Data\DB\Structure\Database;
-use \X\Data\DB\Structure\Table;
-use \X\Data\DB\Structure\Field;
 
 class Key {
 
@@ -38,7 +35,7 @@ class Key {
   }
 
   public function getCamelName(){
-    return str_replace(" ", "",ucwords(implode(" ",explode("_",$this->getName()))));
+    return Field::s_getCamelName($this->getName());
   }
 
   public function addField(Field &$field){
@@ -49,6 +46,10 @@ class Key {
   public function addRefField(Field &$field){
     $this->refFields[] = $field;
     return $this;
+  }
+
+  public function getRefFields(){
+    return $this->refFields;
   }
 
   /**
