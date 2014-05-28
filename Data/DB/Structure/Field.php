@@ -24,16 +24,22 @@ class Field {
   private $timeOnCreate = false;
   private $unsigned = false;
   private $keys = [];
+  private $tableName='';
 
   private $driver;
 
-  public function __construct(IDB &$driver, $name){
+  public function __construct(IDB &$driver, $name, $tableName=''){
     if (!Values::isSuitableForVarName($name)){
       throw new \exception("Bad field name '".$name."'!", self::ERR_BAD_FIELD_NAME);
     }
     $this->driver = &$driver;
+    $this->tableName = $tableName;
     $this->name = strtolower($name);
     $this->alias = '_'.$this->name;
+  }
+
+  public function getTableName(){
+    return $this->tableName;
   }
 
   public function generateSQLCreate(){

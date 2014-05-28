@@ -80,7 +80,7 @@ class Table {
       if ($existingOnly){
         throw new \Exception("No such field '".$name."' in table '".$this->getName()."'", self::FIELD_DOES_NOT_EXIST);
       }
-      $this->fields[$name]=new Field($this->driver, $name);
+      $this->fields[$name]=new Field($this->driver, $name, $this->getName());
       return $this->fields[$name];
     }
   }
