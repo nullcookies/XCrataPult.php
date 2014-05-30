@@ -72,6 +72,10 @@ abstract class {%CLASSNAME%} extends CRUD{
 
 {%SELECTORS%}
 
+  /**
+     * @param bool $asArray if you want to invoke [asArray] method on every fetched object. False by default
+     * @return Collection|{%CLASSNAME%}[]
+     */
   public static function getAll($asArray=false){
     return static::get(null, null, 0, $asArray);
   }
