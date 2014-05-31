@@ -144,7 +144,9 @@ class Mysql implements IDB{
     $keys = [];
     foreach(new Collection("SELECT k.*, t.* FROM information_schema.table_constraints t JOIN information_schema.key_column_usage k USING ( constraint_name, table_schema, table_name ) WHERE k.TABLE_NAME = '".$tableName."' AND t.table_schema =  '".$this->dbname."'", $this) as $key){
 
-      $key_s = new Key($this, $key['CONSTRAINT_NAME']);
+      if (!array_key_exists($key['CONSTRAINT_NAME'], $keys)){
+        $keys[$key['CONSTRAINT_NAME']] = new Key($this, $key['CONSTRAINT_NAME']);
+      }
 
       $type = 0;
       switch($key['CONSTRAINT_TYPE']){
@@ -167,15 +169,14 @@ class Mysql implements IDB{
         ->getDatabase()
         ->tableByName($key['TABLE_NAME'])
         ->fieldByName($key['COLUMN_NAME']);
-      $key_s->addField($keyField);
+      $keys[$key['CONSTRAINT_NAME']]->addField($keyField);
       if ($key['REFERENCED_TABLE_SCHEMA']){
         $keyRefField = &DB::connectionByDatabase($key['REFERENCED_TABLE_SCHEMA'])
           ->getDatabase()
           ->tableByName($key['REFERENCED_TABLE_NAME'])
           ->fieldByName($key['REFERENCED_COLUMN_NAME']);
-        $key_s->addRefField($keyRefField);
+        $keys[$key['CONSTRAINT_NAME']]->addRefField($keyRefField);
       }
-      $keys[$key['CONSTRAINT_NAME']] = $key_s;
       Logger::add("- - key '".$key['TABLE_NAME']."_".$key['COLUMN_NAME']."'... OK");
     }
     return $keys;
@@ -200,7 +201,7 @@ class Mysql implements IDB{
         $typeRange = array_map("trim", explode(",", str_replace(["'",'"'],'',$typeRange)));
       }
 
-      $fields[$field['Field']] = (new Field($this, $field['Field']))
+      $fields[$field['Field']] = (new Field($this, $field['Field'], $tableName))
         ->setType($type, $typeRange)
         ->setNull($field['Null']!='NO')
         ->setDefault($field['Default']!="CURRENT_TIMESTAMP" ? $field['Default'] : null)
