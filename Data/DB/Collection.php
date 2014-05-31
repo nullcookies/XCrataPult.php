@@ -25,7 +25,6 @@ class Collection extends \ArrayObject{
   const BAD_QUERY_RESOURCE = 802;
 
   public function __construct($res, IDB &$driver, $instantiator=null, $cacheKey=null, $cacheTTL=0){
-
     Logger::add("new Collection created for ".$res);
 
     if ($cacheKey && $cacheTTL && Cache::enabled()){
@@ -52,12 +51,13 @@ class Collection extends \ArrayObject{
     }else{
       if (!is_resource($res)){
         if (trim($res)){
-          $res = $driver->query($res);
+          $query = $res;
+          $res = $driver->query($query);
         }
       }
 
       if (!is_resource($res) || $driver->errno()){
-        throw new \Exception("Resource (or query) provided for collection (".$res.") is not resource (query)!", self::BAD_QUERY_RESOURCE);
+        throw new \Exception("Resource (or query) provided for collection (".$res.", ".$query.") is not resource (query)!", self::BAD_QUERY_RESOURCE);
       }
 
       $this->driver = &$driver;
