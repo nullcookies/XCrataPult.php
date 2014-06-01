@@ -516,7 +516,7 @@ class Mysql implements IDB{
     $primaryFields = $object::getPrimaryFields();
     reset($primaryFields);
     foreach($primaryFields as $name=>$alias){
-      $sql.= '`'.$name.'`'."='".$object->getPrimaryField($name)."'".($alias != end($primaryFields) ? ",":"");
+      $sql.= '`'.$name.'`'."='".$object->getPrimaryField($name)."'".($alias != end($primaryFields) ? " AND ":"");
     }
     $sql.= " LIMIT 1;";
 
