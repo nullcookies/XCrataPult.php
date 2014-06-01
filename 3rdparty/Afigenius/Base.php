@@ -16,12 +16,13 @@ class Base {
 
   const HOST = "http://data.afigenius.ru/";
 
-  public static function request($uri, $params=[], $fieldsNeeded=[]){
+  public static function request($uri, $params=[], $fieldsNeeded=[], $limit=10){
     if (!is_array($params) || !is_array($fieldsNeeded)){
       throw new \InvalidArgumentException();
     }
     ksort($params);
     ksort($fieldsNeeded);
+    $params["limit"]=$limit;
     if (count($params)){
       $params = Strings::smartKImplode($params, "&", function($key, $val){return $key.'='.urlencode($val);});
     }else{
