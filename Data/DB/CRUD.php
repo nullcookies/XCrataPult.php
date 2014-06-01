@@ -16,18 +16,18 @@ abstract class CRUD implements ICRUD{
   protected static $UserFields = [];
   protected static $UserFieldsInterface = [];
 
-  static protected $mutated = false;
+  static protected $mutated = [];
 
   public static function mutation(){
 
   }
 
   public static function mutate(){
-    if (static::$mutated){
+    if (array_key_exists(get_called_class(), static::$mutated)){
       return;
     }
     static::mutation();
-    static::$mutated=true;
+    static::$mutated[get_called_class()]=true;
   }
 
   public static function create(){
