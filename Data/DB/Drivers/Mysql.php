@@ -517,7 +517,6 @@ class Mysql implements IDB{
         $sql.= '`'.$name.'`'."='".$object->getPrimaryField($name)."'".($alias != end($primaryFields) ? " AND ":"");
       }
       $sql.= " LIMIT 1;";
-      die($sql);
     }else{
       $fields = $object::getFields();
       reset($fields);
@@ -525,7 +524,6 @@ class Mysql implements IDB{
         $sql.= '`'.$name.'`'."='".$object->getFieldData($name)."'".($fdata != end($fields) ? " AND ":"");
       }
       $sql.= " LIMIT 1;";
-      die($sql);
     }
 
     $res = $this->query($sql);
