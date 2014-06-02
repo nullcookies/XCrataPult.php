@@ -142,6 +142,14 @@ abstract class {%CLASSNAME%} extends CRUD{
     return array_key_exists($field, static::$Fields) ? static::$Fields[$field] : null;
   }
 
+  public function getFieldData($fieldName){
+    static::mutate();
+    if ($field = (array_key_exists($fieldName, static::$Fields) ? static::$Fields[$fieldName] : null)){
+      return call_user_func([$this, $field['getter']]);
+    }
+    return ;
+  }
+
   public static function hook_constructor_before(&$className){}
   public function hook_constructor_after(){}
 

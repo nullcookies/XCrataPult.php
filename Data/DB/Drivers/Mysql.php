@@ -500,9 +500,6 @@ class Mysql implements IDB{
   }
 
   public function delete(ICRUD &$object){
-    if (!$object->isValid()){
-      return;
-    }
 
     foreach($object->getFields() as $fieldName=>$fieldRules){
       $fieldNames[]=$fieldName;
@@ -514,11 +511,22 @@ class Mysql implements IDB{
 
     $sql = "DELETE FROM `".$object::TABLE_NAME."` WHERE ";
     $primaryFields = $object::getPrimaryFields();
-    reset($primaryFields);
-    foreach($primaryFields as $name=>$alias){
-      $sql.= '`'.$name.'`'."='".$object->getPrimaryField($name)."'".($alias != end($primaryFields) ? " AND ":"");
+    if (count($primaryFields)){
+      reset($primaryFields);
+      foreach($primaryFields as $name=>$alias){
+        $sql.= '`'.$name.'`'."='".$object->getPrimaryField($name)."'".($alias != end($primaryFields) ? " AND ":"");
+      }
+      $sql.= " LIMIT 1;";
+      die($sql);
+    }else{
+      $fields = $object::getFields();
+      reset($fields);
+      foreach($fields as $name=>$fdata){
+        $sql.= '`'.$name.'`'."='".$object->getFieldData($name)."'".($fdata != end($fields) ? " AND ":"");
+      }
+      $sql.= " LIMIT 1;";
+      die($sql);
     }
-    $sql.= " LIMIT 1;";
 
     $res = $this->query($sql);
     if (!$res){
