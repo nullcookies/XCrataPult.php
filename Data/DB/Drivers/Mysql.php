@@ -290,7 +290,11 @@ class Mysql implements IDB{
           break;
         case "const":
           $p1 = strpos($item["base_expr"], "?:");
-          $p2 = strpos($item["base_expr"], ":", $p1+2);
+          if ($p1!==false){
+            $p2 = strpos($item["base_expr"], ":", $p1+2);
+          }else{
+            $p2 = false;
+          }
           if ($p1!==false && $p2!==false){
             $valname = substr($item["base_expr"],$p1+2, $p2-$p1-2);
           }
