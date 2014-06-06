@@ -30,6 +30,8 @@ abstract class {%CLASSNAME%} extends CRUD{
 
   const BAD_CALLBACK = 2002;
 
+{%FIELDNAMES%}
+
 {%FIELDS%}
 {%PRIMARYFIELDS%}
 {%PROPERTIES%}

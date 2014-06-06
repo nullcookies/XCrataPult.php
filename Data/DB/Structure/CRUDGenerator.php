@@ -244,6 +244,7 @@ class CRUDGenerator extends PrivateInstantiation{
 
     $fields=[];
     $fields[]="protected static \$Fields = [";
+    $fieldNames=[];
 
     $pFields=[];
     $pFields[]="protected static \$PrimaryFields = [";
@@ -392,6 +393,7 @@ class CRUDGenerator extends PrivateInstantiation{
       $selectors[] = "\t\t]);";
       $selectors[] = "}";
 
+      $fieldNames[]="\t const f_".$field->getName()." = '`".$table->getName()."`.`".$field->getName()."`';";
       $fields[]= "\t'" . $field->getName() . "'=>[";
       $fields[]= "\t\t'camelName'=>'".$field->getCamelName()."',";
       $fields[]= "\t\t'getter'=>'get".$field->getCamelName()."',";
@@ -427,6 +429,7 @@ class CRUDGenerator extends PrivateInstantiation{
 
     $glue = function (&$value){$value = implode("\n", $value);};
 
+    $glue($fieldNames);
     $glue($fields);
     $glue($pFields);
     $glue($properties);
@@ -479,6 +482,7 @@ class CRUDGenerator extends PrivateInstantiation{
     $result = str_replace("{%TABLENAME%}",      $table->getName(),    $result);
     $result = str_replace("{%CLASSNAME%}",      $className,           $result);
     $result = str_replace("{%FIELDS%}",         $fields,              $result);
+    $result = str_replace("{%FIELDNAMES%}",     $fieldNames,          $result);
     $result = str_replace("{%PRIMARYFIELDS%}",  $pFields,             $result);
     $result = str_replace("{%AUTOINCREMENT%}",  self::gAutoincrement($table->getFields()), $result);
     $result = str_replace("{%PRETENDREAL%}",    self::gPretendReal($primaryFields), $result);
