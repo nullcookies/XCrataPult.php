@@ -76,13 +76,13 @@ class CRUDGenerator extends PrivateInstantiation{
   }
 
   private static function gCreateFromRaw(Table $table, $primaryFields){
-    $creator  = "public static function &createFromRaw(\$raw){"."\n".
+    $creator  = "public static function &createFromRaw(\$raw, \$prefix=''){"."\n".
                 "\t\$className = get_called_class();"."\n".
                 "\t\$classObj = \$className::create();"."\n".
-                "\t\$classObj->hook_createFromRaw_before(\$raw);"."\n";
+                "\t\$classObj->hook_createFromRaw_before(\$raw, \$prefix);"."\n";
     foreach($table->getFields() as $field){
-      $creator.="\tif (array_key_exists('".$field->getName()."', \$raw)){"."\n";
-      $creator.="\t\t\$classObj->set".$field->getCamelName()."(\$raw['".$field->getName()."']);"."\n";
+      $creator.="\tif (array_key_exists(\$prefix.'".$field->getName()."', \$raw)){"."\n";
+      $creator.="\t\t\$classObj->set".$field->getCamelName()."(\$raw[\$prefix.'".$field->getName()."']);"."\n";
       $creator.="\t}"."\n";
     }
     $creator .= "\t\$classObj->hook_createFromRaw_after();"."\n";
@@ -446,9 +446,32 @@ class CRUDGenerator extends PrivateInstantiation{
     foreach ($table->getFields() as $field){
       $getters.= self::gGetter($field);
     }
+
+    $backRefs=[];
+
     foreach ($table->getKeys() as $key){
       $getters.="\n".self::gGetByKey($db, $table, $key);
+
+      if ($key->getType()==Key::KEY_TYPE_FOREIGN){
+        foreach($key->getRefFields() as $field){
+          $ref=[];
+          $ref['type']='direct';
+          $ref['key_table'] = $table;
+          $ref['target_table'] = $db->tableByName($field->getTableName());
+          $ref['key'] = $key;
+          $ftable = $db->tableByName($field->getTableName());
+          $keys = $ftable->getKeys();
+          foreach($keys as $fkey){
+            foreach ($key->getRefFields() as $f){
+              if ($f->getName()==$field->getName()){
+                //$getters.="\n".self::gGetByFK($db, $table, $ftable, $fkey);
+              }
+            }
+          }
+        }
+      }
     }
+
 
     $result = file_get_contents(dirname(__FILE__).'/CRUDtemplate');
     $result = str_replace("{%NAMESPACE%}",      $namespaceName,       $result);
