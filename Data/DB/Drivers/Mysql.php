@@ -3,8 +3,6 @@
 namespace X\Data\DB\Drivers;
 
 use X\Data\DB\Interfaces\ICRUD;
-use X\Data\DB\Structure\_AND;
-use X\Data\DB\Structure\_OR;
 use X\Tools\Strings;
 use \X\X;
 use \X\C;
@@ -18,6 +16,7 @@ use \X\Data\DB\Structure\Key;
 use \X\Validators\Values;
 use \X\Data\DB\Collection;
 use \X\Data\DB\CRUD;
+use \X\Debug\Tracer;
 
 
 class Mysql implements IDB{
@@ -169,13 +168,15 @@ class Mysql implements IDB{
         ->getDatabase()
         ->tableByName($key['TABLE_NAME'])
         ->fieldByName($key['COLUMN_NAME']);
-      $keys[$key['CONSTRAINT_NAME']]->addField($keyField);
-      if ($key['REFERENCED_TABLE_SCHEMA']){
+      if (0 && $type==Key::KEY_TYPE_FOREIGN && $key['REFERENCED_TABLE_SCHEMA']){
         $keyRefField = &DB::connectionByDatabase($key['REFERENCED_TABLE_SCHEMA'])
           ->getDatabase()
           ->tableByName($key['REFERENCED_TABLE_NAME'])
           ->fieldByName($key['REFERENCED_COLUMN_NAME']);
-        $keys[$key['CONSTRAINT_NAME']]->addRefField($keyRefField);
+        $keys[$key['CONSTRAINT_NAME']]->addRefField($keyField, $keyRefField);
+        $keys[$key['CONSTRAINT_NAME']]->setRefTable($key['REFERENCED_TABLE_NAME']);
+      }else{
+        $keys[$key['CONSTRAINT_NAME']]->addField($keyField);
       }
       Logger::add("- - key '".$key['TABLE_NAME']."_".$key['COLUMN_NAME']."'... OK");
     }
@@ -374,7 +375,7 @@ class Mysql implements IDB{
     }
 
     if ($options['instantiator']!==false && !Values::isCallback($options['instantiator'])){
-      if ($tableClass = \X\Debug\Tracer::getCallerClass()){
+      if ($tableClass = Tracer::getCallerClass()){
         $interfaces = class_implements($tableClass, true);
         if ($interfaces && !in_array("X\\Data\\DB\\Interfaces\\ICRUD", $interfaces)){
           if ($options['table']===null){
@@ -386,7 +387,9 @@ class Mysql implements IDB{
           }
         }
       }
-    }elseif($options['instantiator']!==false && $options['table']===null){
+    }
+
+    if($options['instantiator']!==false && $options['table']===null && is_array($options['instantiator']) && class_exists($options['instantiator'][0])){
       $options['table']=$options['instantiator'][0]::TABLE_NAME;
     }
 

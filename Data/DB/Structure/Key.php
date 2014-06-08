@@ -15,6 +15,7 @@ class Key {
   private $type;
   private $name;
   private $driver;
+  private $refTable;
 
   /**
    * @var Field[]
@@ -43,9 +44,18 @@ class Key {
     return $this;
   }
 
-  public function addRefField(Field &$field){
-    $this->refFields[] = $field;
+  public function addRefField(Field &$field, Field &$refField=null){
+    $this->refFields[] = [$field, $refField];
     return $this;
+  }
+
+  public function setRefTable($tableName){
+    $this->refTable = $tableName;
+    return $this;
+  }
+
+  public function getRefTable(){
+    return $this->refTable;
   }
 
   public function getRefFields(){
