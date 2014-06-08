@@ -11,8 +11,6 @@ use \X\Data\DB\Structure\Database;
 use \X\Data\DB\Structure\Table;
 use \X\Data\DB\Structure\Field;
 use \X\Data\DB\Structure\Key;
-use \X\Tools\Validators;
-use \X\Tools\Values;
 use \X\Data\DB\Collection;
 use \X\Data\DB\CRUD;
 
