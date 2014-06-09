@@ -32,6 +32,8 @@ abstract class {%CLASSNAME%} extends CRUD{
 
 {%FIELDNAMES%}
 
+{%REFS%}
+
 {%FIELDS%}
 {%PRIMARYFIELDS%}
 {%PROPERTIES%}

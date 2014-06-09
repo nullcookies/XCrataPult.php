@@ -168,16 +168,16 @@ class Mysql implements IDB{
         ->getDatabase()
         ->tableByName($key['TABLE_NAME'])
         ->fieldByName($key['COLUMN_NAME']);
-      if (0 && $type==Key::KEY_TYPE_FOREIGN && $key['REFERENCED_TABLE_SCHEMA']){
+      if ($type==Key::KEY_TYPE_FOREIGN && $key['REFERENCED_TABLE_SCHEMA']){
         $keyRefField = &DB::connectionByDatabase($key['REFERENCED_TABLE_SCHEMA'])
           ->getDatabase()
           ->tableByName($key['REFERENCED_TABLE_NAME'])
           ->fieldByName($key['REFERENCED_COLUMN_NAME']);
         $keys[$key['CONSTRAINT_NAME']]->addRefField($keyField, $keyRefField);
         $keys[$key['CONSTRAINT_NAME']]->setRefTable($key['REFERENCED_TABLE_NAME']);
-      }else{
+      }//else{
         $keys[$key['CONSTRAINT_NAME']]->addField($keyField);
-      }
+      //}
       Logger::add("- - key '".$key['TABLE_NAME']."_".$key['COLUMN_NAME']."'... OK");
     }
     return $keys;

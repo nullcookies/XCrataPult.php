@@ -248,10 +248,7 @@ class CRUDGenerator extends PrivateInstantiation{
 
     $pFields=[];
     $pFields[]="protected static \$PrimaryFields = [";
-
-
     foreach($table->getFields() as $field){
-
       if ($field->getDefault()===null && $field->getNull()){
         $default='null';
       }else{
@@ -393,7 +390,7 @@ class CRUDGenerator extends PrivateInstantiation{
       $selectors[] = "\t\t]);";
       $selectors[] = "}";
 
-      $fieldNames[]="\t const f_".$field->getName()." = '`".$table->getName()."`.`".$field->getName()."`';";
+      $fieldNames[]="\tconst f_".$field->getName()." = '`".$table->getName()."`.`".$field->getName()."`';";
       $fields[]= "\t'" . $field->getName() . "'=>[";
       $fields[]= "\t\t'camelName'=>'".$field->getCamelName()."',";
       $fields[]= "\t\t'getter'=>'get".$field->getCamelName()."',";
@@ -450,36 +447,38 @@ class CRUDGenerator extends PrivateInstantiation{
       $getters.= self::gGetter($field);
     }
 
-    $backRefs=[];
+    $referenceData=[];
 
+    $refTables = [];
     foreach ($table->getKeys() as $key){
       $getters.="\n".self::gGetByKey($db, $table, $key);
-
-      if ($key->getType()==Key::KEY_TYPE_FOREIGN){
-        foreach($key->getRefFields() as $field){
-          $ref=[];
-          $ref['type']='direct';
-          $ref['key_table'] = $table;
-          $ref['target_table'] = $db->tableByName($field->getTableName());
-          $ref['key'] = $key;
-          $ftable = $db->tableByName($field->getTableName());
-          $keys = $ftable->getKeys();
-          foreach($keys as $fkey){
-            foreach ($key->getRefFields() as $f){
-              if ($f->getName()==$field->getName()){
-                //$getters.="\n".self::gGetByFK($db, $table, $ftable, $fkey);
-              }
-            }
-          }
-        }
+      if ($key->getType()==Key::KEY_TYPE_FOREIGN && $key->getRefFields()){
+        $refTables[$db->tableByName($key->getRefTable())->getName()][$key->getName()]=$key->getRefFields();
       }
     }
 
+    $referenceData[]="\tpublic static \$refTables=[";
+    foreach($refTables as $tableName=>$d){
+      $referenceData[]="\t\t'".$tableName."'=>[";
+      foreach($d as $keyName=>$keyData){
+        $referenceData[]="\t\t\t'".$keyName."'=>[";
+        foreach($keyData as $fieldsPair){
+          list($field_from, $field_to) = $fieldsPair;
+          $referenceData[]="\t\t\t\t'".$field_from->getName()."'=>'".$field_to->getName()."',";
+        }
+        $referenceData[]="\t\t\t],";
+      }
+      $referenceData[]="\t\t],";
+    }
+    $referenceData[]="\t];";
+
+    $glue($referenceData);
 
     $result = file_get_contents(dirname(__FILE__).'/CRUDtemplate');
     $result = str_replace("{%NAMESPACE%}",      $namespaceName,       $result);
     $result = str_replace("{%DATABASE_ALIAS%}", $db->getAlias(),      $result);
     $result = str_replace("{%TABLENAME%}",      $table->getName(),    $result);
+    $result = str_replace("{%REFS%}",           $referenceData,       $result);
     $result = str_replace("{%CLASSNAME%}",      $className,           $result);
     $result = str_replace("{%FIELDS%}",         $fields,              $result);
     $result = str_replace("{%FIELDNAMES%}",     $fieldNames,          $result);
