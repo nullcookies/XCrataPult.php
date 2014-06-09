@@ -173,7 +173,11 @@ class DB extends PrivateInstantiation{
    * @return IDB
    * @throws \Exception
    */
-  public static function connectionByDatabase($db){
+  public static function connectionByDatabase($db=null){
+    if ($db===null && count(self::$aliases)){
+      reset(self::$aliases);
+      $db = key(self::$aliases);
+    }
     if (!array_key_exists($db, self::$aliases)){
       throw new \Exception("There is no database '".$db."' registered in DB::connections", self::ERR_NO_SUCH_DATABASE);
     }
