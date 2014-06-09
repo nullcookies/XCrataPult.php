@@ -103,6 +103,10 @@ class Mysql implements IDB{
     $this->pass   = $pass  ?: $this->pass  ?: ini_get("mysql.default_password");
   }
 
+  public function getAlias(){
+    return $this->alias;
+  }
+
   public function lazyConnect(){
     if ($this->connection){
       return;

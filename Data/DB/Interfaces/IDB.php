@@ -73,7 +73,10 @@ Interface IDB{
    */
   public function getPHPType($type);
 
-//  public function condition($fieldName, $compare, $value);
+  /**
+   * @return string
+   */
+  public function getAlias();
 
   /**
    * @param array $options
