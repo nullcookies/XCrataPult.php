@@ -26,6 +26,7 @@ class JoinedTables {
     $tableClass = $this->checkTableClass($tableClass);
     $this->tables[]=[
       "name"=>$tableClass::TABLE_NAME,
+      "alias"=>$tableClass::TABLE_NAME,
       "class"=>$tableClass
     ];
     $this->tableNames[$tableClass::TABLE_NAME]=$tableClass;

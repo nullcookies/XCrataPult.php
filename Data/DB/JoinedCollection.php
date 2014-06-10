@@ -34,7 +34,7 @@ class JoinedCollection extends Collection{
   public function row($num = null){
     if (!array_key_exists($num, $this->oCache)){
       $data = parent::row($num);
-      $this->oCache[$num] = new JoinedCRUD($data);
+      $this->oCache[$num] = new JoinedCRUD($data, $this->tables);
     }
     return $this->oCache[$num];
   }
