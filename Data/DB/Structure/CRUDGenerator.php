@@ -393,6 +393,7 @@ class CRUDGenerator extends PrivateInstantiation{
       $fieldNames[]="\tconst f_".$field->getName()." = '`".$table->getName()."`.`".$field->getName()."`';";
       $fields[]= "\t'" . $field->getName() . "'=>[";
       $fields[]= "\t\t'camelName'=>'".$field->getCamelName()."',";
+      $fields[]= "\t\t'fullName'=>'`".$table->getName()."`.`".$field->getName()."`',";
       $fields[]= "\t\t'getter'=>'get".$field->getCamelName()."',";
       $fields[]= "\t\t'type'=>'".$field->getType()."',";
       $fields[]= "\t\t'unsigned'=>".($field->getUnsigned() ? "true":"false").",";
@@ -464,7 +465,7 @@ class CRUDGenerator extends PrivateInstantiation{
         $referenceData[]="\t\t\t'".$keyName."'=>[";
         foreach($keyData as $fieldsPair){
           list($field_from, $field_to) = $fieldsPair;
-          $referenceData[]="\t\t\t\t'".$field_from->getName()."'=>'".$field_to->getName()."',";
+          $referenceData[]="\t\t\t\t'`".$table->getName()."`.`".$field_from->getName()."`'=>'`".$tableName."`.`".$field_to->getName()."`',";
         }
         $referenceData[]="\t\t\t],";
       }
