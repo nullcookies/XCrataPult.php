@@ -66,7 +66,7 @@ class Key {
    * @return string
    */
   public function getType(){
-    if ($this->getName()=="PRIMARY"){
+    if ($this->getName()=="primary"){
       return self::KEY_TYPE_PRIMARY;
     }elseif(count($this->refFields)){
       return self::KEY_TYPE_FOREIGN;
