@@ -32,7 +32,7 @@ class Key {
   }
 
   public function getName(){
-    return $this->name;
+    return strtolower($this->name);
   }
 
   public function getCamelName(){
