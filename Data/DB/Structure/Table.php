@@ -49,7 +49,7 @@ class Table {
    * @return string table name
    */
   public function getName(){
-    return $this->name;
+    return strtolower($this->name);
   }
 
   /**
