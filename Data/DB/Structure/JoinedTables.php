@@ -9,7 +9,10 @@
 namespace X\Data\DB\Structure;
 
 use X\C;
+use X\Data\DB\CRUD;
 use X\Data\DB\DB;
+use X\Data\DB\JoinedCollection;
+use X\Validators\Values;
 
 class JoinedTables {
 
@@ -54,18 +57,18 @@ class JoinedTables {
     return $tableClass;
   }
 
-  public function join($tableClass, $conditions=null){
+  public function join($tableClass, $conditions=null, $alias=null){
     $tClass = $this->checkTableClass($tableClass);
+    if ($alias && !Values::isSuitableForVarName($alias)){
+      throw new \RuntimeException("Alias '".$alias."' can't be used as alias due to illegal symbols used");
+    }
 
     $fields=null;
 
     if ($conditions===null){
       try{
-        foreach($this->tables as $dTable){
-          $dClass = $dTable["class"];
 
-
-          // dClass -> tClass
+        $checkRef = function($tClass, $dClass)use(&$fields){
           if (array_key_exists($tClass::TABLE_NAME, $dClass::$refTables)){
             if (count($dClass::$refTables[$tClass::TABLE_NAME])>1){
               throw new \RuntimeException();
@@ -77,20 +80,16 @@ class JoinedTables {
               }
             }
           }
+        };
 
-          // tClass -> dClass
-          if (array_key_exists($dClass::TABLE_NAME, $tClass::$refTables)){
-            if (count($tClass::$refTables[$dClass::TABLE_NAME])>1){
-              throw new \RuntimeException();
-            }elseif(count($tClass::$refTables[$dClass::TABLE_NAME])==1){
-              if ($fields!==null){
-                throw new \RuntimeException();
-              }else{
-                $fields = reset($tClass::$refTables[$dClass::TABLE_NAME]);
-              }
-            }
-          }
+        foreach($this->tables as $dTable){
+          $dClass = $dTable["class"];
+
+          // dClass -> tClass
+          $checkRef($tClass, $dClass);
+          $checkRef($dClass, $tClass);
         }
+
       }catch(\RuntimeException $e){
         $fields = null;
       }
@@ -168,14 +167,34 @@ class JoinedTables {
 
     $this->tables[]=[
       "name"=>$tClass::TABLE_NAME,
+      "alias"=>$alias ?: $tClass::TABLE_NAME,
       "class"=>$tClass,
       "fields"=>$fields
     ];
     $this->tableNames[$tClass::TABLE_NAME]=$tClass;
     $this->parseFields($tClass);
 
-    echo "<pre>";
-    print_R($fields);
+  }
+
+  /**
+   * @param string $where
+   * @param string|array $fields
+   * @param int $limit
+   * @param string|array $order
+   * @return JoinedCollection
+   */
+  public function get($where=null, $fields=null, $limit=0, $order=Array()){
+    /**
+     * @var $tClass CRUD
+     */
+    $tClass = $this->tables[0]["class"];
+    $connection = $tClass::connection();
+    return $connection->getJoined([
+      'tables'=>$this->tables,
+      'conditions'=>[$where, $fields],
+      'limit'=>$limit,
+      'order'=>$order
+    ]);
   }
 
   private function parseFields($tableClass){
