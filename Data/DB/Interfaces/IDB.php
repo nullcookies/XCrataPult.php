@@ -3,6 +3,7 @@
 namespace X\Data\DB\Interfaces;
 
 use X\Data\DB\Collection;
+use X\Data\DB\JoinedCollection;
 use \X\Data\DB\Structure\Database;
 use \X\Data\DB\Structure\Field;
 use X\Data\DB\Structure\Key;
@@ -83,4 +84,10 @@ Interface IDB{
    * @return array|Collection
    */
   public function getSimple($options=[]);
+
+  /**
+   * @param array $options
+   * @return JoinedCollection
+   */
+  public function getJoined($options=[]);
 }

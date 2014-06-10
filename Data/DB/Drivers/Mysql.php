@@ -3,6 +3,7 @@
 namespace X\Data\DB\Drivers;
 
 use X\Data\DB\Interfaces\ICRUD;
+use X\Data\DB\JoinedCollection;
 use X\Tools\Strings;
 use \X\X;
 use \X\C;
@@ -362,6 +363,27 @@ class Mysql implements IDB{
     }
   }
 
+  private function parseOrderBy($condition){
+    $orderBy = Array();
+    foreach ($condition as $key=>$val){
+      $key = strtolower($key);
+      if ($val=='*'){
+        $orderBy[]="RAND()";
+      }elseif (is_int($key)){
+        $orderBy[]="`".$val."` ASC";
+      }else{
+        $orderBy[]="`".$key."` ".(($val===false || strtolower($val)==='desc') ? "DESC" : "ASC");
+      }
+    }
+    if (count($orderBy)){
+      $orderBy = "ORDER BY ".implode(", ", $orderBy);
+    }else{
+      $orderBy = '';
+    }
+
+    return $orderBy;
+  }
+
   public function getSimple($options=[]){
     $defaults = [
       'conditions'=>[],
@@ -412,22 +434,7 @@ class Mysql implements IDB{
 
     $options['limit'] = intval($options['limit']);
 
-    $orderBy = Array();
-    foreach ($options['order'] as $key=>$val){
-      $key = strtolower($key);
-      if ($val=='*'){
-        $orderBy[]="RAND()";
-      }elseif (is_int($key) && (!isset($tableClass) || (!array_key_exists($key, $tableClass::getFields()) && array_key_exists($val,$tableClass::getFields())))){
-        $orderBy[]="`".$val."` ASC";
-      }elseif (!isset($tableClass) || array_key_exists($key, $tableClass::getFields())){
-        $orderBy[]="`".$key."` ".(($val===false || strtolower($val)==='desc') ? "DESC" : "ASC");
-      }
-    }
-    if (count($orderBy)){
-      $orderBy = "ORDER BY ".implode(", ", $orderBy);
-    }else{
-      $orderBy = '';
-    }
+    $orderBy = $this->parseOrderBy($options['order']);
 
     $fields=[];
     if (!is_array($options['fields']) || !count($options['fields']) || !$tableClass){
@@ -463,6 +470,87 @@ class Mysql implements IDB{
       return $answer;
     }
 
+    return $collection;
+  }
+
+  public function getJoined($options=[]){
+    $defaults = [
+      'conditions'=>[],
+      'limit'=>0,
+      'order'=>[],
+      'tables'=>[],
+      'cache_ttl'=>C::getDbCacheTtl()
+    ];
+    $options = array_merge($defaults, $options);
+
+
+    if (!is_array($options['tables']) || count($options['tables'])==0){
+      throw new \exception("Tables weren't specified for select-query", self::ERR_GET_NO_TABLE);
+    }
+
+    foreach($options['tables'] as $tableData){
+      if (!class_exists($tableData['class'])){
+        throw new \exception("Tables array is inconsistent, there is no valid classname specified", self::ERR_GET_NO_TABLE);
+      }
+    }
+
+    if (!is_array($options['conditions']) || !count($options['conditions'])){
+      $options['conditions']=null;
+    }
+
+    $options['limit'] = intval($options['limit']);
+    $orderBy = $this->parseOrderBy($options['order']);
+
+    $fieldsWeNeed=[];
+
+    foreach($options['tables'] as $tableData){
+      $class = $tableData['class'];
+      foreach($class::getFields() as $fieldName=>$field){
+        if (array_key_exists('fullName', $field) && $field['fullName']){
+          $fieldsWeNeed[]=$field['fullName']." as '".$tableData['name'].".".$fieldName."'";
+        }
+      }
+    }
+
+    $fieldsWeNeed=implode(",", $fieldsWeNeed);
+
+    $joinedTables='';
+
+    for ($i=0; $i<count($options['tables']); $i++){
+      if ($i==0){
+        $joinedTables.="`".$options['tables'][$i]['name']."` ";
+      }else{
+        $joinedTables.="LEFT JOIN `".$options['tables'][$i]['name']."` ON(";
+        $fields=[];
+        foreach($options['tables'][$i]['fields'] as $f1=>$f2){
+          $fields[]=$f1."=".$f2;
+        }
+        $joinedTables.=implode(",",$fields);
+        $joinedTables.=")";
+      }
+    }
+
+    $where='';
+    $wherevars = [];
+
+    if (is_array($options["conditions"]) && strlen(trim($options["conditions"][0]))){
+      $where = "WHERE ".$options["conditions"][0];
+      $wherevars = $options["conditions"][1];
+    }
+
+    $sqlExpr = 'SELECT '.$fieldsWeNeed.' FROM '.$joinedTables.' '.$where.' '.$orderBy.' '.($options['limit'] > 0 ? 'LIMIT '.$options['limit'] : '').';';
+
+    $parsed = (new \PHPSQLParser($sqlExpr))->parsed;
+
+    if ($wherevars && $where && $parsed["WHERE"]){
+      $this->collapseVars($parsed["WHERE"], $wherevars, $tableClass);
+    }
+    $sqlExpr = (new \PHPSQLCreator())->create($parsed);
+    echo $sqlExpr;
+    if (($ttl = intval($options["cache_ttl"]))>0){
+      $cacheKey = md5($sqlExpr.$options["instantiator"]);
+    }
+    $collection = new JoinedCollection($sqlExpr, $this, $options['tables'], $ttl ? $cacheKey : null, $ttl);
     return $collection;
   }
 
