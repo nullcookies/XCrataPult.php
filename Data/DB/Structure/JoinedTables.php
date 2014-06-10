@@ -184,7 +184,7 @@ class JoinedTables {
    * @param string|array $order
    * @return JoinedCollection
    */
-  public function get($where=null, $fields=null, $limit=0, $order=Array()){
+  public function get($where=null, $fields=null, $limit=0, $order=Array(), $groupBy=null){
     /**
      * @var $tClass CRUD
      */
@@ -194,7 +194,8 @@ class JoinedTables {
       'tables'=>$this->tables,
       'conditions'=>[$where, $fields],
       'limit'=>$limit,
-      'order'=>$order
+      'order'=>$order,
+      'groupBy'=>$groupBy
     ]);
   }
 

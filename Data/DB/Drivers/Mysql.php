@@ -365,16 +365,21 @@ class Mysql implements IDB{
 
   private function parseOrderBy($condition){
     $orderBy = Array();
-    foreach ($condition as $key=>$val){
-      $key = strtolower($key);
-      if ($val=='*'){
-        $orderBy[]="RAND()";
-      }elseif (is_int($key)){
-        $orderBy[]="`".$val."` ASC";
-      }else{
-        $orderBy[]="`".$key."` ".(($val===false || strtolower($val)==='desc') ? "DESC" : "ASC");
+    if (is_array($condition)){
+      foreach ($condition as $key=>$val){
+        $key = strtolower($key);
+        if ($val=='*'){
+          $orderBy[]="RAND()";
+        }elseif (is_int($key)){
+          $orderBy[]="`".$val."` ASC";
+        }else{
+          $orderBy[]="`".$key."` ".(($val===false || strtolower($val)==='desc') ? "DESC" : "ASC");
+        }
       }
+    }elseif(is_string($condition) && strlen(trim($condition))>0){
+      $orderBy=[trim($condition)];
     }
+
     if (count($orderBy)){
       $orderBy = "ORDER BY ".implode(", ", $orderBy);
     }else{
@@ -393,6 +398,7 @@ class Mysql implements IDB{
       'table'=>null,
       'instantiator'=>null,
       'fields'=>[],
+      'groupBy'=>null,
       'cache_ttl'=>C::getDbCacheTtl()
     ];
     $options = array_merge($defaults, $options);
@@ -435,6 +441,7 @@ class Mysql implements IDB{
     $options['limit'] = intval($options['limit']);
 
     $orderBy = $this->parseOrderBy($options['order']);
+    $groupBy = $options['groupBy']? "GROUP BY ".$options['groupBy']:'';
 
     $fields=[];
     if (!is_array($options['fields']) || !count($options['fields']) || !$tableClass){
@@ -451,7 +458,7 @@ class Mysql implements IDB{
       $wherevars = $options["conditions"][1];
     }
 
-    $sqlExpr = 'SELECT '.$fieldsWeNeed.' FROM `'.$options['table'].'` '.$where.' '.$orderBy.' '.($options['limit'] > 0 ? 'LIMIT '.$options['limit'] : '').';';
+    $sqlExpr = 'SELECT '.$fieldsWeNeed.' FROM `'.$options['table'].'` '.$where.' '.$groupBy.' '.$orderBy.' '.($options['limit'] > 0 ? 'LIMIT '.$options['limit'] : '').';';
     $parsed = (new \PHPSQLParser($sqlExpr))->parsed;
 
     if ($wherevars && $where && $parsed["WHERE"]){
@@ -479,7 +486,8 @@ class Mysql implements IDB{
       'limit'=>0,
       'order'=>[],
       'tables'=>[],
-      'cache_ttl'=>C::getDbCacheTtl()
+      'cache_ttl'=>C::getDbCacheTtl(),
+      'groupBy'=>null
     ];
     $options = array_merge($defaults, $options);
 
@@ -538,7 +546,9 @@ class Mysql implements IDB{
       $wherevars = $options["conditions"][1];
     }
 
-    $sqlExpr = 'SELECT '.$fieldsWeNeed.' FROM '.$joinedTables.' '.$where.' '.$orderBy.' '.($options['limit'] > 0 ? 'LIMIT '.$options['limit'] : '').';';
+    $groupBy = $options['groupBy']? "GROUP BY ".$options['groupBy']:'';
+
+    $sqlExpr = 'SELECT '.$fieldsWeNeed.' FROM '.$joinedTables.' '.$where.' '.$groupBy.' '.$orderBy.' '.($options['limit'] > 0 ? 'LIMIT '.$options['limit'] : '').';';
 
     $parsed = (new \PHPSQLParser($sqlExpr))->parsed;
 

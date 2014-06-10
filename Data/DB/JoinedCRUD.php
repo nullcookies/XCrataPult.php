@@ -21,7 +21,6 @@ class JoinedCRUD {
     return $this->rawData;
   }
 
-
   public function __call($method, $args){
     if (substr($method, 0, 2)=='as'){
       $method = strtolower(substr($method, 2));
