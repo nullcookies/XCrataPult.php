@@ -268,7 +268,7 @@ class Mysql implements IDB{
     return mysql_query($sql, $this->connection);
   }
 
-  public function collapseVars(&$subtree, $vars, $tableClass){
+  public function collapseVars(&$subtree, $vars){
     foreach ($subtree as &$item){
       switch ($item["expr_type"]){
         case "colref":
@@ -288,10 +288,6 @@ class Mysql implements IDB{
             $item["expr_type"]="const";
             $item["base_expr"]= ($replacement===null ? "NULL": (is_numeric($replacement) ? $replacement : (is_bool($replacement) ? ($replacement ? "TRUE" : "FALSE") : "\"".$this->escape($replacement)."\"")));
             unset($item["no_quotes"]);
-          }elseif (!isset($tableClass) || array_key_exists($key, $tableClass::getFields())){
-            if (strpos(trim($item["base_expr"]), "`")!==0){
-              $item["base_expr"] ="`".$item["base_expr"]."`";
-            }
           }
           break;
         case "const":
@@ -318,7 +314,6 @@ class Mysql implements IDB{
         $this->collapseVars($item["sub_tree"], $vars, $tableClass);
       }
     }
-    return $where;
   }
 
   public function getNext($resource, $asArray=true, $assoc=true){
@@ -462,7 +457,7 @@ class Mysql implements IDB{
     $parsed = (new \PHPSQLParser($sqlExpr))->parsed;
 
     if ($wherevars && $where && $parsed["WHERE"]){
-      $this->collapseVars($parsed["WHERE"], $wherevars, $tableClass);
+      $this->collapseVars($parsed["WHERE"], $wherevars);
     }
     $sqlExpr = (new \PHPSQLCreator())->create($parsed);
     if (($ttl = intval($options["cache_ttl"]))>0){
@@ -553,10 +548,10 @@ class Mysql implements IDB{
     $parsed = (new \PHPSQLParser($sqlExpr))->parsed;
 
     if ($wherevars && $where && $parsed["WHERE"]){
-      $this->collapseVars($parsed["WHERE"], $wherevars, $tableClass);
+      $this->collapseVars($parsed["WHERE"], $wherevars);
     }
     $sqlExpr = (new \PHPSQLCreator())->create($parsed);
-    echo $sqlExpr;
+//    echo $sqlExpr;
     if (($ttl = intval($options["cache_ttl"]))>0){
       $cacheKey = md5($sqlExpr.$options["instantiator"]);
     }
