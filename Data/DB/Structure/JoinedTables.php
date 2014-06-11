@@ -23,24 +23,37 @@ class JoinedTables {
 
   public function __construct($tableClass){
     $this->defaultNamespace = "\\".str_replace('/',"\\", C::getDbNamespace().ucfirst(DB::connectionByDatabase()->getAlias()))."\\";
+    $alias=null;
+    if (is_array($tableClass)){
+      list($tableClass, $alias) = $tableClass;
+      if ($alias && !Values::isSuitableForVarName($alias)){
+        throw new \RuntimeException("Alias '".$alias."' can't be used as alias due to illegal symbols used");
+      }
+    }
     $tableClass = $this->checkTableClass($tableClass);
     $this->tables[]=[
       "name"=>$tableClass::TABLE_NAME,
-      "alias"=>$tableClass::TABLE_NAME,
+      "alias"=>$alias?:($alias=$tableClass::TABLE_NAME),
       "class"=>$tableClass
     ];
-    $this->tableNames[$tableClass::TABLE_NAME]=$tableClass;
+    $this->tableNames[$alias]=$tableClass;
 
     $this->parseFields($tableClass);
 
     if (func_num_args()>1){
       for($i=1; $i<func_num_args(); $i++){
-        $this->join(func_get_args()[$i]);
+        if (is_array(func_get_args()[$i])){
+          list($name, $condition, $alias) = func_get_args()[$i];
+          $this->join($name, $condition, $alias);
+        }else{
+          $this->join(func_get_args()[$i]);
+        }
       }
     }
   }
 
   private function checkTableClass($tableClass){
+
     if (!class_exists($tableClass)){
       if (!class_exists($this->defaultNamespace.$tableClass)){
         throw new \RuntimeException("There is no CRUD class '".$tableClass."'");
@@ -62,14 +75,33 @@ class JoinedTables {
     $tClass = $this->checkTableClass($tableClass);
     if ($alias && !Values::isSuitableForVarName($alias)){
       throw new \RuntimeException("Alias '".$alias."' can't be used as alias due to illegal symbols used");
+    }elseif($alias===null){
+      $alias = $tClass::TABLE_NAME;
     }
 
     $fields=null;
 
+    $fieldsAssigner = function($fieldsOriginal, $tClass, $dClass, $tAlias, $dAlias){
+      $fields=[];
+      foreach($fieldsOriginal as $f1=>$f2){
+        if ($dClass::TABLE_NAME!=$dAlias){
+          $f1 = explode(".", $f1);
+          $f1[0]="`".$dAlias."`";
+          $f1 = implode(".", $f1);
+        }
+        if ($tClass::TABLE_NAME!=$tAlias){
+          $f2 = explode(".", $f2);
+          $f2[0]="`".$tAlias."`";
+          $f2 = implode(".", $f2);
+        }
+        $fields[$f1]=$f2;
+      }
+      return $fields;
+    };
+
     if ($conditions===null){
       try{
-
-        $checkRef = function($tClass, $dClass)use(&$fields){
+        $checkRef = function($tClass, $dClass, $tAlias, $dAlias)use(&$fields, $fieldsAssigner){
           if (array_key_exists($tClass::TABLE_NAME, $dClass::$refTables)){
             if (count($dClass::$refTables[$tClass::TABLE_NAME])>1){
               throw new \RuntimeException();
@@ -77,7 +109,7 @@ class JoinedTables {
               if ($fields!==null){
                 throw new \RuntimeException();
               }else{
-                $fields = reset($dClass::$refTables[$tClass::TABLE_NAME]);
+                $fields=$fieldsAssigner(reset($dClass::$refTables[$tClass::TABLE_NAME]), $tClass, $dClass, $tAlias, $dAlias);
               }
             }
           }
@@ -87,8 +119,8 @@ class JoinedTables {
           $dClass = $dTable["class"];
 
           // dClass -> tClass
-          $checkRef($tClass, $dClass);
-          $checkRef($dClass, $tClass);
+          $checkRef($tClass, $dClass, $alias, $dTable["alias"]);
+          $checkRef($dClass, $tClass, $dTable["alias"], $alias);
         }
 
       }catch(\RuntimeException $e){
@@ -109,7 +141,7 @@ class JoinedTables {
           array_key_exists($tClass::TABLE_NAME, $dClass::$refTables) &&
           array_key_exists($conditions, $dClass::$refTables[$tClass::TABLE_NAME])
         ){
-          $fields = $dClass::$refTables[$tClass::TABLE_NAME][$dClass::$refTables[$tClass::TABLE_NAME]];
+          $fields=$fieldsAssigner($dClass::$refTables[$tClass::TABLE_NAME][$conditions], $tClass, $dClass, $alias, $dTable["alias"]);
         }
 
         // tClass -> dClass
@@ -117,7 +149,7 @@ class JoinedTables {
           array_key_exists($dClass::TABLE_NAME, $tClass::$refTables) &&
           array_key_exists($conditions, $tClass::$refTables[$dClass::TABLE_NAME])
           ){
-            $fields = reset($tClass::$refTables[$dClass::TABLE_NAME][$conditions]);
+            $fields=$fieldsAssigner($tClass::$refTables[$dClass::TABLE_NAME][$conditions], $dClass, $tClass, $dTable["alias"], $alias);
           }
         }
       if ($fields===null){
@@ -168,13 +200,14 @@ class JoinedTables {
 
     $this->tables[]=[
       "name"=>$tClass::TABLE_NAME,
-      "alias"=>$alias ?: $tClass::TABLE_NAME,
+      "alias"=>$alias,
       "class"=>$tClass,
       "fields"=>$fields
     ];
-    $this->tableNames[$tClass::TABLE_NAME]=$tClass;
+    $this->tableNames[$alias]=$tClass;
     $this->parseFields($tClass);
 
+    return $this;
   }
 
   /**

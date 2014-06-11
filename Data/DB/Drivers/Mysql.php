@@ -515,7 +515,7 @@ class Mysql implements IDB{
       $class = $tableData['class'];
       foreach($class::getFields() as $fieldName=>$field){
         if (array_key_exists('fullName', $field) && $field['fullName']){
-          $fieldsWeNeed[]=$field['fullName']." as '".$tableData['name'].".".$fieldName."'";
+          $fieldsWeNeed[]="`".$tableData['alias'].'`.`'.$fieldName."` as '".$tableData['alias'].".".$fieldName."'";
         }
       }
     }
@@ -526,9 +526,9 @@ class Mysql implements IDB{
 
     for ($i=0; $i<count($options['tables']); $i++){
       if ($i==0){
-        $joinedTables.="`".$options['tables'][$i]['name']."` ";
+        $joinedTables.="`".$options['tables'][$i]['name']."` ".$options['tables'][$i]['alias']." ";
       }else{
-        $joinedTables.="LEFT JOIN `".$options['tables'][$i]['name']."` ON(";
+        $joinedTables.="LEFT JOIN `".$options['tables'][$i]['name']."` ".$options['tables'][$i]['alias']." ON(";
         $fields=[];
         foreach($options['tables'][$i]['fields'] as $f1=>$f2){
           $fields[]=$f1."=".$f2;
