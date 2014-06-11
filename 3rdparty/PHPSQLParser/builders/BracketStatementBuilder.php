@@ -35,13 +35,17 @@
  * @author    André Rothe <andre.rothe@phosco.info>
  * @copyright 2010-2014 Justin Swanhart and André Rothe
  * @license   http://www.debian.org/misc/bsd.license  BSD License (3 Clause)
- * @version   SVN: $Id: BracketStatementBuilder.php 1074 2014-01-30 14:38:03Z phosco@gmx.de $
+ * @version   SVN: $Id$
  * 
  */
+
+namespace PHPSQLParser\builders;
+use PHPSQLParser\exceptions\UnableToCreateSQLException;
 
 require_once dirname(__FILE__) . '/SelectBracketExpressionBuilder.php';
 require_once dirname(__FILE__) . '/SelectStatementBuilder.php';
 require_once dirname(__FILE__) . '/Builder.php';
+require_once dirname(__FILE__) . '/../exceptions/UnableToCreateSQLException.php';
 
 /**
  * This class implements the builder for the parentheses around a statement. 

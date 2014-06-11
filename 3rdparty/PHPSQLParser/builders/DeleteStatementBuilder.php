@@ -35,10 +35,11 @@
  * @author    André Rothe <andre.rothe@phosco.info>
  * @copyright 2010-2014 Justin Swanhart and André Rothe
  * @license   http://www.debian.org/misc/bsd.license  BSD License (3 Clause)
- * @version   SVN: $Id: DeleteStatementBuilder.php 1008 2014-01-13 11:15:31Z phosco@gmx.de $
+ * @version   SVN: $Id$
  * 
  */
 
+namespace PHPSQLParser\builders;
 require_once dirname(__FILE__) . '/WhereBuilder.php';
 require_once dirname(__FILE__) . '/FromBuilder.php';
 require_once dirname(__FILE__) . '/DeleteBuilder.php';
@@ -68,7 +69,7 @@ class DeleteStatementBuilder implements Builder {
         $builder = new DeleteBuilder();
         return $builder->build($parsed);
     }
-    
+
     public function build(array $parsed) {
         $sql = $this->buildDELETE($parsed['DELETE']) . " " . $this->buildFROM($parsed['FROM']);
         if (isset($parsed['WHERE'])) {
@@ -76,6 +77,6 @@ class DeleteStatementBuilder implements Builder {
         }
         return $sql;
     }
-    
+
 }
 ?>

@@ -35,12 +35,12 @@
  * @author    André Rothe <andre.rothe@phosco.info>
  * @copyright 2010-2014 Justin Swanhart and André Rothe
  * @license   http://www.debian.org/misc/bsd.license  BSD License (3 Clause)
- * @version   SVN: $Id: DeleteProcessor.php 1149 2014-03-04 14:41:53Z phosco@gmx.de $
+ * @version   SVN: $Id$
  *
  */
 
+namespace PHPSQLParser\processors;
 require_once dirname(__FILE__) . '/AbstractProcessor.php';
-
 
 /**
  * This class processes the DELETE statements.
@@ -57,7 +57,8 @@ class DeleteProcessor extends AbstractProcessor {
         $del = $tokens['DELETE'];
 
         foreach ($tokens['DELETE'] as $expression) {
-            if (strtoupper($expression) !== 'DELETE' && trim($expression, ' .*') !== "" && !$this->isCommaToken($expression)) {
+            if (strtoupper($expression) !== 'DELETE' && trim($expression, ' .*') !== ""
+                && !$this->isCommaToken($expression)) {
                 $tables[] = trim($expression, '.* ');
             }
         }
@@ -67,16 +68,17 @@ class DeleteProcessor extends AbstractProcessor {
                 $tables[] = trim($table['table'], '.* ');
             }
             $tokens['FROM'] = $tokens['USING'];
-            unset($tokens['USING']);              
+            unset($tokens['USING']);
         }
-        
+
         $options = array();
         if (isset($tokens['OPTIONS'])) {
             $options = $tokens['OPTIONS'];
             unset($tokens['OPTIONS']);
         }
 
-        $tokens['DELETE'] = array('options' => $options, 'tables' => $tables);
+        $tokens['DELETE'] = array('options' => (empty($options) ? false : $options),
+                                  'tables' => (empty($tables) ? false : $tables));
         return $tokens;
     }
 }

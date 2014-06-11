@@ -4,43 +4,58 @@
  *
  * This file implements the processor for expression lists.
  *
- * Copyright (c) 2010-2012, Justin Swanhart
- * with contributions by André Rothe <arothe@phosco.info, phosco@gmx.de>
+ * PHP version 5
  *
+ * LICENSE:
+ * Copyright (c) 2010-2014 Justin Swanhart and André Rothe
  * All rights reserved.
  *
- * Redistribution and use in source and binary forms, with or without modification,
- * are permitted provided that the following conditions are met:
+ * Redistribution and use in source and binary forms, with or without
+ * modification, are permitted provided that the following conditions
+ * are met:
+ * 1. Redistributions of source code must retain the above copyright
+ *    notice, this list of conditions and the following disclaimer.
+ * 2. Redistributions in binary form must reproduce the above copyright
+ *    notice, this list of conditions and the following disclaimer in the
+ *    documentation and/or other materials provided with the distribution.
+ * 3. The name of the author may not be used to endorse or promote products
+ *    derived from this software without specific prior written permission.
  *
- *   * Redistributions of source code must retain the above copyright notice,
- *     this list of conditions and the following disclaimer.
- *   * Redistributions in binary form must reproduce the above copyright notice,
- *     this list of conditions and the following disclaimer in the documentation
- *     and/or other materials provided with the distribution.
+ * THIS SOFTWARE IS PROVIDED BY THE AUTHOR ``AS IS'' AND ANY EXPRESS OR
+ * IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES
+ * OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED.
+ * IN NO EVENT SHALL THE AUTHOR BE LIABLE FOR ANY DIRECT, INDIRECT,
+ * INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT
+ * NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
+ * DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
+ * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+ * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF
+ * THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND ANY
- * EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES
- * OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT
- * SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT,
- * INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED
- * TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR
- * BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
- * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN
- * ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH
- * DAMAGE.
+ * @author    André Rothe <andre.rothe@phosco.info>
+ * @copyright 2010-2014 Justin Swanhart and André Rothe
+ * @license   http://www.debian.org/misc/bsd.license  BSD License (3 Clause)
+ * @version   SVN: $Id$
+ *
  */
 
-require_once(dirname(__FILE__) . '/AbstractProcessor.php');
-require_once(dirname(__FILE__) . '/DefaultProcessor.php');
-require_once(dirname(__FILE__) . '/../utils/ExpressionToken.php');
-require_once(dirname(__FILE__) . '/../utils/ExpressionType.php');
+namespace PHPSQLParser\processors;
+use PHPSQLParser\utils\ExpressionType;
+use PHPSQLParser\utils\ExpressionToken;
+use PHPSQLParser\utils\PHPSQLParserConstants;
+
+require_once dirname(__FILE__) . '/AbstractProcessor.php';
+require_once dirname(__FILE__) . '/DefaultProcessor.php';
+require_once dirname(__FILE__) . '/../utils/PHPSQLParserConstants.php';
+require_once dirname(__FILE__) . '/../utils/ExpressionToken.php';
+require_once dirname(__FILE__) . '/../utils/ExpressionType.php';
 
 /**
- * 
  * This class processes expression lists.
- * 
- * @author arothe
- * 
+ *
+ * @author  André Rothe <andre.rothe@phosco.info>
+ * @license http://www.debian.org/misc/bsd.license  BSD License (3 Clause)
+ *
  */
 class ExpressionListProcessor extends AbstractProcessor {
 
@@ -121,7 +136,8 @@ class ExpressionListProcessor extends AbstractProcessor {
                     $curr->setTokenType(ExpressionType::MATCH_ARGUMENTS);
                     $prev->setTokenType(ExpressionType::SIMPLE_FUNCTION);
 
-                } elseif ($prev->isColumnReference() || $prev->isFunction() || $prev->isAggregateFunction()) {
+                } elseif ($prev->isColumnReference() || $prev->isFunction() || $prev->isAggregateFunction()
+                    || $prev->isCustomFunction()) {
 
                     // if we have a colref followed by a parenthesis pair,
                     // it isn't a colref, it is a user-function
@@ -152,7 +168,9 @@ class ExpressionListProcessor extends AbstractProcessor {
                             }
 
                             if (!$curr->getSubTree()) {
-                                $curr->setSubTree($localExprList);
+                                if (!empty($localExprList)) {
+                                    $curr->setSubTree($localExprList);
+                                }
                             } else {
                                 $tmpExprList = $curr->getSubTree();
                                 $curr->setSubTree(array_merge($tmpExprList, $localExprList));
@@ -175,7 +193,9 @@ class ExpressionListProcessor extends AbstractProcessor {
                     }
 
                     if (!$curr->getSubTree()) {
-                        $curr->setSubTree($localExprList);
+                        if (!empty($localExprList)) {
+                            $curr->setSubTree($localExprList);
+                        }
                     } else {
                         $tmpExprList = $curr->getSubTree();
                         $curr->setSubTree(array_merge($tmpExprList, $localExprList));
@@ -183,7 +203,11 @@ class ExpressionListProcessor extends AbstractProcessor {
 
                     $prev->setSubTree($curr->getSubTree());
                     if ($prev->isColumnReference()) {
-                        $prev->setTokenType(ExpressionType::SIMPLE_FUNCTION);
+                        if (PHPSQLParserConstants::getInstance()->isCustomFunction($prev->getUpper())) {
+                            $prev->setTokenType(ExpressionType::CUSTOM_FUNCTION);
+                        } else {
+                            $prev->setTokenType(ExpressionType::SIMPLE_FUNCTION);
+                        }
                         $prev->setNoQuotes(null);
                     }
 
@@ -217,7 +241,9 @@ class ExpressionListProcessor extends AbstractProcessor {
                             }
 
                             if (!$curr->getSubTree()) {
-                                $curr->setSubTree($localExprList);
+                                if (!empty($localExprList)) {
+                                    $curr->setSubTree($localExprList);
+                                }
                             } else {
                                 $tmpExprList = $curr->getSubTree();
                                 $curr->setSubTree(array_merge($tmpExprList, $localExprList));
@@ -233,7 +259,9 @@ class ExpressionListProcessor extends AbstractProcessor {
 
                     $curr->setTokenType(ExpressionType::BRACKET_EXPRESSION);
                     if (!$curr->getSubTree()) {
-                        $curr->setSubTree($localExprList);
+                        if (!empty($localExprList)) {
+                            $curr->setSubTree($localExprList);
+                        }
                     } else {
                         $tmpExprList = $curr->getSubTree();
                         $curr->setSubTree(array_merge($tmpExprList, $localExprList));
@@ -329,7 +357,7 @@ class ExpressionListProcessor extends AbstractProcessor {
 
                     if ($prev->isColumnReference() || $prev->isFunction() || $prev->isAggregateFunction()
                         || $prev->isConstant() || $prev->isSubQuery() || $prev->isExpression()
-                        || $prev->isBracketExpression() || $prev->isVariable()) {
+                        || $prev->isBracketExpression() || $prev->isVariable() || $prev->isCustomFunction()) {
                         $curr->setTokenType(ExpressionType::OPERATOR);
                     } else {
                         $curr->setTokenType(ExpressionType::SIGN);
@@ -373,9 +401,13 @@ class ExpressionListProcessor extends AbstractProcessor {
 
             /* is a reserved word? */
             if (!$curr->isOperator() && !$curr->isInList() && !$curr->isFunction() && !$curr->isAggregateFunction()
-                && PHPSQLParserConstants::isReserved($curr->getUpper())) {
+                && !$curr->isCustomFunction() && PHPSQLParserConstants::getInstance()->isReserved($curr->getUpper())) {
 
-                if (PHPSQLParserConstants::isAggregateFunction($curr->getUpper())) {
+                if (PHPSQLParserConstants::getInstance()->isCustomFunction($curr->getUpper())) {
+                    $curr->setTokenType(ExpressionType::CUSTOM_FUNCTION);
+                    $curr->setNoQuotes(null);
+
+                } elseif (PHPSQLParserConstants::getInstance()->isAggregateFunction($curr->getUpper())) {
                     $curr->setTokenType(ExpressionType::AGGREGATE_FUNCTION);
                     $curr->setNoQuotes(null);
 
@@ -384,13 +416,13 @@ class ExpressionListProcessor extends AbstractProcessor {
                     $curr->setTokenType(ExpressionType::CONSTANT);
 
                 } else {
-                    if (PHPSQLParserConstants::isParameterizedFunction($curr->getUpper())) {
+                    if (PHPSQLParserConstants::getInstance()->isParameterizedFunction($curr->getUpper())) {
                         // issue 60: check functions with parameters
                         // -> colref (we check parameters later)
                         // -> if there is no parameter, we leave the colref
                         $curr->setTokenType(ExpressionType::COLREF);
 
-                    } elseif (PHPSQLParserConstants::isFunction($curr->getUpper())) {
+                    } elseif (PHPSQLParserConstants::getInstance()->isFunction($curr->getUpper())) {
                         $curr->setTokenType(ExpressionType::SIMPLE_FUNCTION);
                         $curr->setNoQuotes(null);
 
@@ -402,12 +434,12 @@ class ExpressionListProcessor extends AbstractProcessor {
             }
 
             // issue 94, INTERVAL 1 MONTH
-            if ($curr->isConstant() && PHPSQLParserConstants::isParameterizedFunction($prev->getUpper())) {
+            if ($curr->isConstant() && PHPSQLParserConstants::getInstance()->isParameterizedFunction($prev->getUpper())) {
                 $prev->setTokenType(ExpressionType::RESERVED);
                 $prev->setNoQuotes(null);
             }
 
-            if ($prev->isConstant() && PHPSQLParserConstants::isParameterizedFunction($curr->getUpper())) {
+            if ($prev->isConstant() && PHPSQLParserConstants::getInstance()->isParameterizedFunction($curr->getUpper())) {
                 $curr->setTokenType(ExpressionType::RESERVED);
                 $curr->setNoQuotes(null);
             }

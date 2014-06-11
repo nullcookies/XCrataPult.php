@@ -1,5 +1,9 @@
 <?php
 
+namespace PHPSQLParser\utils;
+
+use PHPSQLParser\processors\DefaultProcessor;
+
 require_once dirname(__FILE__) . '/ExpressionType.php';
 require_once dirname(__FILE__) . '/../processors/DefaultProcessor.php';
 
@@ -118,6 +122,10 @@ class ExpressionToken {
     
     public function isAggregateFunction() {
         return $this->tokenType === ExpressionType::AGGREGATE_FUNCTION;
+    }
+
+    public function isCustomFunction() {
+        return $this->tokenType === ExpressionType::CUSTOM_FUNCTION;
     }
 
     public function isColumnReference() {

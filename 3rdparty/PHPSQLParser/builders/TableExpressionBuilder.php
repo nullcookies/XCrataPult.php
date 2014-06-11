@@ -35,9 +35,12 @@
  * @author    André Rothe <andre.rothe@phosco.info>
  * @copyright 2010-2014 Justin Swanhart and André Rothe
  * @license   http://www.debian.org/misc/bsd.license  BSD License (3 Clause)
- * @version   SVN: $Id: TableExpressionBuilder.php 1019 2014-01-13 12:19:20Z phosco@gmx.de $
+ * @version   SVN: $Id$
  * 
  */
+
+namespace PHPSQLParser\builders;
+use PHPSQLParser\utils\ExpressionType;
 
 require_once dirname(__FILE__) . '/../utils/ExpressionType.php';
 require_once dirname(__FILE__) . '/AliasBuilder.php';
@@ -61,7 +64,7 @@ class TableExpressionBuilder implements Builder {
         $builder = new FromBuilder();
         return $builder->build($parsed);
     }
-    
+
     protected function buildAlias($parsed) {
         $builder = new AliasBuilder();
         return $builder->build($parsed);
@@ -71,12 +74,12 @@ class TableExpressionBuilder implements Builder {
         $builder = new JoinBuilder();
         return $builder->build($parsed);
     }
-    
+
     protected function buildRefType($parsed) {
         $builder = new RefTypeBuilder();
         return $builder->build($parsed);
     }
-    
+
     protected function buildRefClause($parsed) {
         $builder = new RefClauseBuilder();
         return $builder->build($parsed);

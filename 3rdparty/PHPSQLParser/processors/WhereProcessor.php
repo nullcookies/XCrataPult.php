@@ -35,10 +35,11 @@
  * @author    André Rothe <andre.rothe@phosco.info>
  * @copyright 2010-2014 Justin Swanhart and André Rothe
  * @license   http://www.debian.org/misc/bsd.license  BSD License (3 Clause)
- * @version   SVN: $Id: WhereProcessor.php 972 2014-01-09 22:44:37Z phosco@gmx.de $
+ * @version   SVN: $Id$
  *
  */
 
+namespace PHPSQLParser\processors;
 require_once dirname(__FILE__) . '/ExpressionListProcessor.php';
 
 /**

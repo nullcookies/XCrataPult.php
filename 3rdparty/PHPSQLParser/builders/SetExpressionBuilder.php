@@ -35,13 +35,18 @@
  * @author    André Rothe <andre.rothe@phosco.info>
  * @copyright 2010-2014 Justin Swanhart and André Rothe
  * @license   http://www.debian.org/misc/bsd.license  BSD License (3 Clause)
- * @version   SVN: $Id: SetExpressionBuilder.php 1095 2014-02-25 09:30:56Z phosco@gmx.de $
+ * @version   SVN: $Id$
  * 
  */
+
+namespace PHPSQLParser\builders;
+use PHPSQLParser\exceptions\UnableToCreateSQLException;
+use PHPSQLParser\utils\ExpressionType;
 
 require_once dirname(__FILE__) . '/../utils/ExpressionType.php';
 require_once dirname(__FILE__) . '/../exceptions/UnableToCreateSQLException.php';
 require_once dirname(__FILE__) . '/ColumnReferenceBuilder.php';
+require_once dirname(__FILE__) . '/SelectBracketExpressionBuilder.php';
 require_once dirname(__FILE__) . '/ConstantBuilder.php';
 require_once dirname(__FILE__) . '/OperatorBuilder.php';
 require_once dirname(__FILE__) . '/FunctionBuilder.php';
@@ -78,6 +83,11 @@ class SetExpressionBuilder implements Builder {
         return $builder->build($parsed);
     }
     
+    protected function buildBracketExpression($parsed) {
+        $builder = new SelectBracketExpressionBuilder();
+        return $builder->build($parsed);
+    }
+    
     protected function buildSign($parsed) {
         $builder = new SignBuilder();
         return $builder->build($parsed);
@@ -95,7 +105,8 @@ class SetExpressionBuilder implements Builder {
             $sql .= $this->buildConstant($v);
             $sql .= $this->buildOperator($v);
             $sql .= $this->buildFunction($v);
-            
+            $sql .= $this->buildBracketExpression($v);
+                        
             // we don't need whitespace between the sign and 
             // the following part
             if ($this->buildSign($v) !== '') {

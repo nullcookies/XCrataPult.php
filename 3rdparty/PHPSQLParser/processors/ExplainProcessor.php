@@ -35,9 +35,12 @@
  * @author    André Rothe <andre.rothe@phosco.info>
  * @copyright 2010-2014 Justin Swanhart and André Rothe
  * @license   http://www.debian.org/misc/bsd.license  BSD License (3 Clause)
- * @version   SVN: $Id: ExplainProcessor.php 1180 2014-03-08 00:49:55Z phosco@gmx.de $
+ * @version   SVN: $Id$
  *
  */
+
+namespace PHPSQLParser\processors;
+use PHPSQLParser\utils\ExpressionType;
 
 require_once dirname(__FILE__) . '/AbstractProcessor.php';
 require_once dirname(__FILE__) . '/../utils/ExpressionType.php';

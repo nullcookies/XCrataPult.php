@@ -35,9 +35,21 @@
  * @author    André Rothe <andre.rothe@phosco.info>
  * @copyright 2010-2014 André Rothe
  * @license   http://www.debian.org/misc/bsd.license  BSD License (3 Clause)
- * @version   SVN: $Id: PHPSQLCreator.php 1204 2014-03-08 20:03:07Z phosco@gmx.de $
+ * @version   SVN: $Id$
  * 
  */
+
+namespace PHPSQLParser;
+use PHPSQLParser\exceptions\UnsupportedFeatureException;
+use PHPSQLParser\builders\SelectStatementBuilder;
+use PHPSQLParser\builders\DeleteStatementBuilder;
+use PHPSQLParser\builders\UpdateStatementBuilder;
+use PHPSQLParser\builders\InsertStatementBuilder;
+use PHPSQLParser\builders\CreateStatementBuilder;
+use PHPSQLParser\builders\DropStatementBuilder;
+use PHPSQLParser\builders\RenameStatementBuilder;
+use PHPSQLParser\builders\ShowStatementBuilder;
+use PHPSQLParser\builders\BracketStatementBuilder;
 
 require_once dirname(__FILE__) . '/exceptions/UnsupportedFeatureException.php';
 require_once dirname(__FILE__) . '/builders/SelectStatementBuilder.php';

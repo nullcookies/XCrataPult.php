@@ -35,11 +35,15 @@
  * @author    André Rothe <andre.rothe@phosco.info>
  * @copyright 2010-2014 Justin Swanhart and André Rothe
  * @license   http://www.debian.org/misc/bsd.license  BSD License (3 Clause)
- * @version   SVN: $Id: HavingProcessor.php 1157 2014-03-05 09:21:42Z phosco@gmx.de $
+ * @version   SVN: $Id$
  * 
  */
 
+namespace PHPSQLParser\processors;
+use PHPSQLParser\utils\ExpressionType;
+
 require_once dirname(__FILE__) . '/ExpressionListProcessor.php';
+require_once dirname(__FILE__) . '/../utils/ExpressionType.php';
 
 /**
  * This class implements the processor for the HAVING statement. 

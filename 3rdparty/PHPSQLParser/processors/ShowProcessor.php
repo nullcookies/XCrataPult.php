@@ -30,6 +30,10 @@
  * DAMAGE.
  */
 
+namespace PHPSQLParser\processors;
+use PHPSQLParser\utils\ExpressionType;
+use PHPSQLParser\utils\PHPSQLParserConstants;
+
 require_once(dirname(__FILE__) . '/../utils/PHPSQLParserConstants.php');
 require_once(dirname(__FILE__) . '/../utils/ExpressionType.php');
 require_once(dirname(__FILE__) . '/LimitProcessor.php');
@@ -136,7 +140,7 @@ class ShowProcessor extends AbstractProcessor {
                     $category = "TABLENAME";
                     break;
                 case 'FUNCTION':
-                    if (PHPSQLParserConstants::isAggregateFunction($upper)) {
+                    if (PHPSQLParserConstants::getInstance()->isAggregateFunction($upper)) {
                         $expr_type = ExpressionType::AGGREGATE_FUNCTION;
                     } else {
                         $expr_type = ExpressionType::SIMPLE_FUNCTION;

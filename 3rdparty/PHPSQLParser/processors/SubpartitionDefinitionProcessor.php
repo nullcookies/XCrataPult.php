@@ -36,9 +36,12 @@
  * @author    André Rothe <andre.rothe@phosco.info>
  * @copyright 2010-2014 Justin Swanhart and André Rothe
  * @license   http://www.debian.org/misc/bsd.license  BSD License (3 Clause)
- * @version   SVN: $Id: SubpartitionDefinitionProcessor.php 1060 2014-01-30 12:24:58Z phosco@gmx.de $
+ * @version   SVN: $Id$
  *
  */
+
+namespace PHPSQLParser\processors;
+use PHPSQLParser\utils\ExpressionType;
 
 require_once dirname(__FILE__) . '/AbstractProcessor.php';
 require_once dirname(__FILE__) . '/../utils/ExpressionType.php';
@@ -182,7 +185,7 @@ class SubpartitionDefinitionProcessor extends AbstractProcessor {
             case 'INDEX':
                 if ($prevCategory === 'SUBPARTITION') {
                     // followed by DIRECTORY
-                    $expr[] = array('expr_type' => constant('ExpressionType::SUBPARTITION_' . $upper . '_DIR'),
+                    $expr[] = array('expr_type' => constant('PHPSQLParser\utils\ExpressionType::SUBPARTITION_' . $upper . '_DIR'),
                                     'base_expr' => false, 'sub_tree' => false,
                                     'storage' => substr($base_expr, 0, -strlen($token)));
 
@@ -208,7 +211,7 @@ class SubpartitionDefinitionProcessor extends AbstractProcessor {
             case 'MAX_ROWS':
             case 'MIN_ROWS':
                 if ($prevCategory === 'SUBPARTITION') {
-                    $expr[] = array('expr_type' => constant('ExpressionType::SUBPARTITION_' . $upper),
+                    $expr[] = array('expr_type' => constant('PHPSQLParser\utils\ExpressionType::SUBPARTITION_' . $upper),
                                     'base_expr' => false, 'sub_tree' => false,
                                     'storage' => substr($base_expr, 0, -strlen($token)));
 

@@ -35,9 +35,13 @@
  * @author    André Rothe <andre.rothe@phosco.info>
  * @copyright 2010-2014 Justin Swanhart and André Rothe
  * @license   http://www.debian.org/misc/bsd.license  BSD License (3 Clause)
- * @version   SVN: $Id: FunctionBuilder.php 1005 2014-01-13 11:12:29Z phosco@gmx.de $
+ * @version   SVN: $Id$
  * 
  */
+
+namespace PHPSQLParser\builders;
+use PHPSQLParser\exceptions\UnableToCreateSQLException;
+use PHPSQLParser\utils\ExpressionType;
 
 require_once dirname(__FILE__) . '/../exceptions/UnableToCreateSQLException.php';
 require_once dirname(__FILE__) . '/../utils/ExpressionType.php';
@@ -48,7 +52,6 @@ require_once dirname(__FILE__) . '/FunctionBuilder.php';
 require_once dirname(__FILE__) . '/ReservedBuilder.php';
 require_once dirname(__FILE__) . '/SelectExpressionBuilder.php';
 require_once dirname(__FILE__) . '/SelectBracketExpressionBuilder.php';
-require_once dirname(__FILE__) . '/DirectionBuilder.php';
 require_once dirname(__FILE__) . '/Builder.php';
 
 /**
@@ -61,11 +64,6 @@ require_once dirname(__FILE__) . '/Builder.php';
  */
 class FunctionBuilder implements Builder {
 
-    protected function buildDirection($parsed) {
-        $builder = new DirectionBuilder();
-        return $builder->build($parsed);
-    }
-    
     protected function buildAlias($parsed) {
         $builder = new AliasBuilder();
         return $builder->build($parsed);
@@ -103,7 +101,8 @@ class FunctionBuilder implements Builder {
 
     public function build(array $parsed) {
         if (($parsed['expr_type'] !== ExpressionType::AGGREGATE_FUNCTION)
-            && ($parsed['expr_type'] !== ExpressionType::SIMPLE_FUNCTION)) {
+            && ($parsed['expr_type'] !== ExpressionType::SIMPLE_FUNCTION)
+            && ($parsed['expr_type'] !== ExpressionType::CUSTOM_FUNCTION)) {
             return "";
         }
 
@@ -127,7 +126,7 @@ class FunctionBuilder implements Builder {
 
             $sql .= ($this->isReserved($v) ? " " : ",");
         }
-        return $parsed['base_expr'] . "(" . substr($sql, 0, -1) . ")" . $this->buildAlias($parsed) . $this->buildDirection($parsed);
+        return $parsed['base_expr'] . "(" . substr($sql, 0, -1) . ")" . $this->buildAlias($parsed);
     }
 
 }

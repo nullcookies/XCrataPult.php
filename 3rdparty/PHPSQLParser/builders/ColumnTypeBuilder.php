@@ -35,9 +35,13 @@
  * @author    André Rothe <andre.rothe@phosco.info>
  * @copyright 2010-2014 Justin Swanhart and André Rothe
  * @license   http://www.debian.org/misc/bsd.license  BSD License (3 Clause)
- * @version   SVN: $Id: ColumnTypeBuilder.php 1080 2014-02-18 01:36:00Z phosco@gmx.de $
+ * @version   SVN: $Id$
  * 
  */
+
+namespace PHPSQLParser\builders;
+use PHPSQLParser\exceptions\UnableToCreateSQLException;
+use PHPSQLParser\utils\ExpressionType;
 
 require_once dirname(__FILE__) . '/../exceptions/UnableToCreateSQLException.php';
 require_once dirname(__FILE__) . '/ReservedBuilder.php';
@@ -46,6 +50,7 @@ require_once dirname(__FILE__) . '/DataTypeBuilder.php';
 require_once dirname(__FILE__) . '/DefaultValueBuilder.php';
 require_once dirname(__FILE__) . '/Builder.php';
 require_once dirname(__FILE__) . '/../utils/ExpressionType.php';
+
 /**
  * This class implements the builder for the column type statement part of CREATE TABLE. 
  * You can overwrite all functions to achieve another handling.

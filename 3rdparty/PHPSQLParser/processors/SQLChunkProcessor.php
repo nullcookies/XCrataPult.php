@@ -35,10 +35,11 @@
  * @author    André Rothe <andre.rothe@phosco.info>
  * @copyright 2010-2014 Justin Swanhart and André Rothe
  * @license   http://www.debian.org/misc/bsd.license  BSD License (3 Clause)
- * @version   SVN: $Id: SQLChunkProcessor.php 1219 2014-03-09 18:06:13Z phosco@gmx.de $
+ * @version   SVN: $Id$
  *
  */
 
+namespace PHPSQLParser\processors;
 require_once dirname(__FILE__) . '/AbstractProcessor.php';
 require_once dirname(__FILE__) . '/FromProcessor.php';
 require_once dirname(__FILE__) . '/RecordProcessor.php';
@@ -62,7 +63,6 @@ require_once dirname(__FILE__) . '/SelectProcessor.php';
 require_once dirname(__FILE__) . '/ExplainProcessor.php';
 require_once dirname(__FILE__) . '/LimitProcessor.php';
 require_once dirname(__FILE__) . '/SetProcessor.php';
-require_once dirname(__FILE__) . '/ExpressionListProcessor.php';
 require_once dirname(__FILE__) . '/OrderByProcessor.php';
 require_once dirname(__FILE__) . '/ShowProcessor.php';
 require_once dirname(__FILE__) . '/CreateProcessor.php';

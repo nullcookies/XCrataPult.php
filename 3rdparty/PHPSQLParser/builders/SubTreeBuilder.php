@@ -35,12 +35,14 @@
  * @author    André Rothe <andre.rothe@phosco.info>
  * @copyright 2010-2014 Justin Swanhart and André Rothe
  * @license   http://www.debian.org/misc/bsd.license  BSD License (3 Clause)
- * @version   SVN: $Id: SubTreeBuilder.php 1077 2014-01-30 14:47:10Z phosco@gmx.de $
+ * @version   SVN: $Id$
  * 
  */
 
+namespace PHPSQLParser\builders;
+use PHPSQLParser\exceptions\UnableToCreateSQLException;
+
 require_once dirname(__FILE__) . '/../exceptions/UnableToCreateSQLException.php';
-require_once dirname(__FILE__) . '/../utils/ExpressionType.php';
 require_once dirname(__FILE__) . '/ReservedBuilder.php';
 require_once dirname(__FILE__) . '/SelectBracketExpressionBuilder.php';
 require_once dirname(__FILE__) . '/ColumnReferenceBuilder.php';
@@ -95,7 +97,7 @@ class SubTreeBuilder implements Builder {
         $builder = new QueryBuilder();
         return $builder->build($parsed);
     }
-    
+
     protected function buildSelectBracketExpression($parsed) {
         $builder = new SelectBracketExpressionBuilder();
         return $builder->build($parsed);

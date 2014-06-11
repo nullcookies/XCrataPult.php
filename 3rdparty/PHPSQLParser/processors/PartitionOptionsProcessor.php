@@ -36,9 +36,12 @@
  * @author    André Rothe <andre.rothe@phosco.info>
  * @copyright 2010-2014 Justin Swanhart and André Rothe
  * @license   http://www.debian.org/misc/bsd.license  BSD License (3 Clause)
- * @version   SVN: $Id: PartitionOptionsProcessor.php 1060 2014-01-30 12:24:58Z phosco@gmx.de $
+ * @version   SVN: $Id$
  *
  */
+
+namespace PHPSQLParser\processors;
+use PHPSQLParser\utils\ExpressionType;
 
 require_once dirname(__FILE__) . '/AbstractProcessor.php';
 require_once dirname(__FILE__) . '/ColumnListProcessor.php';
@@ -146,7 +149,7 @@ class PartitionOptionsProcessor extends AbstractProcessor {
             case 'PARTITIONS':
             case 'SUBPARTITIONS':
                 $currCategory = 'PARTITION_NUM';
-                $expr = array('expr_type' => constant('ExpressionType::' . substr($upper, 0, -1) . '_COUNT'),
+                $expr = array('expr_type' => constant('PHPSQLParser\utils\ExpressionType::' . substr($upper, 0, -1) . '_COUNT'),
                               'base_expr' => false, 'sub_tree' => array($this->getReservedType($trim)),
                               'storage' => substr($base_expr, 0, -strlen($token)));
                 $base_expr = $token;
@@ -160,7 +163,7 @@ class PartitionOptionsProcessor extends AbstractProcessor {
 
             case 'HASH':
             case 'KEY':
-                $expr[] = array('expr_type' => constant('ExpressionType::' . $prevCategory . '_' . $upper),
+                $expr[] = array('expr_type' => constant('PHPSQLParser\utils\ExpressionType::' . $prevCategory . '_' . $upper),
                                 'base_expr' => false, 'linear' => ($currCategory === 'LINEAR'), 'sub_tree' => false,
                                 'storage' => substr($base_expr, 0, -strlen($token)));
 
@@ -177,7 +180,7 @@ class PartitionOptionsProcessor extends AbstractProcessor {
 
             case 'ALGORITHM':
                 if ($currCategory === 'KEY') {
-                    $expr[] = array('expr_type' => constant('ExpressionType::' . $prevCategory . '_KEY_ALGORITHM'),
+                    $expr[] = array('expr_type' => constant('PHPSQLParser\utils\ExpressionType::' . $prevCategory . '_KEY_ALGORITHM'),
                                     'base_expr' => false, 'sub_tree' => false,
                                     'storage' => substr($base_expr, 0, -strlen($token)));
 
@@ -198,7 +201,7 @@ class PartitionOptionsProcessor extends AbstractProcessor {
 
             case 'RANGE':
             case 'LIST':
-                $expr[] = array('expr_type' => constant('ExpressionType::PARTITION_' . $upper), 'base_expr' => false,
+                $expr[] = array('expr_type' => constant('PHPSQLParser\utils\ExpressionType::PARTITION_' . $upper), 'base_expr' => false,
                                 'sub_tree' => false, 'storage' => substr($base_expr, 0, -strlen($token)));
 
                 $last = array_pop($parsed);
@@ -284,7 +287,8 @@ class PartitionOptionsProcessor extends AbstractProcessor {
                 case 'HASH':
                 // parenthesis around an expression
                     $last = $this->getBracketExpressionType($trim);
-                    $last['sub_tree'] = $this->processExpressionList($trim);
+                    $res = $this->processExpressionList($trim);
+                    $last['sub_tree'] = (empty($res) ? false : $res);
                     $expr[] = $last;
 
                     $last = array_pop($parsed);

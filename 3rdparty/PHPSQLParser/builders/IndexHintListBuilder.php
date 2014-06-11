@@ -1,8 +1,8 @@
 <?php
 /**
- * IndexParserBuilder.php
+ * IndexHintListBuilder.php
  *
- * Builds index parser part of a PRIMARY KEY statement part of CREATE TABLE.
+ * Builds the index hint list of a table.
  *
  * PHP version 5
  *
@@ -40,53 +40,32 @@
  */
 
 namespace PHPSQLParser\builders;
-use PHPSQLParser\exceptions\UnableToCreateSQLException;
-use PHPSQLParser\utils\ExpressionType;
-
-require_once dirname(__FILE__) . '/../utils/ExpressionType.php';
-require_once dirname(__FILE__) . '/../exceptions/UnableToCreateSQLException.php';
-require_once dirname(__FILE__) . '/ConstantBuilder.php';
-require_once dirname(__FILE__) . '/ReservedBuilder.php';
 require_once dirname(__FILE__) . '/Builder.php';
 
 /**
- * This class implements the builder for the index parser of a PRIMARY KEY
- * statement part of CREATE TABLE. 
+ * This class implements the builder for index hint lists. 
  * You can overwrite all functions to achieve another handling.
  *
  * @author  André Rothe <andre.rothe@phosco.info>
  * @license http://www.debian.org/misc/bsd.license  BSD License (3 Clause)
  *  
  */
-class IndexParserBuilder implements Builder {
+class IndexHintListBuilder implements Builder {
 
-    protected function buildReserved($parsed) {
-        $builder = new ReservedBuilder();
-        return $builder->build($parsed);
+    public function hasHint($parsed) {
+        return isset($parsed['hints']);
     }
 
-    protected function buildConstant($parsed) {
-        $builder = new ConstantBuilder();
-        return $builder->build($parsed);
-    }
-    
+    // TODO: the hint list should be enhanced to get base_expr fro position calculation
     public function build(array $parsed) {
-        if ($parsed['expr_type'] !== ExpressionType::INDEX_PARSER) {
+        if (!isset($parsed['hints']) || $parsed['hints'] === false) {
             return "";
         }
         $sql = "";
-        foreach ($parsed['sub_tree'] as $k => $v) {
-            $len = strlen($sql);
-            $sql .= $this->buildReserved($v);
-            $sql .= $this->buildConstant($v);
-
-            if ($len == strlen($sql)) {
-                throw new UnableToCreateSQLException('CREATE TABLE primary key index parser subtree', $k, $v, 'expr_type');
-            }
-
-            $sql .= " ";
+        foreach ($parsed['hints'] as $k => $v) {
+            $sql .= $v['hint_type'] . " " . $v['hint_list'] . " ";
         }
-        return substr($sql, 0, -1);
+        return " " . substr($sql, 0, -1);
     }
 }
 ?>

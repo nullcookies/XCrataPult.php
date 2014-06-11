@@ -35,9 +35,12 @@
  * @author    André Rothe <andre.rothe@phosco.info>
  * @copyright 2010-2014 Justin Swanhart and André Rothe
  * @license   http://www.debian.org/misc/bsd.license  BSD License (3 Clause)
- * @version   SVN: $Id: GroupByBuilder.php 1055 2014-01-30 10:28:21Z phosco@gmx.de $
+ * @version   SVN: $Id$
  * 
  */
+
+namespace PHPSQLParser\builders;
+use PHPSQLParser\exceptions\UnableToCreateSQLException;
 
 require_once dirname(__FILE__) . '/../exceptions/UnableToCreateSQLException.php';
 require_once dirname(__FILE__) . '/PositionBuilder.php';
@@ -70,12 +73,12 @@ class GroupByBuilder implements Builder {
         $builder = new FunctionBuilder();
         return $builder->build($parsed);
     }
-    
+
     protected function buildGroupByAlias($parsed) {
         $builder = new GroupByAliasBuilder();
         return $builder->build($parsed);
     }
-            
+
     public function build(array $parsed) {
         $sql = "";
         foreach ($parsed as $k => $v) {
@@ -84,7 +87,7 @@ class GroupByBuilder implements Builder {
             $sql .= $this->buildPosition($v);
             $sql .= $this->buildFunction($v);
             $sql .= $this->buildGroupByAlias($v);
-            
+
             if ($len == strlen($sql)) {
                 throw new UnableToCreateSQLException('GROUP', $k, $v, 'expr_type');
             }
@@ -94,6 +97,6 @@ class GroupByBuilder implements Builder {
         $sql = substr($sql, 0, -2);
         return "GROUP BY " . $sql;
     }
-    
+
 }
 ?>

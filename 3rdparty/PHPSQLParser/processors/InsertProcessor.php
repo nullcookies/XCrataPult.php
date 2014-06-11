@@ -35,9 +35,12 @@
  * @author    André Rothe <andre.rothe@phosco.info>
  * @copyright 2010-2014 Justin Swanhart and André Rothe
  * @license   http://www.debian.org/misc/bsd.license  BSD License (3 Clause)
- * @version   SVN: $Id: InsertProcessor.php 1205 2014-03-09 00:53:50Z phosco@gmx.de $
+ * @version   SVN: $Id$
  *
  */
+
+namespace PHPSQLParser\processors;
+use PHPSQLParser\utils\ExpressionType;
 
 require_once dirname(__FILE__) . '/AbstractProcessor.php';
 require_once dirname(__FILE__) . '/DefaultProcessor.php';

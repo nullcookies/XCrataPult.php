@@ -2,6 +2,7 @@
 
 namespace X\Data\DB\Drivers;
 
+use PHPSQLParser\PHPSQLCreator;
 use X\Data\DB\Interfaces\ICRUD;
 use X\Data\DB\JoinedCollection;
 use X\Tools\Strings;
@@ -18,6 +19,7 @@ use \X\Validators\Values;
 use \X\Data\DB\Collection;
 use \X\Data\DB\CRUD;
 use \X\Debug\Tracer;
+use PHPSQLParser\PHPSQLParser;
 
 
 class Mysql implements IDB{
@@ -454,12 +456,12 @@ class Mysql implements IDB{
     }
 
     $sqlExpr = 'SELECT '.$fieldsWeNeed.' FROM `'.$options['table'].'` '.$where.' '.$groupBy.' '.$orderBy.' '.($options['limit'] > 0 ? 'LIMIT '.$options['limit'] : '').';';
-    $parsed = (new \PHPSQLParser($sqlExpr))->parsed;
+    $parsed = (new PHPSQLParser($sqlExpr))->parsed;
 
     if ($wherevars && $where && $parsed["WHERE"]){
       $this->collapseVars($parsed["WHERE"], $wherevars);
     }
-    $sqlExpr = (new \PHPSQLCreator())->create($parsed);
+    $sqlExpr = (new PHPSQLCreator())->create($parsed);
     if (($ttl = intval($options["cache_ttl"]))>0){
       $cacheKey = md5($sqlExpr.$options["instantiator"]);
     }
@@ -545,12 +547,12 @@ class Mysql implements IDB{
 
     $sqlExpr = 'SELECT '.$fieldsWeNeed.' FROM '.$joinedTables.' '.$where.' '.$groupBy.' '.$orderBy.' '.($options['limit'] > 0 ? 'LIMIT '.$options['limit'] : '').';';
 
-    $parsed = (new \PHPSQLParser($sqlExpr))->parsed;
+    $parsed = (new PHPSQLParser($sqlExpr))->parsed;
 
     if ($wherevars && $where && $parsed["WHERE"]){
       $this->collapseVars($parsed["WHERE"], $wherevars);
     }
-    $sqlExpr = (new \PHPSQLCreator())->create($parsed);
+    $sqlExpr = (new PHPSQLCreator())->create($parsed);
 //    echo $sqlExpr;
     if (($ttl = intval($options["cache_ttl"]))>0){
       $cacheKey = md5($sqlExpr.$options["instantiator"]);

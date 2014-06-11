@@ -35,10 +35,11 @@
  * @author    André Rothe <andre.rothe@phosco.info>
  * @copyright 2010-2014 Justin Swanhart and André Rothe
  * @license   http://www.debian.org/misc/bsd.license  BSD License (3 Clause)
- * @version   SVN: $Id: CreateIndexTypeBuilder.php 1146 2014-03-04 13:01:18Z phosco@gmx.de $
+ * @version   SVN: $Id$
  * 
  */
 
+namespace PHPSQLParser\builders;
 require_once dirname(__FILE__) . '/IndexTypeBuilder.php';
 
 /**

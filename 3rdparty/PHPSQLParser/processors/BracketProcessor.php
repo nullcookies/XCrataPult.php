@@ -35,9 +35,12 @@
  * @author    André Rothe <andre.rothe@phosco.info>
  * @copyright 2010-2014 Justin Swanhart and André Rothe
  * @license   http://www.debian.org/misc/bsd.license  BSD License (3 Clause)
- * @version   SVN: $Id: BracketProcessor.php 1132 2014-02-26 07:46:49Z phosco@gmx.de $
+ * @version   SVN: $Id$
  *
  */
+
+namespace PHPSQLParser\processors;
+use PHPSQLParser\utils\ExpressionType;
 
 require_once dirname(__FILE__) . '/../utils/ExpressionType.php';
 require_once dirname(__FILE__) . '/DefaultProcessor.php';
@@ -56,7 +59,7 @@ class BracketProcessor extends AbstractProcessor {
         $processor = new DefaultProcessor();
         return $processor->process($sql);
     }
-    
+
     public function process($tokens) {
 
         $token = $this->removeParenthesisFromStart($tokens[0]);
@@ -68,7 +71,8 @@ class BracketProcessor extends AbstractProcessor {
         }
 
         if (isset($subtree['SELECT'])) {
-            $subtree = array(array('expr_type' => ExpressionType::QUERY, 'base_expr' => $token, 'sub_tree' => $subtree));
+            $subtree = array(
+                    array('expr_type' => ExpressionType::QUERY, 'base_expr' => $token, 'sub_tree' => $subtree));
         }
 
         return array(

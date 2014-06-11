@@ -35,10 +35,11 @@
  * @author    André Rothe <andre.rothe@phosco.info>
  * @copyright 2010-2014 Justin Swanhart and André Rothe
  * @license   http://www.debian.org/misc/bsd.license  BSD License (3 Clause)
- * @version   SVN: $Id: SelectStatementBuilder.php 1076 2014-01-30 14:45:22Z phosco@gmx.de $
+ * @version   SVN: $Id$
  * 
  */
 
+namespace PHPSQLParser\builders;
 require_once dirname(__FILE__) . '/LimitBuilder.php';
 require_once dirname(__FILE__) . '/SelectBuilder.php';
 require_once dirname(__FILE__) . '/FromBuilder.php';
@@ -47,6 +48,7 @@ require_once dirname(__FILE__) . '/GroupByBuilder.php';
 require_once dirname(__FILE__) . '/HavingBuilder.php';
 require_once dirname(__FILE__) . '/OrderByBuilder.php';
 require_once dirname(__FILE__) . '/Builder.php';
+
 /**
  * This class implements the builder for the whole Select statement. You can overwrite
  * all functions to achieve another handling.
@@ -81,7 +83,7 @@ class SelectStatementBuilder implements Builder {
         $builder = new HavingBuilder();
         return $builder->build($parsed);
     }
-    
+
     protected function buildORDER($parsed) {
         $builder = new OrderByBuilder();
         return $builder->build($parsed);

@@ -30,6 +30,9 @@
  * DAMAGE.
  */
 
+namespace PHPSQLParser\processors;
+use PHPSQLParser\utils\ExpressionType;
+
 require_once dirname(__FILE__) . '/AbstractProcessor.php';
 require_once dirname(__FILE__) . '/ExpressionListProcessor.php';
 require_once dirname(__FILE__) . '/../utils/ExpressionType.php';
@@ -54,8 +57,11 @@ class SetProcessor extends AbstractProcessor {
      */
     protected function processAssignment($base_expr) {
         $assignment = $this->processExpressionList($this->splitSQLIntoTokens($base_expr));
+        
+        // TODO: if the left side of the assignment is a reserved keyword, it should be changed to colref
+        
         return array('expr_type' => ExpressionType::EXPRESSION, 'base_expr' => trim($base_expr),
-                     'sub_tree' => $assignment);
+                     'sub_tree' => (empty($assignment) ? false : $assignment));
     }
 
     public function process($tokens, $isUpdate = false) {

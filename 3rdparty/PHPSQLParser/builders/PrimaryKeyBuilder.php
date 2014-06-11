@@ -35,9 +35,13 @@
  * @author    André Rothe <andre.rothe@phosco.info>
  * @copyright 2010-2014 Justin Swanhart and André Rothe
  * @license   http://www.debian.org/misc/bsd.license  BSD License (3 Clause)
- * @version   SVN: $Id: PrimaryKeyBuilder.php 1005 2014-01-13 11:12:29Z phosco@gmx.de $
+ * @version   SVN: $Id$
  * 
  */
+
+namespace PHPSQLParser\builders;
+use PHPSQLParser\exceptions\UnableToCreateSQLException;
+use PHPSQLParser\utils\ExpressionType;
 
 require_once dirname(__FILE__) . '/../utils/ExpressionType.php';
 require_once dirname(__FILE__) . '/../exceptions/UnableToCreateSQLException.php';
@@ -78,17 +82,17 @@ class PrimaryKeyBuilder implements Builder {
         $builder = new IndexTypeBuilder();
         return $builder->build($parsed);
     }
-    
+
     protected function buildIndexSize($parsed) {
         $builder = new IndexSizeBuilder();
         return $builder->build($parsed);
     }
-    
+
     protected function buildIndexParser($parsed) {
         $builder = new IndexParserBuilder();
         return $builder->build($parsed);
     }
-    
+
     public function build(array $parsed) {
         if ($parsed['expr_type'] !== ExpressionType::PRIMARY_KEY) {
             return "";

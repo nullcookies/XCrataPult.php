@@ -35,9 +35,14 @@
  * @author    André Rothe <andre.rothe@phosco.info>
  * @copyright 2010-2014 Justin Swanhart and André Rothe
  * @license   http://www.debian.org/misc/bsd.license  BSD License (3 Clause)
- * @version   SVN: $Id: AbstractProcessor.php 1114 2014-02-25 19:52:53Z phosco@gmx.de $
+ * @version   SVN: $Id$
  *
  */
+
+namespace PHPSQLParser\processors;
+
+use PHPSQLParser\lexer\PHPSQLLexer;
+use PHPSQLParser\utils\ExpressionType;
 
 require_once dirname(__FILE__) . '/../utils/ExpressionType.php';
 require_once dirname(__FILE__) . '/../lexer/PHPSQLLexer.php';
@@ -243,6 +248,10 @@ abstract class AbstractProcessor {
         return (isset($out['expr_type']) && $out['expr_type'] === ExpressionType::AGGREGATE_FUNCTION);
     }
 
+    protected function isCustomFunction($out) {
+        return (isset($out['expr_type']) && $out['expr_type'] === ExpressionType::CUSTOM_FUNCTION);
+    }
+
     protected function isFunction($out) {
         return (isset($out['expr_type']) && $out['expr_type'] === ExpressionType::SIMPLE_FUNCTION);
     }
@@ -267,7 +276,7 @@ abstract class AbstractProcessor {
         foreach ($tokenList as $token) {
             $expr[] = $token->toArray();
         }
-        return (empty($expr) ? false : $expr);
+        return $expr;
     }
 
     protected function array_insert_after($array, $key, $entry) {

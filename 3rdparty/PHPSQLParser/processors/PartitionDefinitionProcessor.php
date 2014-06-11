@@ -36,9 +36,12 @@
  * @author    André Rothe <andre.rothe@phosco.info>
  * @copyright 2010-2014 Justin Swanhart and André Rothe
  * @license   http://www.debian.org/misc/bsd.license  BSD License (3 Clause)
- * @version   SVN: $Id: PartitionDefinitionProcessor.php 1060 2014-01-30 12:24:58Z phosco@gmx.de $
+ * @version   SVN: $Id$
  *
  */
+
+namespace PHPSQLParser\processors;
+use PHPSQLParser\utils\ExpressionType;
 
 require_once dirname(__FILE__) . '/AbstractProcessor.php';
 require_once dirname(__FILE__) . '/ExpressionListProcessor.php';
@@ -258,7 +261,7 @@ class PartitionDefinitionProcessor extends AbstractProcessor {
             case 'INDEX':
                 if ($prevCategory === 'PARTITION') {
                     // followed by DIRECTORY
-                    $expr[] = array('expr_type' => constant('ExpressionType::PARTITION_' . $upper . '_DIR'),
+                    $expr[] = array('expr_type' => constant('PHPSQLParser\utils\ExpressionType::PARTITION_' . $upper . '_DIR'),
                                     'base_expr' => false, 'sub_tree' => false,
                                     'storage' => substr($base_expr, 0, -strlen($token)));
 
@@ -284,7 +287,7 @@ class PartitionDefinitionProcessor extends AbstractProcessor {
             case 'MAX_ROWS':
             case 'MIN_ROWS':
                 if ($prevCategory === 'PARTITION') {
-                    $expr[] = array('expr_type' => constant('ExpressionType::PARTITION_' . $upper),
+                    $expr[] = array('expr_type' => constant('PHPSQLParser\utils\ExpressionType::PARTITION_' . $upper),
                                     'base_expr' => false, 'sub_tree' => false,
                                     'storage' => substr($base_expr, 0, -strlen($token)));
 
@@ -336,7 +339,9 @@ class PartitionDefinitionProcessor extends AbstractProcessor {
                 case 'VALUES':
                 // we have parenthesis and have to process an expression/in-list
                     $last = $this->getBracketExpressionType($trim);
-                    $last['sub_tree'] = $this->processExpressionList($trim);
+                    
+                    $res = $this->processExpressionList($trim);
+                    $last['sub_tree'] = (empty($res) ? false : $res); 
                     $expr[] = $last;
 
                     $last = array_pop($parsed['sub_tree']);

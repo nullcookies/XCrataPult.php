@@ -35,10 +35,11 @@
  * @author    André Rothe <andre.rothe@phosco.info>
  * @copyright 2010-2014 Justin Swanhart and André Rothe
  * @license   http://www.debian.org/misc/bsd.license  BSD License (3 Clause)
- * @version   SVN: $Id: DefaultProcessor.php 1089 2014-02-25 09:00:10Z phosco@gmx.de $
+ * @version   SVN: $Id$
  *
  */
 
+namespace PHPSQLParser\processors;
 require_once dirname(__FILE__) . '/AbstractProcessor.php';
 require_once dirname(__FILE__) . '/UnionProcessor.php';
 require_once dirname(__FILE__) . '/SQLProcessor.php';
@@ -75,13 +76,13 @@ class DefaultProcessor extends AbstractProcessor {
 
         // If there was no UNION or UNION ALL in the query, then the query is
         // stored at $queries[0].
-        if (!$this->isUnion($queries)) {
+        if (!empty($queries) && !$this->isUnion($queries)) {
             $queries = $this->processSQL($queries[0]);
         }
 
         return $queries;
     }
-    
+
     public function revokeQuotation($sql) {
         return parent::revokeQuotation($sql);
     }

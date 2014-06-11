@@ -35,10 +35,11 @@
  * @author    André Rothe <andre.rothe@phosco.info>
  * @copyright 2010-2014 Justin Swanhart and André Rothe
  * @license   http://www.debian.org/misc/bsd.license  BSD License (3 Clause)
- * @version   SVN: $Id: DescribeProcessor.php 1180 2014-03-08 00:49:55Z phosco@gmx.de $
+ * @version   SVN: $Id$
  *
  */
 
+namespace PHPSQLParser\processors;
 require_once dirname(__FILE__) . '/ExplainProcessor.php';
 
 /**

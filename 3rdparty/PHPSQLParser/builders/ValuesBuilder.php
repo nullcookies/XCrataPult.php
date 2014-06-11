@@ -35,9 +35,12 @@
  * @author    André Rothe <andre.rothe@phosco.info>
  * @copyright 2010-2014 Justin Swanhart and André Rothe
  * @license   http://www.debian.org/misc/bsd.license  BSD License (3 Clause)
- * @version   SVN: $Id: ValuesBuilder.php 1013 2014-01-13 11:56:02Z phosco@gmx.de $
+ * @version   SVN: $Id$
  * 
  */
+
+namespace PHPSQLParser\builders;
+use PHPSQLParser\exceptions\UnableToCreateSQLException;
 
 require_once dirname(__FILE__) . '/../exceptions/UnableToCreateSQLException.php';
 require_once dirname(__FILE__) . '/RecordBuilder.php';
@@ -72,6 +75,6 @@ class ValuesBuilder implements Builder {
         }
         $sql = substr($sql, 0, -2);
         return "VALUES " . $sql;
-    }    
+    }
 }
 ?>

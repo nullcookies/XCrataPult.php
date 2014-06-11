@@ -35,9 +35,12 @@
  * @author    André Rothe <andre.rothe@phosco.info>
  * @copyright 2010-2014 Justin Swanhart and André Rothe
  * @license   http://www.debian.org/misc/bsd.license  BSD License (3 Clause)
- * @version   SVN: $Id: DropStatementBuilder.php 1178 2014-03-07 10:13:02Z phosco@gmx.de $
+ * @version   SVN: $Id$
  * 
  */
+
+namespace PHPSQLParser\builders;
+use PHPSQLParser\exceptions\UnableToCreateSQLException;
 
 require_once dirname(__FILE__) . '/../utils/ExpressionType.php';
 require_once dirname(__FILE__) . '/Builder.php';
@@ -58,12 +61,12 @@ class DropStatementBuilder implements Builder {
         $builder = new ReservedBuilder();
         return $builder->build($parsed);
     }
-    
+
     protected function buildExpression($parsed) {
         $builder = new DropExpressionBuilder();
         return $builder->build($parsed);
     }
-    
+
     public function build(array $parsed) {
         $drop = $parsed['DROP'];
         $sql = '';

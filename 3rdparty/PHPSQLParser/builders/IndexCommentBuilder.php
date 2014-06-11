@@ -35,9 +35,13 @@
  * @author    André Rothe <andre.rothe@phosco.info>
  * @copyright 2010-2014 Justin Swanhart and André Rothe
  * @license   http://www.debian.org/misc/bsd.license  BSD License (3 Clause)
- * @version   SVN: $Id: IndexCommentBuilder.php 1146 2014-03-04 13:01:18Z phosco@gmx.de $
+ * @version   SVN: $Id$
  * 
  */
+
+namespace PHPSQLParser\builders;
+use PHPSQLParser\exceptions\UnableToCreateSQLException;
+use PHPSQLParser\utils\ExpressionType;
 
 require_once dirname(__FILE__) . '/../utils/ExpressionType.php';
 require_once dirname(__FILE__) . '/../exceptions/UnableToCreateSQLException.php';
@@ -64,7 +68,7 @@ class IndexCommentBuilder implements Builder {
         $builder = new ConstantBuilder();
         return $builder->build($parsed);
     }
-    
+
     public function build(array $parsed) {
         if ($parsed['expr_type'] !== ExpressionType::COMMENT) {
             return '';

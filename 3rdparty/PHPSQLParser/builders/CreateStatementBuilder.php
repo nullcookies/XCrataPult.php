@@ -35,10 +35,11 @@
  * @author    André Rothe <andre.rothe@phosco.info>
  * @copyright 2010-2014 Justin Swanhart and André Rothe
  * @license   http://www.debian.org/misc/bsd.license  BSD License (3 Clause)
- * @version   SVN: $Id: CreateStatementBuilder.php 1005 2014-01-13 11:12:29Z phosco@gmx.de $
+ * @version   SVN: $Id$
  * 
  */
 
+namespace PHPSQLParser\builders;
 require_once dirname(__FILE__) . '/LikeBuilder.php';
 require_once dirname(__FILE__) . '/SelectStatementBuilder.php';
 require_once dirname(__FILE__) . '/CreateBuilder.php';
@@ -68,7 +69,7 @@ class CreateStatementBuilder implements Builder {
         $builder = new CreateBuilder();
         return $builder->build($parsed);
     }
-    
+
     public function build(array $parsed) {
         $sql = $this->buildCREATE($parsed);
         if (isset($parsed['LIKE'])) {

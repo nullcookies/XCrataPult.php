@@ -35,10 +35,11 @@
  * @author    André Rothe <andre.rothe@phosco.info>
  * @copyright 2010-2014 Justin Swanhart and André Rothe
  * @license   http://www.debian.org/misc/bsd.license  BSD License (3 Clause)
- * @version   SVN: $Id: InsertStatementBuilder.php 1011 2014-01-13 11:33:56Z phosco@gmx.de $
+ * @version   SVN: $Id$
  * 
  */
 
+namespace PHPSQLParser\builders;
 require_once dirname(__FILE__) . '/InsertBuilder.php';
 require_once dirname(__FILE__) . '/ValuesBuilder.php';
 require_once dirname(__FILE__) . '/SelectStatementBuilder.php';

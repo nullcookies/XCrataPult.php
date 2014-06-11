@@ -35,11 +35,13 @@
  * @author    André Rothe <andre.rothe@phosco.info>
  * @copyright 2010-2014 Justin Swanhart and André Rothe
  * @license   http://www.debian.org/misc/bsd.license  BSD License (3 Clause)
- * @version   SVN: $Id: DropProcessor.php 1179 2014-03-08 00:49:14Z phosco@gmx.de $
+ * @version   SVN: $Id$
  *
  */
 
-require_once dirname(__FILE__) . '/../utils/ExpressionToken.php';
+namespace PHPSQLParser\processors;
+use PHPSQLParser\utils\ExpressionType;
+
 require_once dirname(__FILE__) . '/../utils/ExpressionType.php';
 require_once dirname(__FILE__) . '/AbstractProcessor.php';
 
@@ -74,7 +76,7 @@ class DropProcessor extends AbstractProcessor {
             case 'DATABASE':
             case 'TABLE':
                 if ($objectType === '') {
-                    $objectType = constant('ExpressionType::' . $upper);
+                    $objectType = constant('PHPSQLParser\utils\ExpressionType::' . $upper);
                 }
                 $base_expr = '';
                 break;

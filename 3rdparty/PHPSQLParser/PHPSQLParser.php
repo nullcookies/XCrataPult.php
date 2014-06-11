@@ -1,7 +1,7 @@
 <?php
 
 /**
- * php-sql-parser.php
+ * PHPSQLParser.php
  *
  * A pure PHP SQL (non validating) parser w/ focus on MySQL dialect of SQL
  *
@@ -36,11 +36,17 @@
  * @author    André Rothe <andre.rothe@phosco.info>
  * @copyright 2010-2014 Justin Swanhart and André Rothe
  * @license   http://www.debian.org/misc/bsd.license  BSD License (3 Clause)
- * @version   SVN: $Id: PHPSQLParser.php 757 2013-12-16 09:54:05Z phosco@gmx.de $
+ * @version   SVN: $Id$
  */
+
+namespace PHPSQLParser;
+use PHPSQLParser\positions\PositionCalculator;
+use PHPSQLParser\processors\DefaultProcessor;
+use PHPSQLParser\utils\PHPSQLParserConstants;
 
 require_once dirname(__FILE__) . '/positions/PositionCalculator.php';
 require_once dirname(__FILE__) . '/processors/DefaultProcessor.php';
+require_once dirname(__FILE__) . '/utils/PHPSQLParserConstants.php';
 
 /**
  * This class implements the parser functionality.
@@ -93,6 +99,37 @@ class PHPSQLParser {
         // store the parsed queries
         $this->parsed = $queries;
         return $this->parsed;
+    }
+
+    /**
+     * Add a custom function to the parser.  no return value
+     * 
+     * @param String $token The name of the function to add
+     * 
+     * @return null
+     */
+    public function addCustomFunction($token) {
+        PHPSQLParserConstants::getInstance()->addCustomFunction($token);
+    }
+
+    /**
+     * Remove a custom function from the parser.  no return value
+     * 
+     * @param String $token The name of the function to remove
+     * 
+     * @return null
+     */
+    public function removeCustomFunction($token) {
+        PHPSQLParserConstants::getInstance()->removeCustomFunction($token);
+    }
+
+    /**
+     * Returns the list of custom functions
+     * 
+     * @return array Returns an array of all custom functions 
+     */
+    public function getCustomFunctions() {
+        return PHPSQLParserConstants::getInstance()->getCustomFunctions();
     }
 }
 ?>

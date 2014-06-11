@@ -30,6 +30,9 @@
  * DAMAGE.
  */
 
+namespace PHPSQLParser\processors;
+use PHPSQLParser\utils\ExpressionType;
+
 require_once(dirname(__FILE__) . '/AbstractProcessor.php');
 require_once(dirname(__FILE__) . '/ExpressionListProcessor.php');
 require_once(dirname(__FILE__) . '/../utils/ExpressionType.php');
@@ -43,12 +46,11 @@ require_once(dirname(__FILE__) . '/../utils/ExpressionType.php');
  */
 class SelectExpressionProcessor extends AbstractProcessor {
 
-    private $expressionListProcessor;
-
-    public function __construct() {
-        $this->expressionListProcessor = new ExpressionListProcessor();
+    protected function processExpressionList($unparsed) {
+        $processor = new ExpressionListProcessor();
+        return $processor->process($unparsed);
     }
-
+        
     /**
      * This fuction processes each SELECT clause.
      * We determine what (if any) alias
@@ -102,7 +104,14 @@ class SelectExpressionProcessor extends AbstractProcessor {
             $base_expr .= $token;
         }
 
-        $stripped = $this->expressionListProcessor->process($stripped);
+        if ($alias) {
+            // remove quotation from the alias
+            $alias['no_quotes'] = $this->revokeQuotation($alias['name']);
+            $alias['name'] = trim($alias['name']);
+            $alias['base_expr'] = trim($alias['base_expr']);
+        }    
+        
+        $stripped = $this->processExpressionList($stripped);
 
         // TODO: the last part can also be a comment, don't use array_pop
 
@@ -118,33 +127,24 @@ class SelectExpressionProcessor extends AbstractProcessor {
 
             if ($this->isReserved($prev) || $this->isConstant($prev) || $this->isAggregateFunction($prev)
                     || $this->isFunction($prev) || $this->isExpression($prev) || $this->isSubQuery($prev)
-                    || $this->isColumnReference($prev) || $this->isBracketExpression($prev)) {
+                    || $this->isColumnReference($prev) || $this->isBracketExpression($prev)|| $this->isCustomFunction($prev)) {
 
                 $alias = array('as' => false, 'name' => trim($last['base_expr']),
                                'no_quotes' => $this->revokeQuotation($last['base_expr']),
                                'base_expr' => trim($last['base_expr']));
                 // remove the last token
                 array_pop($tokens);
-                $base_expr = join("", $tokens);
             }
         }
 
-        if (!$alias) {
-            $base_expr = join("", $tokens);
-        } else {
-            /* remove escape from the alias */
-            $alias['no_quotes'] = $this->revokeQuotation($alias['name']);
-            $alias['name'] = trim($alias['name']);
-            $alias['base_expr'] = trim($alias['base_expr']);
-        }
-
+        $base_expr = $expression;
+        
         // TODO: this is always done with $stripped, how we do it twice?
-        $processed = $this->expressionListProcessor->process($tokens);
+        $processed = $this->processExpressionList($tokens);
 
         // if there is only one part, we copy the expr_type
-        // in all other cases we use "expression" as global type
+        // in all other cases we use "EXPRESSION" as global type
         $type = ExpressionType::EXPRESSION;
-
         if (count($processed) === 1) {
             if (!$this->isSubQuery($processed[0])) {
                 $type = $processed[0]['expr_type'];
@@ -161,7 +161,7 @@ class SelectExpressionProcessor extends AbstractProcessor {
         if (!empty($no_quotes)) {
             $result['no_quotes'] = $no_quotes;
         }
-        $result['sub_tree'] = $processed;
+        $result['sub_tree'] = (empty($processed) ? false : $processed);
         return $result;
     }
 

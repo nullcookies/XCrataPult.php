@@ -35,15 +35,19 @@
  * @author    André Rothe <andre.rothe@phosco.info>
  * @copyright 2010-2014 Justin Swanhart and André Rothe
  * @license   http://www.debian.org/misc/bsd.license  BSD License (3 Clause)
- * @version   SVN: $Id: RefClauseBuilder.php 1225 2014-03-09 22:03:44Z phosco@gmx.de $
+ * @version   SVN: $Id$
  * 
  */
+
+namespace PHPSQLParser\builders;
+use PHPSQLParser\exceptions\UnableToCreateSQLException;
 
 require_once dirname(__FILE__) . '/../exceptions/UnableToCreateSQLException.php';
 require_once dirname(__FILE__) . '/ColumnReferenceBuilder.php';
 require_once dirname(__FILE__) . '/OperatorBuilder.php';
 require_once dirname(__FILE__) . '/ConstantBuilder.php';
 require_once dirname(__FILE__) . '/FunctionBuilder.php';
+require_once dirname(__FILE__) . '/InListBuilder.php';
 require_once dirname(__FILE__) . '/SelectBracketExpressionBuilder.php';
 require_once dirname(__FILE__) . '/Builder.php';
 
@@ -56,6 +60,11 @@ require_once dirname(__FILE__) . '/Builder.php';
  *  
  */
 class RefClauseBuilder implements Builder {
+
+    protected function buildInList($parsed) {
+        $builder = new InListBuilder();
+        return $builder->build($parsed);
+    }
 
     protected function buildColRef($parsed) {
         $builder = new ColumnReferenceBuilder();
@@ -94,6 +103,7 @@ class RefClauseBuilder implements Builder {
             $sql .= $this->buildConstant($v);
             $sql .= $this->buildFunction($v);
             $sql .= $this->buildBracketExpression($v);
+            $sql .= $this->buildInList($v);
 
             if ($len == strlen($sql)) {
                 throw new UnableToCreateSQLException('expression ref_clause', $k, $v, 'expr_type');

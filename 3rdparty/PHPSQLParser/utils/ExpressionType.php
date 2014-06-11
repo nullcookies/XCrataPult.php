@@ -36,9 +36,11 @@
  * @author    André Rothe <andre.rothe@phosco.info>
  * @copyright 2010-2014 Justin Swanhart and André Rothe
  * @license   http://www.debian.org/misc/bsd.license  BSD License (3 Clause)
- * @version   SVN: $Id: ExpressionType.php 1138 2014-03-04 11:24:15Z phosco@gmx.de $
+ * @version   SVN: $Id$
  * 
  */
+
+namespace PHPSQLParser\utils;
 
 /**
  * This class defines all values, which are possible for the [expr_type] field 
@@ -61,6 +63,8 @@ class ExpressionType {
     const CONSTANT = 'const';
 
     const AGGREGATE_FUNCTION = 'aggregate_function';
+    const CUSTOM_FUNCTION = 'custom_function';
+
     const SIMPLE_FUNCTION = 'function';
 
     const EXPRESSION = 'expression';

@@ -1,8 +1,8 @@
 <?php
 /**
- * IndexParserBuilder.php
+ * OrderByColumnReferenceBuilder.php
  *
- * Builds index parser part of a PRIMARY KEY statement part of CREATE TABLE.
+ * Builds column references within the ORDER-BY part.
  *
  * PHP version 5
  *
@@ -40,53 +40,32 @@
  */
 
 namespace PHPSQLParser\builders;
-use PHPSQLParser\exceptions\UnableToCreateSQLException;
-use PHPSQLParser\utils\ExpressionType;
-
-require_once dirname(__FILE__) . '/../utils/ExpressionType.php';
-require_once dirname(__FILE__) . '/../exceptions/UnableToCreateSQLException.php';
-require_once dirname(__FILE__) . '/ConstantBuilder.php';
-require_once dirname(__FILE__) . '/ReservedBuilder.php';
-require_once dirname(__FILE__) . '/Builder.php';
+require_once dirname(__FILE__) . '/ColumnReferenceBuilder.php';
+require_once dirname(__FILE__) . '/DirectionBuilder.php';
 
 /**
- * This class implements the builder for the index parser of a PRIMARY KEY
- * statement part of CREATE TABLE. 
+ * This class implements the builder for column references within the ORDER-BY part. 
+ * It must contain the direction. 
  * You can overwrite all functions to achieve another handling.
  *
  * @author  André Rothe <andre.rothe@phosco.info>
  * @license http://www.debian.org/misc/bsd.license  BSD License (3 Clause)
  *  
  */
-class IndexParserBuilder implements Builder {
+class OrderByColumnReferenceBuilder extends ColumnReferenceBuilder {
 
-    protected function buildReserved($parsed) {
-        $builder = new ReservedBuilder();
+    protected function buildDirection($parsed) {
+        $builder = new DirectionBuilder();
         return $builder->build($parsed);
     }
 
-    protected function buildConstant($parsed) {
-        $builder = new ConstantBuilder();
-        return $builder->build($parsed);
-    }
-    
     public function build(array $parsed) {
-        if ($parsed['expr_type'] !== ExpressionType::INDEX_PARSER) {
-            return "";
+        $sql = parent::build($parsed);
+        if ($sql !== '') {
+            $sql .= $this->buildDirection($parsed);
         }
-        $sql = "";
-        foreach ($parsed['sub_tree'] as $k => $v) {
-            $len = strlen($sql);
-            $sql .= $this->buildReserved($v);
-            $sql .= $this->buildConstant($v);
-
-            if ($len == strlen($sql)) {
-                throw new UnableToCreateSQLException('CREATE TABLE primary key index parser subtree', $k, $v, 'expr_type');
-            }
-
-            $sql .= " ";
-        }
-        return substr($sql, 0, -1);
+        return $sql;
     }
+
 }
 ?>
