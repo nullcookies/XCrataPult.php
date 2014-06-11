@@ -348,11 +348,23 @@ class CRUDGenerator extends PrivateInstantiation{
       $selectors[] = " * @return Collection";
       $selectors[] = " */";
       $selectors[] = "public static function getBy".$field->getCamelName()."_greater(\$val, \$limit=0, \$asArray=false, \$groupBy=null, \$fields=[], \$ttl=null){";
+      switch($field->getType()){
+        case 'timestamp':
+        case 'datetime':
+          $selectors[] = "\t\$val == is_int(\$val) ? date('Y-m-d H:i:s', \$val) : \$val;";
+          break;
+        case 'date':
+          $selectors[] = "\t\$val == is_int(\$val) ? date('Y-m-d', \$val) : \$val;";
+          break;
+        case 'time':
+          $selectors[] = "\t\$val == is_int(\$val) ? date('H:i:s', \$val) : \$val;";
+          break;
+      }
       $selectors[] = "\treturn DB::connectionByAlias('".$db->getAlias()."')->getSimple([";
       $selectors[] = "\t\t\t'table'=>'".$table->getName()."',";
       $selectors[] = "\t\t\t'instantiator'=>get_called_class().'::createFromRaw',";
       $selectors[] = "\t\t\t'className'=>get_called_class(),";
-      $selectors[] = "\t\t\t'conditions'=>['".$field->getName()." > \"%?:val:%\"',['val'=>\$val]],";
+      $selectors[] = "\t\t\t'conditions'=>['".$field->getName()." > \"?:val:\"',['val'=>\$val]],";
       $selectors[] = "\t\t\t'limit'=>\$limit,";
       $selectors[] = "\t\t\t'asArray'=>\$asArray,";
       $selectors[] = "\t\t\t'fields'=>\$fields,";
@@ -366,11 +378,23 @@ class CRUDGenerator extends PrivateInstantiation{
       $selectors[] = " * @return Collection";
       $selectors[] = " */";
       $selectors[] = "public static function getBy".$field->getCamelName()."_less(\$val, \$limit=0, \$asArray=false, \$groupBy=null, \$fields=[], \$ttl=null){";
+      switch($field->getType()){
+        case 'timestamp':
+        case 'datetime':
+          $selectors[] = "\t\$val == is_int(\$val) ? date('Y-m-d H:i:s', \$val) : \$val;";
+          break;
+        case 'date':
+          $selectors[] = "\t\$val == is_int(\$val) ? date('Y-m-d', \$val) : \$val;";
+          break;
+        case 'time':
+          $selectors[] = "\t\$val == is_int(\$val) ? date('H:i:s', \$val) : \$val;";
+          break;
+      }
       $selectors[] = "\treturn DB::connectionByAlias('".$db->getAlias()."')->getSimple([";
       $selectors[] = "\t\t\t'table'=>'".$table->getName()."',";
       $selectors[] = "\t\t\t'instantiator'=>get_called_class().'::createFromRaw',";
       $selectors[] = "\t\t\t'className'=>get_called_class(),";
-      $selectors[] = "\t\t\t'conditions'=>['".$field->getName()." < \"%?:val:%\"',['val'=>\$val]],";
+      $selectors[] = "\t\t\t'conditions'=>['".$field->getName()." < \"?:val:\"',['val'=>\$val]],";
       $selectors[] = "\t\t\t'limit'=>\$limit,";
       $selectors[] = "\t\t\t'asArray'=>\$asArray,";
       $selectors[] = "\t\t\t'fields'=>\$fields,";
@@ -383,12 +407,27 @@ class CRUDGenerator extends PrivateInstantiation{
       $selectors[] = " * @param \$val";
       $selectors[] = " * @return Collection";
       $selectors[] = " */";
-      $selectors[] = "public static function getBy".$field->getCamelName()."_between(\$val1, \$val1, \$limit=0, \$groupBy=null, \$asArray=false, \$fields=[], \$ttl=null){";
+      $selectors[] = "public static function getBy".$field->getCamelName()."_between(\$val1, \$val2, \$limit=0, \$groupBy=null, \$asArray=false, \$fields=[], \$ttl=null){";
+      switch($field->getType()){
+        case 'timestamp':
+        case 'datetime':
+          $selectors[] = "\t\$val1 == is_int(\$val) ? date('Y-m-d H:i:s', \$val1) : \$val1;";
+          $selectors[] = "\t\$val2 == is_int(\$val) ? date('Y-m-d H:i:s', \$val2) : \$val2;";
+          break;
+        case 'date':
+          $selectors[] = "\t\$val1 == is_int(\$val1) ? date('Y-m-d', \$val1) : \$val1;";
+          $selectors[] = "\t\$val2 == is_int(\$val2) ? date('Y-m-d', \$val2) : \$val2;";
+          break;
+        case 'time':
+          $selectors[] = "\t\$val1 == is_int(\$val1) ? date('H:i:s', \$val1) : \$val1;";
+          $selectors[] = "\t\$val2 == is_int(\$val2) ? date('H:i:s', \$val2) : \$val2;";
+          break;
+      }
       $selectors[] = "\treturn DB::connectionByAlias('".$db->getAlias()."')->getSimple([";
       $selectors[] = "\t\t\t'table'=>'".$table->getName()."',";
       $selectors[] = "\t\t\t'instantiator'=>get_called_class().'::createFromRaw',";
       $selectors[] = "\t\t\t'className'=>get_called_class(),";
-      $selectors[] = "\t\t\t'conditions'=>['".$field->getName()." BETWEEN \"%?:val1:%\" AND \"%?:val2:%\"',['val1'=>\$val1, 'val2'=>\$val2]],";
+      $selectors[] = "\t\t\t'conditions'=>['".$field->getName()." BETWEEN \"?:val1:\" AND \"?:val2:\"',['val1'=>\$val1, 'val2'=>\$val2]],";
       $selectors[] = "\t\t\t'limit'=>\$limit,";
       $selectors[] = "\t\t\t'asArray'=>\$asArray,";
       $selectors[] = "\t\t\t'fields'=>\$fields,";
