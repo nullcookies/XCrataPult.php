@@ -62,7 +62,7 @@ class CRUDGenerator extends PrivateInstantiation{
                 "public function get".$field->getCamelName()."(){"."\n".
                 "\treturn \$this->".$field->getAlias().";"."\n".
                 "}"."\n";
-    if ($field->getType()=='timestamp' || $field->getType()=='datetime'){
+    if ($field->getType()=='timestamp' || $field->getType()=='datetime'  || $field->getType()=='date'  || $field->getType()=='time'){
       $getter  .= "\n/**"."\n".
         " * Getter for field '".$field->getName()."'"."\n".
         " *"."\n".
@@ -70,6 +70,15 @@ class CRUDGenerator extends PrivateInstantiation{
         " */"."\n".
         "public function get".$field->getCamelName()."_unixtime(){"."\n".
         "\treturn strtotime(\$this->".$field->getAlias().");"."\n".
+        "}"."\n";
+    }elseif($field->getType()=='year'){
+      $getter  .= "\n/**"."\n".
+        " * Getter for field '".$field->getName()."'"."\n".
+        " *"."\n".
+        " * @return int\n".
+        " */"."\n".
+        "public function get".$field->getCamelName()."_unixtime(){"."\n".
+        "\treturn mktime(0,0,1,1,1,\$this->".$field->getAlias().");"."\n".
         "}"."\n";
     }
     return $getter;
@@ -358,6 +367,9 @@ class CRUDGenerator extends PrivateInstantiation{
           break;
         case 'time':
           $selectors[] = "\t\$val == is_int(\$val) ? date('H:i:s', \$val) : \$val;";
+          break;
+        case 'year':
+          $selectors[] = "\t\$val == (is_int(\$val) && (\$val>2155 || \$val<1901)) ? date('Y', \$val) : \$val;";
           break;
       }
       $selectors[] = "\treturn DB::connectionByAlias('".$db->getAlias()."')->getSimple([";
