@@ -553,7 +553,7 @@ class Mysql implements IDB{
       $this->collapseVars($parsed["WHERE"], $wherevars);
     }
     $sqlExpr = (new PHPSQLCreator())->create($parsed);
-//    echo $sqlExpr;
+    //echo $sqlExpr;
     if (($ttl = intval($options["cache_ttl"]))>0){
       $cacheKey = md5($sqlExpr.$options["instantiator"]);
     }
