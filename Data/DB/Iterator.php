@@ -11,124 +11,99 @@ class Iterator extends \ArrayIterator{
    */
   private $collection;
 
-  public function offsetExists($index)
-  {
+  public function offsetExists($index){
     return $this->collection->offsetExists($index);
   }
 
-  public function offsetGet($index)
-  {
+  public function offsetGet($index){
     return $this->collection->offsetGet($index);
   }
 
-  public function offsetSet($index, $newval)
-  {
+  public function offsetSet($index, $newval){
     throw new \BadMethodCallException("Iterator: This method is not applicable (".__METHOD__.")");
   }
 
-  public function offsetUnset($index)
-  {
+  public function offsetUnset($index){
     throw new \BadMethodCallException("Iterator: This method is not applicable (".__METHOD__.")");
   }
 
-  public function append($value)
-  {
+  public function append($value){
     throw new \BadMethodCallException("Iterator: This method is not applicable (".__METHOD__.")");
   }
 
-  public function getArrayCopy()
-  {
+  public function getArrayCopy(){
     throw new \BadMethodCallException("Iterator: This method is not applicable (".__METHOD__.")");
   }
 
-  public function count()
-  {
-    echo 3;
+  public function count(){
     return $this->collection->count();
   }
 
-  public function getFlags()
-  {
+  public function getFlags(){
     throw new \BadMethodCallException("Iterator: This method is not applicable (".__METHOD__.")");
   }
 
-  public function setFlags($flags)
-  {
+  public function setFlags($flags){
     throw new \BadMethodCallException("Iterator: This method is not applicable (".__METHOD__.")");
   }
 
-  public function asort()
-  {
+  public function asort(){
     throw new \BadMethodCallException("Iterator: This method is not applicable (".__METHOD__.")");
   }
 
-  public function ksort()
-  {
+  public function ksort(){
     throw new \BadMethodCallException("Iterator: This method is not applicable (".__METHOD__.")");
   }
 
-  public function uasort($cmp_function)
-  {
+  public function uasort($cmp_function){
     throw new \BadMethodCallException("Iterator: This method is not applicable (".__METHOD__.")");
   }
 
-  public function uksort($cmp_function)
-  {
+  public function uksort($cmp_function){
     throw new \BadMethodCallException("Iterator: This method is not applicable (".__METHOD__.")");
   }
 
-  public function natsort()
-  {
+  public function natsort(){
     throw new \BadMethodCallException("Iterator: This method is not applicable (".__METHOD__.")");
   }
 
-  public function natcasesort()
-  {
+  public function natcasesort(){
     throw new \BadMethodCallException("Iterator: This method is not applicable (".__METHOD__.")");
   }
 
-  public function unserialize($serialized)
-  {
+  public function unserialize($serialized){
     throw new \BadMethodCallException("Iterator: This method is not applicable (".__METHOD__.")");
   }
 
-  public function serialize()
-  {
+  public function serialize(){
     throw new \BadMethodCallException("Iterator: This method is not applicable (".__METHOD__.")");
   }
 
-  public function rewind()
-  {
+  public function rewind(){
     $this->collection->Reset();
   }
 
-  public function current()
-  {
+  public function current(){
     return $this->collection->Current();
   }
 
-  public function key()
-  {
+  public function key(){
     return $this->collection->Position();
   }
 
-  public function next()
-  {
+  public function next(){
     return $this->collection->Next();
   }
 
-  public function valid()
-  {
+  public function valid(){
     return !$this->collection->EOF();
   }
 
-  public function seek($position)
-  {
+  public function seek($position){
     return $this->collection->Position($position);
   }
 
-  public function __construct(Collection &$collection, $flags = 0)
-  {
+  public function __construct(Collection &$collection, $flags = 0){
     $this->collection = &$collection;
   }
 }
