@@ -2,6 +2,7 @@
 
 namespace X\Data\DB;
 
+use X\C;
 use X\Data\DB\Structure\Field;
 use \X\Validators\Values;
 use \X\Data\DB\Interfaces\IDB;
@@ -68,6 +69,12 @@ abstract class CRUD implements ICRUD{
    */
   public static function &connection(){
     throw new \Exception("Static method Connection in class \\X\\Data\\DB\\CRUD should be overridden!");
+  }
+
+  public static function classByTable($tableName, $database){
+    $path= "\\".str_replace('/',"\\", C::getDbNamespace().ucfirst(DB::connectionByDatabase($database)->getAlias()))."\\";
+    $tableName = ucfirst(strtolower($tableName));
+    return $path.$tableName;
   }
 
 }
