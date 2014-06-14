@@ -35,7 +35,7 @@ class DB extends PrivateInstantiation{
    */
   public static function setDriver($alias, $driver){
     if (!Values::isSuitableForVarName($alias)){
-      throw \exception("Bad alias name for ".$alias, self::ERR_BAD_ALIAS_NAME);
+      throw new \Exception("Bad alias name for ".$alias, self::ERR_BAD_ALIAS_NAME);
     }
     $driver = strval($driver);
 
@@ -73,10 +73,10 @@ class DB extends PrivateInstantiation{
    */
   public static function setConnectionType($alias, $type){
     if (!Values::isSuitableForVarName($alias)){
-      throw \exception("Bad alias name for ".$alias, self::ERR_BAD_ALIAS_NAME);
+      throw new \Exception("Bad alias name for ".$alias, self::ERR_BAD_ALIAS_NAME);
     }
     if (!in_array($type, self::$SUPPORTED_CONNECTION_TYPES)){
-      throw \exception("Bad connection type for ".$alias.". Supported types are: ".implode(", ", self::$SUPPORTED_CONNECTION_TYPES), self::ERR_BAD_CONNECTION_TYPE);
+      throw new \Exception("Bad connection type for ".$alias.". Supported types are: ".implode(", ", self::$SUPPORTED_CONNECTION_TYPES), self::ERR_BAD_CONNECTION_TYPE);
     }
     self::$connections[$alias]['connection_type']=$type;
   }
@@ -96,7 +96,7 @@ class DB extends PrivateInstantiation{
    */
   public static function setHost($alias, $host){
     if (!Values::isSuitableForVarName($alias)){
-      throw \exception("Bad alias name for ".$alias, self::ERR_BAD_ALIAS_NAME);
+      throw new \Exception("Bad alias name for ".$alias, self::ERR_BAD_ALIAS_NAME);
     }
     self::$connections[$alias]['host']=$host;
   }
@@ -107,7 +107,7 @@ class DB extends PrivateInstantiation{
    */
   public static function setLogin($alias, $login){
     if (!Values::isSuitableForVarName($alias)){
-      throw \exception("Bad alias name for ".$alias, self::ERR_BAD_ALIAS_NAME);
+      throw new \Exception("Bad alias name for ".$alias, self::ERR_BAD_ALIAS_NAME);
     }
     self::$connections[$alias]['login']=$login;
   }
@@ -118,7 +118,7 @@ class DB extends PrivateInstantiation{
    */
   public static function setPassword($alias, $password){
     if (!Values::isSuitableForVarName($alias)){
-      throw \exception("Bad alias name for ".$alias, self::ERR_BAD_ALIAS_NAME);
+      throw new \Exception("Bad alias name for ".$alias, self::ERR_BAD_ALIAS_NAME);
     }
     self::$connections[$alias]["password"] = $password;
   }
@@ -129,7 +129,7 @@ class DB extends PrivateInstantiation{
    */
   public static function setDatabase($alias, $db){
     if (!Values::isSuitableForVarName($alias)){
-      throw \exception("Bad alias name for ".$alias, self::ERR_BAD_ALIAS_NAME);
+      throw new \Exception("Bad alias name for ".$alias, self::ERR_BAD_ALIAS_NAME);
     }
     self::$connections[$alias]['database']=$db;
     self::$aliases[$db]=$alias;
