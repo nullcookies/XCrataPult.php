@@ -232,4 +232,8 @@ class DB extends PrivateInstantiation{
     }
   }
 
+  public static function Expr($expr){
+    return new Expr($expr); //simple as hell, isn't it?
+  }
+
 }
