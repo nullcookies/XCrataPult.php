@@ -115,9 +115,9 @@ class WhereBracketExpressionBuilder implements Builder {
             $sql .= $this->build($v);
             $sql .= $this->buildUserVariable($v);
 
-            if ($len == strlen($sql)) {
-                throw new UnableToCreateSQLException('WHERE expression subtree', $k, $v, 'expr_type');
-            }
+            //if ($len == strlen($sql)) {
+              //  throw new UnableToCreateSQLException('WHERE expression subtree', $k, $v, 'expr_type');
+            //}
 
             $sql .= " ";
         }

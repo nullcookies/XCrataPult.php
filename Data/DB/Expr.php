@@ -8,6 +8,8 @@
 
 namespace X\Data\DB;
 
+use X\Data\DB\Interfaces\IDB;
+
 class Expr {
   private $expr = '';
 
@@ -26,6 +28,8 @@ class Expr {
   public function run($connectionDBorAlias=null){
     if ($connectionDBorAlias===null){
       return DB::connectionByDatabase()->query($this->get());
+    }elseif($connectionDBorAlias instanceof IDB){
+      return $connectionDBorAlias->query($this->get());
     }else{
       if (!($connection = DB::connectionByDatabase($connectionDBorAlias))){
         $connection = DB::connectionByAlias($connectionDBorAlias);

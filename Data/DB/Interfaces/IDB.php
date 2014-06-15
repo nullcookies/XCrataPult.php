@@ -79,15 +79,4 @@ Interface IDB{
    */
   public function getAlias();
 
-  /**
-   * @param array $options
-   * @return array|Collection
-   */
-  public function getSimple($options=[]);
-
-  /**
-   * @param array $options
-   * @return JoinedCollection
-   */
-  public function getJoined($options=[]);
 }
