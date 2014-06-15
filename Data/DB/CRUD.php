@@ -2,6 +2,7 @@
 
 namespace X\Data\DB;
 
+use X\C;
 use X\Data\DB\Structure\Field;
 use \X\Validators\Values;
 use \X\Data\DB\Interfaces\IDB;
@@ -56,7 +57,7 @@ abstract class CRUD implements ICRUD{
   public function __call($method, $args){
     if (in_array($type=substr($method, 0, 3), ['set','get']) && array_key_exists($camelName=substr($method,3), static::$UserFieldsInterface)){
       if ($type=="set" && count($args)==1){
-        static::$UserFields[static::$UserFieldsInterface[$camelName]['name']] = is_callable($sanitizerFunction=static::$UserFieldsInterface[$camelName]['sanitizer']) ? call_user_func($sanitizerFunction, $val) : $args[0];
+        static::$UserFields[static::$UserFieldsInterface[$camelName]['name']] = is_callable($sanitizerFunction=static::$UserFieldsInterface[$camelName]['sanitizer']) ? call_user_func($sanitizerFunction, $args[0]) : $args[0];
       }elseif($type=="get"){
         return static::$UserFields[static::$UserFieldsInterface[$camelName]['name']];
       }
@@ -68,6 +69,32 @@ abstract class CRUD implements ICRUD{
    */
   public static function &connection(){
     throw new \Exception("Static method Connection in class \\X\\Data\\DB\\CRUD should be overridden!");
+  }
+
+  public static function classByTable($tableName, $database){
+    if ($database instanceof IDB){
+      $connection = $database;
+    }elseif (!($connection = DB::connectionByDatabase($database))){
+      return false;
+    }
+    if (!($alias = $connection->getAlias())){
+      return false;
+    }
+    if (!C::getDbNamespace()){
+      return false;
+    }
+    $path= "\\".str_replace('/',"\\", C::getDbNamespace().ucfirst($alias))."\\";
+    $tableName = ucfirst(strtolower($tableName));
+    return $path.$tableName;
+  }
+
+  public function fieldValue($fieldName){
+    $fieldName=strtolower($fieldName);
+    if (static::$Fields[$fieldName]){
+      $getter = static::$Fields[$fieldName]["getter"];
+      return $this->$getter();
+    }
+    throw new \RuntimeException("There is no field ".$fieldName." in ".static::TABLE_NAME);
   }
 
 }

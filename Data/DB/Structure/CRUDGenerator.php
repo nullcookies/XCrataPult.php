@@ -30,13 +30,7 @@ class CRUDGenerator extends PrivateInstantiation{
                 "\t\$cacheKey = ".$cacheKey.";"."\n".
                 "\tif (!Cache::enabled() || !C::getDbCacheTtl() || !(\$answer = Cache::getInstance()->groupGetItem('DB_".$db->getAlias()."_".$table->getName()."', \$cacheKey))){"."\n".
                 "\t\tLogger::add('DB_".$db->getAlias()."_".$table->getName().": no key '.\$cacheKey.' in cache. Loading from DB');"."\n".
-                "\t\t\$answer=DB::connectionByAlias('".$db->getAlias()."')->getSimple(["."\n".
-                "\t\t\t'conditions'=>[\"".Strings::smartImplode($fields, " AND ", function(Field &$value){$value = $value->getName()." = ?:".$value->getName().":";})."\", [".Strings::smartImplode($fields, " , ", function(Field &$value){$value = "'".$value->getName()."' => \$".$value->getAlias();})."]],"."\n".
-                "\t\t\t'instantiator'=>get_called_class().'::createFromRaw',"."\n".
-                "\t\t\t'className'=>get_called_class(),"."\n".
-                "\t\t\t'limit'=>1,"."\n".
-                "\t\t\t'cache_ttl'=>(\$ttl===null) ? C::getDbCacheTtl() : intval(\$ttl),"."\n".
-                "\t\t]);"."\n".
+                "\t\t\$answer=new Collection(static::connection(),'".$table->getName().", ".Strings::smartImplode($fields, " AND ", function(Field &$value){$value = $value->getName()." = ::".$value->getName();}).", #1', [".Strings::smartImplode($fields, " , ", function(Field &$value){$value = "'".$value->getName()."' => \$".$value->getAlias();})."]);"."\n".
                 "\t\tif (!\$answer->EOF()){"."\n".
                 "\t\t\t\$answer=\$answer->First();"."\n".
                 "\t\t\tif (Cache::enabled() && C::getDbCacheTtl()){"."\n".
@@ -257,6 +251,7 @@ class CRUDGenerator extends PrivateInstantiation{
 
     $pFields=[];
     $pFields[]="protected static \$PrimaryFields = [";
+
     foreach($table->getFields() as $field){
       if ($field->getDefault()===null && $field->getNull()){
         $default='null';
@@ -278,174 +273,83 @@ class CRUDGenerator extends PrivateInstantiation{
             $default = 0;
         }
       }
+      $timeControl='';
+      switch($field->getType()){
+        case 'timestamp':
+        case 'datetime':
+          $timeControl = "\t\$val == is_int(\$val) ? date('Y-m-d H:i:s', \$val) : \$val;";
+          break;
+        case 'date':
+          $timeControl = "\t\$val == is_int(\$val) ? date('Y-m-d', \$val) : \$val;";
+          break;
+        case 'time':
+          $timeControl = "\t\$val == is_int(\$val) ? date('H:i:s', \$val) : \$val;";
+          break;
+        case 'year':
+          $timeControl = "\t\$val == (is_int(\$val) && (\$val>2155 || \$val<1901)) ? date('Y', \$val) : \$val;";
+          break;
+      }
+
       $properties[]="protected \$".$field->getAlias()."=".$default.";";
 
       $selectors[] = "/**";
       $selectors[] = " * @param \$val";
       $selectors[] = " * @return Collection";
       $selectors[] = " */";
-      $selectors[] = "public static function getBy".$field->getCamelName()."(\$val, \$limit=0, \$asArray=false, \$groupBy=null, \$fields=[], \$ttl=null){";
-      $selectors[] = "\treturn DB::connectionByAlias('".$db->getAlias()."')->getSimple([";
-      $selectors[] = "\t\t\t'table'=>'".$table->getName()."',";
-      $selectors[] = "\t\t\t'instantiator'=>get_called_class().'::createFromRaw',";
-      $selectors[] = "\t\t\t'className'=>get_called_class(),";
-      $selectors[] = "\t\t\t'conditions'=>['".$field->getName()."=?:val:',['val'=>\$val]],";
-      $selectors[] = "\t\t\t'limit'=>\$limit,";
-      $selectors[] = "\t\t\t'asArray'=>\$asArray,";
-      $selectors[] = "\t\t\t'fields'=>\$fields,";
-      $selectors[] = "\t\t\t'groupBy'=>\$groupBy,";
-      $selectors[] = "\t\t\t'cache_ttl'=>(\$ttl===null) ? C::getDbCacheTtl() : intval(\$ttl),";
-      $selectors[] = "\t\t]);";
+      $selectors[] = "public static function getBy".$field->getCamelName()."(\$val, \$limit=0, \$groupBy=null, \$ttl=null){";
+      $selectors[] = "\treturn static::getByOneField('".$field->getName()."=::val', \$val, \$limit, \$groupBy);";
       $selectors[] = "}";
 
       $selectors[] = "/**";
       $selectors[] = " * @param \$val";
       $selectors[] = " * @return Collection";
       $selectors[] = " */";
-      $selectors[] = "public static function getBy".$field->getCamelName()."_startsWith(\$val, \$limit=0, \$asArray=false, \$groupBy=null, \$fields=[], \$ttl=null){";
-      $selectors[] = "\treturn DB::connectionByAlias('".$db->getAlias()."')->getSimple([";
-      $selectors[] = "\t\t\t'table'=>'".$table->getName()."',";
-      $selectors[] = "\t\t\t'instantiator'=>get_called_class().'::createFromRaw',";
-      $selectors[] = "\t\t\t'className'=>get_called_class(),";
-      $selectors[] = "\t\t\t'conditions'=>['".$field->getName()." LIKE \"%?:val:\"',['val'=>\$val]],";
-      $selectors[] = "\t\t\t'limit'=>\$limit,";
-      $selectors[] = "\t\t\t'asArray'=>\$asArray,";
-      $selectors[] = "\t\t\t'fields'=>\$fields,";
-      $selectors[] = "\t\t\t'groupBy'=>\$groupBy,";
-      $selectors[] = "\t\t\t'cache_ttl'=>(\$ttl===null) ? C::getDbCacheTtl() : intval(\$ttl),";
-      $selectors[] = "\t\t]);";
+      $selectors[] = "public static function getBy".$field->getCamelName()."_startsWith(\$val, \$limit=0, \$groupBy=null, \$ttl=null){";
+      $selectors[] = "\treturn static::getByOneField('".$field->getName()." LIKE \"::val%\"', \$val, \$limit, \$groupBy);";
       $selectors[] = "}";
 
       $selectors[] = "/**";
       $selectors[] = " * @param \$val";
       $selectors[] = " * @return Collection";
       $selectors[] = " */";
-      $selectors[] = "public static function getBy".$field->getCamelName()."_endsWith(\$val, \$limit=0, \$asArray=false, \$groupBy=null, \$fields=[], \$ttl=null){";
-      $selectors[] = "\treturn DB::connectionByAlias('".$db->getAlias()."')->getSimple([";
-      $selectors[] = "\t\t\t'table'=>'".$table->getName()."',";
-      $selectors[] = "\t\t\t'instantiator'=>get_called_class().'::createFromRaw',";
-      $selectors[] = "\t\t\t'className'=>get_called_class(),";
-      $selectors[] = "\t\t\t'conditions'=>['".$field->getName()." LIKE \"?:val:%\"',['val'=>\$val]],";
-      $selectors[] = "\t\t\t'limit'=>\$limit,";
-      $selectors[] = "\t\t\t'asArray'=>\$asArray,";
-      $selectors[] = "\t\t\t'fields'=>\$fields,";
-      $selectors[] = "\t\t\t'groupBy'=>\$groupBy,";
-      $selectors[] = "\t\t\t'cache_ttl'=>(\$ttl===null) ? C::getDbCacheTtl() : intval(\$ttl),";
-      $selectors[] = "\t\t]);";
+      $selectors[] = "public static function getBy".$field->getCamelName()."_endsWith(\$val, \$limit=0, \$groupBy=null, \$ttl=null){";
+      $selectors[] = "\treturn static::getByOneField('".$field->getName()." LIKE \"%::val\"', \$val, \$limit, \$groupBy);";
       $selectors[] = "}";
 
       $selectors[] = "/**";
       $selectors[] = " * @param \$val";
       $selectors[] = " * @return Collection";
       $selectors[] = " */";
-      $selectors[] = "public static function getBy".$field->getCamelName()."_contains(\$val, \$limit=0, \$asArray=false, \$groupBy=null, \$fields=[], \$ttl=null){";
-      $selectors[] = "\treturn DB::connectionByAlias('".$db->getAlias()."')->getSimple([";
-      $selectors[] = "\t\t\t'table'=>'".$table->getName()."',";
-      $selectors[] = "\t\t\t'instantiator'=>get_called_class().'::createFromRaw',";
-      $selectors[] = "\t\t\t'className'=>get_called_class(),";
-      $selectors[] = "\t\t\t'conditions'=>['".$field->getName()." LIKE \"%?:val:%\"',['val'=>\$val]],";
-      $selectors[] = "\t\t\t'limit'=>\$limit,";
-      $selectors[] = "\t\t\t'asArray'=>\$asArray,";
-      $selectors[] = "\t\t\t'fields'=>\$fields,";
-      $selectors[] = "\t\t\t'groupBy'=>\$groupBy,";
-      $selectors[] = "\t\t\t'cache_ttl'=>(\$ttl===null) ? C::getDbCacheTtl() : intval(\$ttl),";
-      $selectors[] = "\t\t]);";
+      $selectors[] = "public static function getBy".$field->getCamelName()."_contains(\$val, \$limit=0, \$groupBy=null, \$ttl=null){";
+      $selectors[] = "\treturn static::getByOneField('".$field->getName()." LIKE \"%::val%\"', \$val, \$limit, \$groupBy);";
       $selectors[] = "}";
 
       $selectors[] = "/**";
       $selectors[] = " * @param \$val";
       $selectors[] = " * @return Collection";
       $selectors[] = " */";
-      $selectors[] = "public static function getBy".$field->getCamelName()."_greater(\$val, \$limit=0, \$asArray=false, \$groupBy=null, \$fields=[], \$ttl=null){";
-      switch($field->getType()){
-        case 'timestamp':
-        case 'datetime':
-          $selectors[] = "\t\$val == is_int(\$val) ? date('Y-m-d H:i:s', \$val) : \$val;";
-          break;
-        case 'date':
-          $selectors[] = "\t\$val == is_int(\$val) ? date('Y-m-d', \$val) : \$val;";
-          break;
-        case 'time':
-          $selectors[] = "\t\$val == is_int(\$val) ? date('H:i:s', \$val) : \$val;";
-          break;
-        case 'year':
-          $selectors[] = "\t\$val == (is_int(\$val) && (\$val>2155 || \$val<1901)) ? date('Y', \$val) : \$val;";
-          break;
-      }
-      $selectors[] = "\treturn DB::connectionByAlias('".$db->getAlias()."')->getSimple([";
-      $selectors[] = "\t\t\t'table'=>'".$table->getName()."',";
-      $selectors[] = "\t\t\t'instantiator'=>get_called_class().'::createFromRaw',";
-      $selectors[] = "\t\t\t'className'=>get_called_class(),";
-      $selectors[] = "\t\t\t'conditions'=>['".$field->getName()." > \"?:val:\"',['val'=>\$val]],";
-      $selectors[] = "\t\t\t'limit'=>\$limit,";
-      $selectors[] = "\t\t\t'asArray'=>\$asArray,";
-      $selectors[] = "\t\t\t'fields'=>\$fields,";
-      $selectors[] = "\t\t\t'groupBy'=>\$groupBy,";
-      $selectors[] = "\t\t\t'cache_ttl'=>(\$ttl===null) ? C::getDbCacheTtl() : intval(\$ttl),";
-      $selectors[] = "\t\t]);";
+      $selectors[] = "public static function getBy".$field->getCamelName()."_greater(\$val, \$limit=0, \$groupBy=null, \$ttl=null){";
+      $selectors[] = $timeControl;
+      $selectors[] = "\treturn static::getByOneField('".$field->getName()." > ::val', \$val, \$limit, \$groupBy);";
       $selectors[] = "}";
 
       $selectors[] = "/**";
       $selectors[] = " * @param \$val";
       $selectors[] = " * @return Collection";
       $selectors[] = " */";
-      $selectors[] = "public static function getBy".$field->getCamelName()."_less(\$val, \$limit=0, \$asArray=false, \$groupBy=null, \$fields=[], \$ttl=null){";
-      switch($field->getType()){
-        case 'timestamp':
-        case 'datetime':
-          $selectors[] = "\t\$val == is_int(\$val) ? date('Y-m-d H:i:s', \$val) : \$val;";
-          break;
-        case 'date':
-          $selectors[] = "\t\$val == is_int(\$val) ? date('Y-m-d', \$val) : \$val;";
-          break;
-        case 'time':
-          $selectors[] = "\t\$val == is_int(\$val) ? date('H:i:s', \$val) : \$val;";
-          break;
-      }
-      $selectors[] = "\treturn DB::connectionByAlias('".$db->getAlias()."')->getSimple([";
-      $selectors[] = "\t\t\t'table'=>'".$table->getName()."',";
-      $selectors[] = "\t\t\t'instantiator'=>get_called_class().'::createFromRaw',";
-      $selectors[] = "\t\t\t'className'=>get_called_class(),";
-      $selectors[] = "\t\t\t'conditions'=>['".$field->getName()." < \"?:val:\"',['val'=>\$val]],";
-      $selectors[] = "\t\t\t'limit'=>\$limit,";
-      $selectors[] = "\t\t\t'asArray'=>\$asArray,";
-      $selectors[] = "\t\t\t'fields'=>\$fields,";
-      $selectors[] = "\t\t\t'groupBy'=>\$groupBy,";
-      $selectors[] = "\t\t\t'cache_ttl'=>(\$ttl===null) ? C::getDbCacheTtl() : intval(\$ttl),";
-      $selectors[] = "\t\t]);";
+      $selectors[] = "public static function getBy".$field->getCamelName()."_less(\$val, \$limit=0, \$groupBy=null, \$ttl=null){";
+      $selectors[] = $timeControl;
+      $selectors[] = "\treturn static::getByOneField('".$field->getName()." < ::val', \$val, \$limit, \$groupBy);";
       $selectors[] = "}";
 
       $selectors[] = "/**";
       $selectors[] = " * @param \$val";
       $selectors[] = " * @return Collection";
       $selectors[] = " */";
-      $selectors[] = "public static function getBy".$field->getCamelName()."_between(\$val1, \$val2, \$limit=0, \$groupBy=null, \$asArray=false, \$fields=[], \$ttl=null){";
-      switch($field->getType()){
-        case 'timestamp':
-        case 'datetime':
-          $selectors[] = "\t\$val1 == is_int(\$val) ? date('Y-m-d H:i:s', \$val1) : \$val1;";
-          $selectors[] = "\t\$val2 == is_int(\$val) ? date('Y-m-d H:i:s', \$val2) : \$val2;";
-          break;
-        case 'date':
-          $selectors[] = "\t\$val1 == is_int(\$val1) ? date('Y-m-d', \$val1) : \$val1;";
-          $selectors[] = "\t\$val2 == is_int(\$val2) ? date('Y-m-d', \$val2) : \$val2;";
-          break;
-        case 'time':
-          $selectors[] = "\t\$val1 == is_int(\$val1) ? date('H:i:s', \$val1) : \$val1;";
-          $selectors[] = "\t\$val2 == is_int(\$val2) ? date('H:i:s', \$val2) : \$val2;";
-          break;
-      }
-      $selectors[] = "\treturn DB::connectionByAlias('".$db->getAlias()."')->getSimple([";
-      $selectors[] = "\t\t\t'table'=>'".$table->getName()."',";
-      $selectors[] = "\t\t\t'instantiator'=>get_called_class().'::createFromRaw',";
-      $selectors[] = "\t\t\t'className'=>get_called_class(),";
-      $selectors[] = "\t\t\t'conditions'=>['".$field->getName()." BETWEEN \"?:val1:\" AND \"?:val2:\"',['val1'=>\$val1, 'val2'=>\$val2]],";
-      $selectors[] = "\t\t\t'limit'=>\$limit,";
-      $selectors[] = "\t\t\t'asArray'=>\$asArray,";
-      $selectors[] = "\t\t\t'fields'=>\$fields,";
-      $selectors[] = "\t\t\t'groupBy'=>\$groupBy,";
-      $selectors[] = "\t\t\t'cache_ttl'=>(\$ttl===null) ? C::getDbCacheTtl() : intval(\$ttl),";
-      $selectors[] = "\t\t]);";
+      $selectors[] = "public static function getBy".$field->getCamelName()."_between(\$val1, \$val2, \$limit=0, \$groupBy=null, \$ttl=null){";
+      $selectors[] = str_replace("\$val", "\$val1", $timeControl);
+      $selectors[] = str_replace("\$val", "\$val2", $timeControl);
+      $selectors[] = "\treturn static::getByOneField('".$field->getName()." BETWEEN ::val1 AND ::val2', ['val1'=>\$val1, 'val2'=>\$val2], \$limit, \$groupBy);";
       $selectors[] = "}";
 
       $fieldNames[]="\tconst f_".$field->getName()." = '`".$table->getName()."`.`".$field->getName()."`';";

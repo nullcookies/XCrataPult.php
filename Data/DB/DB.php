@@ -31,11 +31,11 @@ class DB extends PrivateInstantiation{
    * @param string $alias alias name
    * @param string $driver driver name
    *
-   * @throws \exception on any error
+   * @throws \RuntimeException on any error
    */
   public static function setDriver($alias, $driver){
     if (!Values::isSuitableForVarName($alias)){
-      throw \exception("Bad alias name for ".$alias, self::ERR_BAD_ALIAS_NAME);
+      throw new \RuntimeException("Bad alias name for ".$alias, self::ERR_BAD_ALIAS_NAME);
     }
     $driver = strval($driver);
 
@@ -43,7 +43,7 @@ class DB extends PrivateInstantiation{
 
     if (!class_exists($driver)){
       if (!class_exists("\\X\\Data\\DB\\Drivers\\".$driver)){
-        throw new \exception("DB Driver '".$driver."' doesn't exist.", self::ERR_NO_SUCH_DRIVER);
+        throw new \RuntimeException("DB Driver '".$driver."' doesn't exist.", self::ERR_NO_SUCH_DRIVER);
       }else{
         $className = "\\X\\Data\\DB\\Drivers\\".$driver;
       }
@@ -52,7 +52,7 @@ class DB extends PrivateInstantiation{
     }
     $interfaces = class_implements($className);
     if (!$interfaces || !in_array("X\\Data\\DB\\Interfaces\\IDB", $interfaces)){
-      throw new \exception("Specified driver for db ".$alias." doesn't implement interface \\X\\Data\\DB\\Interfaces\\IDB", self::ERR_BAD_INTERFACE);
+      throw new \RuntimeException("Specified driver for db ".$alias." doesn't implement interface \\X\\Data\\DB\\Interfaces\\IDB", self::ERR_BAD_INTERFACE);
     }
     self::$connections[$alias]['driver'] = $className;
   }
@@ -69,14 +69,14 @@ class DB extends PrivateInstantiation{
    * @param string $alias alias name
    * @param string $type connection type (supported are in $SUPPORTED_CONNECTION_TYPES)
    *
-   * @throws \exception on any error
+   * @throws \RuntimeException on any error
    */
   public static function setConnectionType($alias, $type){
     if (!Values::isSuitableForVarName($alias)){
-      throw \exception("Bad alias name for ".$alias, self::ERR_BAD_ALIAS_NAME);
+      throw new \RuntimeException("Bad alias name for ".$alias, self::ERR_BAD_ALIAS_NAME);
     }
     if (!in_array($type, self::$SUPPORTED_CONNECTION_TYPES)){
-      throw \exception("Bad connection type for ".$alias.". Supported types are: ".implode(", ", self::$SUPPORTED_CONNECTION_TYPES), self::ERR_BAD_CONNECTION_TYPE);
+      throw new \RuntimeException("Bad connection type for ".$alias.". Supported types are: ".implode(", ", self::$SUPPORTED_CONNECTION_TYPES), self::ERR_BAD_CONNECTION_TYPE);
     }
     self::$connections[$alias]['connection_type']=$type;
   }
@@ -96,7 +96,7 @@ class DB extends PrivateInstantiation{
    */
   public static function setHost($alias, $host){
     if (!Values::isSuitableForVarName($alias)){
-      throw \exception("Bad alias name for ".$alias, self::ERR_BAD_ALIAS_NAME);
+      throw new \RuntimeException("Bad alias name for ".$alias, self::ERR_BAD_ALIAS_NAME);
     }
     self::$connections[$alias]['host']=$host;
   }
@@ -107,7 +107,7 @@ class DB extends PrivateInstantiation{
    */
   public static function setLogin($alias, $login){
     if (!Values::isSuitableForVarName($alias)){
-      throw \exception("Bad alias name for ".$alias, self::ERR_BAD_ALIAS_NAME);
+      throw new \RuntimeException("Bad alias name for ".$alias, self::ERR_BAD_ALIAS_NAME);
     }
     self::$connections[$alias]['login']=$login;
   }
@@ -118,7 +118,7 @@ class DB extends PrivateInstantiation{
    */
   public static function setPassword($alias, $password){
     if (!Values::isSuitableForVarName($alias)){
-      throw \exception("Bad alias name for ".$alias, self::ERR_BAD_ALIAS_NAME);
+      throw new \RuntimeException("Bad alias name for ".$alias, self::ERR_BAD_ALIAS_NAME);
     }
     self::$connections[$alias]["password"] = $password;
   }
@@ -129,7 +129,7 @@ class DB extends PrivateInstantiation{
    */
   public static function setDatabase($alias, $db){
     if (!Values::isSuitableForVarName($alias)){
-      throw \exception("Bad alias name for ".$alias, self::ERR_BAD_ALIAS_NAME);
+      throw new \RuntimeException("Bad alias name for ".$alias, self::ERR_BAD_ALIAS_NAME);
     }
     self::$connections[$alias]['database']=$db;
     self::$aliases[$db]=$alias;
@@ -139,16 +139,16 @@ class DB extends PrivateInstantiation{
    * @param $alias
    *
    * @return IDB
-   * @throws \Exception
+   * @throws \RuntimeException
    */
   public static function &connectionByAlias($alias){
     if (!array_key_exists($alias, self::$connections) || !array_key_exists('database',self::$connections[$alias])){
-      throw new \Exception("There is no database with alias '".$alias."' registered in DB::connections", self::ERR_NO_SUCH_DATABASE);
+      throw new \RuntimeException("There is no database with alias '".$alias."' registered in DB::connections", self::ERR_NO_SUCH_DATABASE);
     }
     $connection = &self::$connections[$alias];
     if (!array_key_exists("connection", $connection)){
       if (!class_exists($connection['driver'])){
-        throw new \Exception("Driver for DB '".$alias."' wasn't set or invalid");
+        throw new \RuntimeException("Driver for DB '".$alias."' wasn't set or invalid");
       }
       $connection['connection']=
         (
@@ -171,7 +171,7 @@ class DB extends PrivateInstantiation{
    * @param $db
    *
    * @return IDB
-   * @throws \Exception
+   * @throws \RuntimeException
    */
   public static function connectionByDatabase($db=null){
     if ($db===null && count(self::$aliases)){
@@ -179,7 +179,7 @@ class DB extends PrivateInstantiation{
       $db = key(self::$aliases);
     }
     if (!array_key_exists($db, self::$aliases)){
-      throw new \Exception("There is no database '".$db."' registered in DB::connections", self::ERR_NO_SUCH_DATABASE);
+      throw new \RuntimeException("There is no database '".$db."' registered in DB::connections", self::ERR_NO_SUCH_DATABASE);
     }
     return self::connectionByAlias(self::$aliases[$db]);
   }
@@ -207,7 +207,7 @@ class DB extends PrivateInstantiation{
 
         if ($forceInheritors || !file_exists($classFile)){
           if ((!file_exists($classPath) || !is_dir($classPath)) && !mkdir($classPath, 0774, true)){
-            throw new \Exception("Cannot create directory '".$classPath."' for CRUD '".$className."'", self::ERR_CANNOT_CREATE_DIR);
+            throw new \RuntimeException("Cannot create directory '".$classPath."' for CRUD '".$className."'", self::ERR_CANNOT_CREATE_DIR);
           }
           $namespaceName = str_replace('/',"\\", C::getDbNamespace().$folderName);
           $classFileContents = file_get_contents(dirname(__FILE__).'/Structure/CRUDinheritorTemplate');
@@ -221,7 +221,7 @@ class DB extends PrivateInstantiation{
 
         if ($forceAbstracts || !file_exists($classFileAbstracts) || filemtime($classFileAbstracts)<$table->getLastModified()){
           if ((!file_exists($classPathAbstracts) || !is_dir($classPathAbstracts)) && !mkdir($classPathAbstracts, 0774, true)){
-            throw new \Exception("Cannot create directory '".$classPathAbstracts."' for CRUD '".$className."'", self::ERR_CANNOT_CREATE_DIR);
+            throw new \RuntimeException("Cannot create directory '".$classPathAbstracts."' for CRUD '".$className."'", self::ERR_CANNOT_CREATE_DIR);
           }
           file_put_contents($classFileAbstracts, CRUDGenerator::generateClass($db, $table));
         }
@@ -230,6 +230,35 @@ class DB extends PrivateInstantiation{
 
       Logger::add("Generating CRUDs for '".$database."'...OK");
     }
+  }
+
+  public static function Expr($expr){
+    return new Expr($expr); //simple as hell, isn't it?
+  }
+
+  public static function get($var){
+    if (is_string($var)){
+      $start=0;
+      try{
+        $connection = self::connectionByAlias($var);
+        $start=1;
+      }catch(\RuntimeException $e){
+        try{
+          $connection = self::connectionByDatabase($var);
+          $start=1;
+        }catch(\RuntimeException $e){
+          $connection = self::connectionByDatabase();
+        }
+      }
+    }elseif($var instanceof IDB){
+      $connection = $var;
+      $start=1;
+    }else{
+      $connection = self::connectionByDatabase();
+      $start=0;
+    }
+
+    return new Collection($connection, array_slice(func_get_args(), $start));
   }
 
 }

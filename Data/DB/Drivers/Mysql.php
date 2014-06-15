@@ -2,9 +2,8 @@
 
 namespace X\Data\DB\Drivers;
 
-use PHPSQLParser\PHPSQLCreator;
+use X\Data\DB\Expr;
 use X\Data\DB\Interfaces\ICRUD;
-use X\Data\DB\JoinedCollection;
 use X\Tools\Strings;
 use \X\X;
 use \X\C;
@@ -15,11 +14,7 @@ use \X\Data\DB\Structure\Database;
 use \X\Data\DB\Structure\Table;
 use \X\Data\DB\Structure\Field;
 use \X\Data\DB\Structure\Key;
-use \X\Validators\Values;
 use \X\Data\DB\Collection;
-use \X\Data\DB\CRUD;
-use \X\Debug\Tracer;
-use PHPSQLParser\PHPSQLParser;
 
 
 class Mysql implements IDB{
@@ -136,7 +131,7 @@ class Mysql implements IDB{
 
     self::chooseDB("information_schema");
     $tables = [];
-    foreach (new Collection("SELECT TABLE_NAME as name, UNIX_TIMESTAMP(CREATE_TIME) as time FROM TABLES WHERE TABLE_SCHEMA = '".$this->dbname."'", $this) as $a){
+    foreach (new Collection($this, new Expr("SELECT TABLE_NAME as name, UNIX_TIMESTAMP(CREATE_TIME) as time FROM TABLES WHERE TABLE_SCHEMA = '".$this->dbname."'")) as $a){
       $tables[]=$a;
     }
     Logger::add("- got Tables");
@@ -148,7 +143,7 @@ class Mysql implements IDB{
     $this->lazyConnect();
 
     $keys = [];
-    foreach(new Collection("SELECT k.*, t.* FROM information_schema.table_constraints t JOIN information_schema.key_column_usage k USING ( constraint_name, table_schema, table_name ) WHERE k.TABLE_NAME = '".$tableName."' AND t.table_schema =  '".$this->dbname."'", $this) as $key){
+    foreach(new Collection($this, new Expr("SELECT k.*, t.* FROM information_schema.table_constraints t JOIN information_schema.key_column_usage k USING ( constraint_name, table_schema, table_name ) WHERE k.TABLE_NAME = '".$tableName."' AND t.table_schema =  '".$this->dbname."'")) as $key){
 
       if (!array_key_exists($key['CONSTRAINT_NAME'], $keys)){
         $keys[$key['CONSTRAINT_NAME']] = new Key($this, $key['CONSTRAINT_NAME']);
@@ -194,7 +189,7 @@ class Mysql implements IDB{
     $this->lazyConnect();
 
     $fields = [];
-    foreach(new Collection("SHOW COLUMNS FROM `".$tableName."`", $this) as $field){
+    foreach(new Collection($this, new Expr("SHOW COLUMNS FROM `".$tableName."`")) as $field){
       Logger::add("- - table '".$tableName."'... field '".$field['Field']."'");
       $extra = strtolower($field['Extra']);
       $typeParams = explode("(",$field['Type']);
@@ -270,54 +265,6 @@ class Mysql implements IDB{
     return mysql_query($sql, $this->connection);
   }
 
-  public function collapseVars(&$subtree, $vars){
-    foreach ($subtree as &$item){
-      switch ($item["expr_type"]){
-        case "colref":
-          if (substr($item["no_quotes"]["parts"][0],0,2)=="?:" && substr($item["no_quotes"]["parts"][0],-1)==":"){
-
-            $valname = substr($item["no_quotes"]["parts"][0],2,-1);
-            if (array_key_exists($valname, $vars)){
-              $replacement = $vars[$valname];
-            }else{
-              $replacement=null;
-            }
-
-            if (is_array($replacement)){
-              throw new \InvalidArgumentException("Replacement in condition shouldn't be an array");
-            }
-
-            $item["expr_type"]="const";
-            $item["base_expr"]= ($replacement===null ? "NULL": (is_numeric($replacement) ? $replacement : (is_bool($replacement) ? ($replacement ? "TRUE" : "FALSE") : "\"".$this->escape($replacement)."\"")));
-            unset($item["no_quotes"]);
-          }
-          break;
-        case "const":
-          $p1 = strpos($item["base_expr"], "?:");
-          if ($p1!==false){
-            $p2 = strpos($item["base_expr"], ":", $p1+2);
-          }else{
-            $p2 = false;
-          }
-          if ($p1!==false && $p2!==false){
-            $valname = substr($item["base_expr"],$p1+2, $p2-$p1-2);
-          }
-
-          if (array_key_exists($valname, $vars)){
-            $replacement = $vars[$valname];
-          }else{
-            $replacement=null;
-          }
-
-          $item["expr_type"]="const";
-          $item["base_expr"]=str_replace("?:".$valname.":", $replacement===null ? "NULL": is_numeric($replacement) ? $replacement : (is_bool($replacement) ? ($replacement ? "TRUE" : "FALSE") : $this->escape($replacement)), $item["base_expr"]);
-      }
-      if (array_key_exists("sub_tree", $item) && $item["sub_tree"]){
-        $this->collapseVars($item["sub_tree"], $vars, $tableClass);
-      }
-    }
-  }
-
   public function getNext($resource, $asArray=true, $assoc=true){
     $this->lazyConnect();
     if ($asArray){
@@ -384,181 +331,6 @@ class Mysql implements IDB{
     }
 
     return $orderBy;
-  }
-
-  public function getSimple($options=[]){
-    $defaults = [
-      'conditions'=>[],
-      'limit'=>0,
-      'asArray'=>false,
-      'order'=>[],
-      'table'=>null,
-      'instantiator'=>null,
-      'fields'=>[],
-      'groupBy'=>null,
-      'cache_ttl'=>C::getDbCacheTtl()
-    ];
-    $options = array_merge($defaults, $options);
-    if (strpos($options['instantiator'], "::")){
-      $options['instantiator'] = explode("::",$options['instantiator']);
-    }
-
-    if ($options['instantiator']!==false && !Values::isCallback($options['instantiator'])){
-      if ($tableClass = Tracer::getCallerClass()){
-        $interfaces = class_implements($tableClass, true);
-        if ($interfaces && !in_array("X\\Data\\DB\\Interfaces\\ICRUD", $interfaces)){
-          if ($options['table']===null){
-            $options['table']=$tableClass::TABLE_NAME;
-          }
-          if ($options['table']===$tableClass::TABLE_NAME){
-            $options['instantiator'] = $tableClass.'::createFromRaw';
-            $options['fields']=[];
-          }
-        }
-      }
-    }
-
-    if($options['instantiator']!==false && $options['table']===null && is_array($options['instantiator']) && class_exists($options['instantiator'][0])){
-      $options['table']=$options['instantiator'][0]::TABLE_NAME;
-    }
-
-    if (!$tableClass && $options["className"]){
-      $tableClass = $options["className"];
-    }
-
-    if ($options['table']===null){
-      throw new \exception("Table wasn't specified for select-query", self::ERR_GET_NO_TABLE);
-    }
-
-    $answer=null;
-    if (!is_array($options['conditions']) || !count($options['conditions'])){
-      $options['conditions']=null;
-    }
-
-    $options['limit'] = intval($options['limit']);
-
-    $orderBy = $this->parseOrderBy($options['order']);
-    $groupBy = $options['groupBy']? "GROUP BY ".$options['groupBy']:'';
-
-    $fields=[];
-    if (!is_array($options['fields']) || !count($options['fields']) || !$tableClass){
-      $fieldsWeNeed = '*';
-    }else{
-      $fieldsWeNeed = Strings::smartImplode($options['fields'], ", ", function(&$value)use($tableClass,&$fields){ if ($tableClass && array_key_exists(strtolower($value),$tableClass::getFields())){$fields[]=$value; $value = "`".$value."`";}else{$value="NULL";}});
-    }
-
-    $where='';
-    $wherevars = [];
-
-    if (is_array($options["conditions"]) && strlen(trim($options["conditions"][0]))){
-      $where = "WHERE ".$options["conditions"][0];
-      $wherevars = $options["conditions"][1];
-    }
-
-    $sqlExpr = 'SELECT '.$fieldsWeNeed.' FROM `'.$options['table'].'` '.$where.' '.$groupBy.' '.$orderBy.' '.($options['limit'] > 0 ? 'LIMIT '.$options['limit'] : '').';';
-    $parsed = (new PHPSQLParser($sqlExpr))->parsed;
-
-    if ($wherevars && $where && $parsed["WHERE"]){
-      $this->collapseVars($parsed["WHERE"], $wherevars);
-    }
-    $sqlExpr = (new PHPSQLCreator())->create($parsed);
-    if (($ttl = intval($options["cache_ttl"]))>0){
-      $cacheKey = md5($sqlExpr.$options["instantiator"]);
-    }
-    $collection = new Collection($sqlExpr, $this, $options['instantiator'], $ttl ? $cacheKey : null, $ttl);
-    if (!!$options['asArray']){
-      $answer = Array();
-      while($instance = $collection->Next()){
-        $answer[]=$instance->asArray($fields);
-      }
-      return $answer;
-    }
-
-    return $collection;
-  }
-
-  public function getJoined($options=[]){
-    $defaults = [
-      'conditions'=>[],
-      'limit'=>0,
-      'order'=>[],
-      'tables'=>[],
-      'cache_ttl'=>C::getDbCacheTtl(),
-      'groupBy'=>null
-    ];
-    $options = array_merge($defaults, $options);
-
-
-    if (!is_array($options['tables']) || count($options['tables'])==0){
-      throw new \exception("Tables weren't specified for select-query", self::ERR_GET_NO_TABLE);
-    }
-
-    foreach($options['tables'] as $tableData){
-      if (!class_exists($tableData['class'])){
-        throw new \exception("Tables array is inconsistent, there is no valid classname specified", self::ERR_GET_NO_TABLE);
-      }
-    }
-
-    if (!is_array($options['conditions']) || !count($options['conditions'])){
-      $options['conditions']=null;
-    }
-
-    $options['limit'] = intval($options['limit']);
-    $orderBy = $this->parseOrderBy($options['order']);
-
-    $fieldsWeNeed=[];
-
-    foreach($options['tables'] as $tableData){
-      $class = $tableData['class'];
-      foreach($class::getFields() as $fieldName=>$field){
-        if (array_key_exists('fullName', $field) && $field['fullName']){
-          $fieldsWeNeed[]="`".$tableData['alias'].'`.`'.$fieldName."` as '".$tableData['alias'].".".$fieldName."'";
-        }
-      }
-    }
-
-    $fieldsWeNeed=implode(",", $fieldsWeNeed);
-
-    $joinedTables='';
-
-    for ($i=0; $i<count($options['tables']); $i++){
-      if ($i==0){
-        $joinedTables.="`".$options['tables'][$i]['name']."` ".$options['tables'][$i]['alias']." ";
-      }else{
-        $joinedTables.="LEFT JOIN `".$options['tables'][$i]['name']."` ".$options['tables'][$i]['alias']." ON(";
-        $fields=[];
-        foreach($options['tables'][$i]['fields'] as $f1=>$f2){
-          $fields[]=$f1."=".$f2;
-        }
-        $joinedTables.=implode(",",$fields);
-        $joinedTables.=")";
-      }
-    }
-
-    $where='';
-    $wherevars = [];
-
-    if (is_array($options["conditions"]) && strlen(trim($options["conditions"][0]))){
-      $where = "WHERE ".$options["conditions"][0];
-      $wherevars = $options["conditions"][1];
-    }
-
-    $groupBy = $options['groupBy']? "GROUP BY ".$options['groupBy']:'';
-
-    $sqlExpr = 'SELECT '.$fieldsWeNeed.' FROM '.$joinedTables.' '.$where.' '.$groupBy.' '.$orderBy.' '.($options['limit'] > 0 ? 'LIMIT '.$options['limit'] : '').';';
-
-    $parsed = (new PHPSQLParser($sqlExpr))->parsed;
-
-    if ($wherevars && $where && $parsed["WHERE"]){
-      $this->collapseVars($parsed["WHERE"], $wherevars);
-    }
-    $sqlExpr = (new PHPSQLCreator())->create($parsed);
-    //echo $sqlExpr;
-    if (($ttl = intval($options["cache_ttl"]))>0){
-      $cacheKey = md5($sqlExpr.$options["instantiator"]);
-    }
-    $collection = new JoinedCollection($sqlExpr, $this, $options['tables'], $ttl ? $cacheKey : null, $ttl);
-    return $collection;
   }
 
   public function store(ICRUD &$object){
