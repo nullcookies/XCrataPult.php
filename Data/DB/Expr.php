@@ -42,4 +42,8 @@ class Expr {
     }
   }
 
+  public function __toString(){
+    return $this->get();
+  }
+
 } 
