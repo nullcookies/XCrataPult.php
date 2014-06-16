@@ -41,6 +41,7 @@ class Collection extends \ArrayObject{
   protected $order=[];
   protected $group=[];
   protected $whereVars=[];
+  protected $fields=[];
 
   const BAD_CALLBACK = 801;
   const BAD_QUERY_RESOURCE = 802;
@@ -84,6 +85,7 @@ class Collection extends \ArrayObject{
       $where=[];
       $order=[];
       $group=[];
+      $fields=[];
       $limit='';
       foreach($this->magicSploder($expr) as $part){
         $part = trim($part);
@@ -93,6 +95,8 @@ class Collection extends \ArrayObject{
           $order[]=$part;
         }elseif($this->strfind($part, "#")!==false){
           $limit=$part;
+        }elseif($part[0]=='+'){
+          $fields[]=substr($part,1);
         }elseif($part[0]=='(' && substr($part, -1)==')'){
           $group[]=$part;
         }elseif($this->strfind($part, "=")!==false){
@@ -154,17 +158,32 @@ class Collection extends \ArrayObject{
           }
         }
       }
-
       $this->from($from);
       $this->by($where);
       $this->limit($limit);
       $this->order($order);
       $this->group($group);
+      $this->fields($fields);
     }
     if (count($this->tableNames)==1){
       reset($this->tableNames);
       $this->scope(key($this->tableNames));
     }
+  }
+
+  public function fields($fields){
+    if (!is_array($fields)){
+      $fields = $this->magicSploder($fields);
+    }
+    foreach($fields as $f){
+      $tmp = explode(" ", trim($f));
+      $tmp = array_pop($tmp);
+      if (Values::isSQLname($tmp,true)){
+        $this->fields[] = "::".($name="expr_".md5($f));
+        $this->whereVars[$name]=new Expr(str_replace(" ".$tmp, " as ".$tmp, $f));
+      }
+    }
+    return $this;
   }
 
   public function order($order){
@@ -187,6 +206,11 @@ class Collection extends \ArrayObject{
         $this->order[]=$o.' '.$direction; //we assume that the user can provide us with function inside
       }
     }
+    return $this;
+  }
+
+  public function resetScope(){
+    $this->scope=null;
     return $this;
   }
 
@@ -363,6 +387,7 @@ class Collection extends \ArrayObject{
         }
       }
     }
+    $fieldsWeNeed = array_merge($fieldsWeNeed, $this->fields);
     $fieldsWeNeed=implode(",", $fieldsWeNeed);
     //TODO: additional fields
     $joinedTables='';
@@ -405,11 +430,14 @@ class Collection extends \ArrayObject{
     $sqlExpr = 'SELECT '.$fieldsWeNeed.' FROM '.$joinedTables.' '.$where.' '.$groupBy.' '.$orderBy.' '.$limit;
 
     $parsed = (new PHPSQLParser($sqlExpr))->parsed;
-
-    if (count($this->whereVars) && $where && $parsed["WHERE"]){
+    if (count($this->whereVars) && $parsed){
       $this->collapseVars($parsed["WHERE"], $this->whereVars);
     }
     $sqlExpr = (new PHPSQLCreator())->create($parsed);
+
+    foreach($this->whereVars as $name=>$val){
+      $sqlExpr = str_replace("::".$name, $val instanceof Expr ? $val->get() : $val, $sqlExpr);
+    }
 
     //echo $sqlExpr;
     //if (($ttl = intval($options["cache_ttl"]))>0){
@@ -422,6 +450,9 @@ class Collection extends \ArrayObject{
 
   private function collapseVars(&$subtree, $vars){
     $n=0;
+    if (!$subtree || !is_array($subtree)){
+      return;
+    }
     foreach ($subtree as &$item){
       switch ($item["expr_type"]){
         case "colref":
@@ -442,9 +473,9 @@ class Collection extends \ArrayObject{
               throw new \InvalidArgumentException("Replacement in condition shouldn't be an array");
             }
 
-            $item["expr_type"]="const";
+            $item["expr_type"]="colref";
             $item["base_expr"]= ($replacement===null ? "NULL": (is_numeric($replacement) ? $replacement : (is_bool($replacement) ? ($replacement ? "TRUE" : "FALSE") : ($replacement instanceof Expr ? $replacement->get() : "\"".$this->driver->escape($replacement)."\""))));
-            unset($item["no_quotes"]);
+            //unset($item["no_quotes"]);
           }
           break;
         case "const":
