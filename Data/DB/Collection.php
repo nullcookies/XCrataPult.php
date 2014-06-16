@@ -339,7 +339,8 @@ class Collection extends \ArrayObject{
         foreach($where as $w){
           $this->where[]=$w;
         }
-        $where = "WHERE ".implode(" and ", $this->where);
+
+        $where = "WHERE ".implode(" and ", array_filter($this->where,'trim'));
         $parsed = (new PHPSQLParser($where))->parsed;
         if ($parsed && array_key_exists("WHERE", $parsed)){
           $this->parseWhere($parsed["WHERE"]);
@@ -1076,7 +1077,7 @@ class Collection extends \ArrayObject{
     $string = strtolower($string);
     $string = preg_replace('/\s\s+/', ' ', trim($string));
     $string = str_replace([" =", "= "], "=", $string);
-    $reg = '/[^(,]*(?:\([^)]+\))?[^),]*\)?/';
+    $reg = '/[^(,]*(?:\([^)]+\))?[^),]*[\)]*/';
     preg_match_all($reg, $string, $matches);
     $answer=array_filter($matches[0]);
     array_walk($answer, function(&$v){$v=trim($v);});
