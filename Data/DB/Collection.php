@@ -1081,7 +1081,15 @@ class Collection extends \ArrayObject{
     preg_match_all($reg, $string, $matches);
     $answer=array_filter($matches[0]);
     array_walk($answer, function(&$v){$v=trim($v);});
-    return $answer;
+    $pn=0;
+    $parts=[];
+    foreach($answer as $chunk){
+      $parts[$pn].=$chunk;
+      if (substr_count($parts[$pn], '(')==substr_count($parts[$pn], ')')){
+        $pn++;
+      }
+    }
+    return $parts;
   }
 
   private function strfind($haystack, $needle, $offset=0){
