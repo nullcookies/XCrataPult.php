@@ -56,6 +56,10 @@ class Collection extends \ArrayObject{
 
     $vars = [];
 
+    if (is_array($expr) && count($expr)==1){
+      $expr=$expr[0];
+    }
+
     if ($expr instanceof Expr){
       $this->expr = $expr;
       $this->exprRestriced=true;
@@ -82,6 +86,7 @@ class Collection extends \ArrayObject{
       $group=[];
       $limit='';
       foreach($this->magicSploder($expr) as $part){
+        $part = trim($part);
         if (Values::isSQLname($part) || ($this->strfind($part, ":")!==false && substr_count($part, ":")==1)){
           $from[]=$part;
         }elseif($this->strfind($part, "by ")!==false || $this->strfind($part." ", "asc ")!==false || $this->strfind($part." ", "desc")!==false){
@@ -154,6 +159,7 @@ class Collection extends \ArrayObject{
       $this->by($where);
       $this->limit($limit);
       $this->order($order);
+      $this->group($group);
     }
     if (count($this->tableNames)==1){
       reset($this->tableNames);
@@ -437,7 +443,7 @@ class Collection extends \ArrayObject{
             }
 
             $item["expr_type"]="const";
-            $item["base_expr"]= ($replacement===null ? "NULL": (is_numeric($replacement) ? $replacement : (is_bool($replacement) ? ($replacement ? "TRUE" : "FALSE") : "\"".$this->driver->escape($replacement)."\"")));
+            $item["base_expr"]= ($replacement===null ? "NULL": (is_numeric($replacement) ? $replacement : (is_bool($replacement) ? ($replacement ? "TRUE" : "FALSE") : ($replacement instanceof Expr ? $replacement->get() : "\"".$this->driver->escape($replacement)."\""))));
             unset($item["no_quotes"]);
           }
           break;
@@ -794,6 +800,7 @@ class Collection extends \ArrayObject{
       if ($this->count && $this->count<C::getDbCacheMaxrows()){
         $this->prefetch();
       }
+      $this->eof= $this->count===0;
     }
   }
 
@@ -1038,7 +1045,7 @@ class Collection extends \ArrayObject{
     $string = strtolower($string);
     $string = preg_replace('/\s\s+/', ' ', trim($string));
     $string = str_replace([" =", "= "], "=", $string);
-    $reg = '/[^(,]*(?:\([^)]+\))?[^),]*/';
+    $reg = '/[^(,]*(?:\([^)]+\))?[^),]*\)?/';
     preg_match_all($reg, $string, $matches);
     $answer=array_filter($matches[0]);
     array_walk($answer, function(&$v){$v=trim($v);});
