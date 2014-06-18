@@ -91,7 +91,7 @@ class Collection extends \ArrayObject{
         $part = trim($part);
         if (Values::isSQLname($part) || ($this->strfind($part, ":")!==false && substr_count($part, ":")==1)){
           $from[]=$part;
-        }elseif($this->strfind($part, "by ")!==false || $this->strfind($part." ", "asc ")!==false || $this->strfind($part." ", "desc")!==false){
+        }elseif($this->strfind(" ".$part, " by ")!==false || $this->strfind(" ".$part." ", " asc ")!==false || $this->strfind(" ".$part." ", " desc ")!==false){
           $order[]=$part;
         }elseif($this->strfind($part, "#")!==false){
           $limit=$part;
@@ -287,7 +287,13 @@ class Collection extends \ArrayObject{
       for ($i=0; $i<func_num_args(); $i++){
         $op='=';
         $newPH = 'auto_'.md5(uniqid(true));
-        $part = trim(func_get_arg($i));
+
+        $part = func_get_arg($i);
+        if (is_array($part)){
+          $this->whereVars = array_merge($this->whereVars, $part);
+          continue;
+        }
+        $part = trim($part);
         if (!$lastPH){
           if ($part[0]=='%'){
             $op=' LIKE "%::'.$newPH.'"';
@@ -413,7 +419,8 @@ class Collection extends \ArrayObject{
 
     $groupBy='';
     if (count($this->group)){
-      $groupBy="GROUP BY ".implode(",", $this->group);
+      $groupBy = array_unique($this->group);
+      $groupBy="GROUP BY ".implode(",", $groupBy);
     }
 
     $orderBy='';
@@ -449,8 +456,7 @@ class Collection extends \ArrayObject{
     return ($this->expr = new Expr($sqlExpr));
   }
 
-  private function collapseVars(&$subtree, $vars){
-    $n=0;
+  private function collapseVars(&$subtree, $vars, $n=0){
     if (!$subtree || !is_array($subtree)){
       return;
     }
@@ -507,7 +513,7 @@ class Collection extends \ArrayObject{
           $item["base_expr"]=str_replace("::".$valname, $replacement===null ? "NULL": is_numeric($replacement) ? $replacement : (is_bool($replacement) ? ($replacement ? "TRUE" : "FALSE") : $this->driver->escape($replacement)), $item["base_expr"]);
       }
       if (array_key_exists("sub_tree", $item) && $item["sub_tree"]){
-        $this->collapseVars($item["sub_tree"], $vars);
+        $this->collapseVars($item["sub_tree"], $vars, $n);
       }
     }
   }
@@ -553,7 +559,7 @@ class Collection extends \ArrayObject{
   public function from($tables){
     $this->resetRes();
     if (!is_array($tables)){
-      $this->magicSploder($tables);
+      $tables = $this->magicSploder($tables);
     }else{
       array_walk($tables, function(&$v){$v=strtolower(trim($v));});
     }
@@ -644,7 +650,7 @@ class Collection extends \ArrayObject{
       }
       $this->addTable([$tableName, $alias, $conditions]);
     }
-
+    return $this;
   }
 
   public function addTable($tableClass, $alias=null, $conditions=null){
