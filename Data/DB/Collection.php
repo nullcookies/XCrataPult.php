@@ -97,7 +97,7 @@ class Collection extends \ArrayObject{
           $limit=$part;
         }elseif($part[0]=='+'){
           $fields[]=substr($part,1);
-        }elseif($part[0]=='(' && substr($part, -1)==')'){
+        }elseif($part[0]=='(' && substr($part, -1)==')' && substr_count($part, "(")==1 && substr_count($part, ")")==1){
           $group[]=$part;
         }elseif($this->strfind($part, "=")!==false){
           if ($this->strfind($part, " ")){
@@ -654,6 +654,8 @@ class Collection extends \ArrayObject{
   }
 
   public function addTable($tableClass, $alias=null, $conditions=null){
+
+
     $this->resetRes();
     if (is_array($tableClass)){
       list($tableClass, $alias, $conditions) = $tableClass;
@@ -758,7 +760,6 @@ class Collection extends \ArrayObject{
         throw new \RuntimeException("The table '".$tClass::TABLE_NAME."' cannot be joined with FK '".$conditions."' since it has no fields shared between tables to be connected");
       }
     }elseif (is_array($conditions) && count($conditions)){
-
       $fieldCheck = function($fieldName)use($tClass, $alias){
         $fieldName = strtolower($fieldName);
         if (strpos($fieldName, ".")){
@@ -793,7 +794,7 @@ class Collection extends \ArrayObject{
         if ($fromField && $toField){
           $fields[$fromField]=$toField;
         }else{
-          throw new \RuntimeException("Fields provided in conditions contain non-existing ones or ambiguous. Use {table_name}.{field_name} naming style.");
+          throw new \RuntimeException("Fields provided in [".$fromField."=>".$toField."] conditions contain non-existing ones or ambiguous. Use {table_name}.{field_name} naming style.");
         }
       }
     }else{
