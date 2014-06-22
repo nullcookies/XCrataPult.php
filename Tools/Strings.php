@@ -79,4 +79,42 @@ class Strings {
   public static function offset($val, $minLength=2, $fillChar='0'){
     return str_repeat($fillChar, $minLength-strlen($val)).$val;
   }
+
+  public static function explodeByIndex($string, array $indexes){
+    $offset=0;
+    $length=strlen($string);
+    $answer=[];
+    foreach($indexes as $i){
+      if ($offset>=$length){
+        break;
+      }
+      $answer[]=substr($string, $offset, $i);
+      $offset+=$i;
+    }
+    return $answer;
+  }
+
+  public static function explodeSelective($string, $delimeters=",", $braces=['()']){
+    $answer=[];
+    $ignore=false;
+    $offset=0;
+
+    $cutPoints=[];
+
+    $string = preg_replace('/\s\s+/', ' ', trim($string));
+    $string = str_replace([" =", "= "], "=", $string);
+    $reg = '/[^(,]*(?:\([^)]+\))?[^),]*[\)]*/';
+    preg_match_all($reg, $string, $matches);
+    $answer=array_filter($matches[0]);
+    array_walk($answer, function(&$v){$v=trim($v);});
+    $pn=0;
+    $parts=[];
+    foreach($answer as $chunk){
+      $parts[$pn].=$chunk;
+      if (substr_count($parts[$pn], '(')==substr_count($parts[$pn], ')')){
+        $pn++;
+      }
+    }
+    return $parts;
+  }
 } 
