@@ -41,6 +41,8 @@ final class Time extends PrivateInstantiation{
   static public function monthToTime($monthTime=null){
     if ($monthTime<0){
       $monthTime = strtotime(abs($monthTime).' months ago');
+    }elseif($monthTime<1000 && $monthTime!==null){
+      $monthTime = strtotime("+".abs($monthTime).' months');
     }
     return strtotime( 'first day of ' . date( 'F Y' , $monthTime?:time()));
   }
