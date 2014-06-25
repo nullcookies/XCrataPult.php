@@ -79,4 +79,120 @@ class Strings {
   public static function offset($val, $minLength=2, $fillChar='0'){
     return str_repeat($fillChar, $minLength-strlen($val)).$val;
   }
+
+  public static function explodeByIndex($string, array $indexes){
+    $offset=0;
+    $length=strlen($string);
+    $answer=[];
+    foreach($indexes as $i){
+      if ($offset>=$length){
+        break;
+      }
+      if (is_array($i)){
+        $answer[]=substr($string, $offset, $i[0]);
+        $offset+=$i[0]+$i[1];
+      }else{
+        $answer[]=substr($string, $offset, $i);
+        $offset+=$i;
+      }
+    }
+    $answer[]=substr($string, $offset);
+    return $answer;
+  }
+
+  public static function explodeSelective($string, $delimeters=",", $braces=['()']){
+    $answer=[];
+    $ignore=false;
+    $offset=0;
+    $length = strlen($string);
+
+    $cutPoints=[];
+
+    if (!is_array($delimeters)){
+      $delimeters = [$delimeters];
+    }
+    if (!is_array($braces)){
+      $braces = [$braces];
+    }
+
+    $nearestB=null;
+    $nearestBpos=0;
+    $bracesStack=[];
+    $q=0;
+    while($offset<$length){
+      $q++;
+      if ($q>10){
+        break;
+      }
+      if (!$ignore){
+        $nearestD=null;
+        $nearestDpos=$length;
+        foreach($delimeters as $d){
+          if ( ($pos = strpos($string, $d, $offset))!==false){
+            if ($pos<$nearestDpos){
+              $nearestDpos=$pos;
+              $nearestD=$d;
+            }
+          }
+        }
+        if ($nearestD===null){
+          $offset=$length;
+          break;
+        }
+        if ($nearestBpos<$nearestDpos){
+          $nearestB=null;
+          $nearestBpos=$length;
+          foreach($braces as $b){
+            if ( ($pos = strpos($string, $b[0], $offset))!==false){
+              if ($pos<$nearestBpos){
+                $nearestBpos=$pos;
+                $nearestB=$b[0];
+              }
+            }
+          }
+          if ($nearestBpos<$nearestDpos){
+            $ignore=true;
+            $offset = $nearestBpos+1;
+            $bracesStack[]=$nearestB;
+          }
+        }
+        if (!$ignore){
+          $cutPoints[]=[$nearestDpos, strlen($nearestD)];
+          $offset = $nearestDpos+1;
+        }
+      }
+      while($ignore && $offset<$length){
+        $nearestOB=null;
+        $nearestOBpos=$length;
+        $nearestCB=null;
+        $nearestCBpos=$length;
+        foreach($braces as $b){
+          if ( ($pos = strpos($string, $b[0], $offset))!==false){
+            if ($pos<$nearestOBpos){
+              $nearestOBpos=$pos;
+              $nearestOB=$b[0];
+            }
+          }
+          if ($b[0]===end($bracesStack) && ($pos = strpos($string, $b[1], $offset))!==false){
+            if ($pos<$nearestCBpos){
+              $nearestCBpos=$pos;
+              $nearestCB=$b[1];
+            }
+          }
+        }
+        if ($nearestCBpos<$nearestOBpos){
+          array_pop($bracesStack);
+          $offset = $nearestCBpos+1;
+          if (count($bracesStack)==0){
+            $ignore=false;
+          }
+        }else{
+          $offset = $nearestOBpos+1;
+          $bracesStack[]=$nearestOB;
+        }
+      }
+    }
+
+    return self::explodeByIndex($string, $cutPoints);
+  }
 } 
