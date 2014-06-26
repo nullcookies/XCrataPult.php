@@ -6,6 +6,7 @@ namespace X\Data\DB;
 
 use PHPSQLParser\PHPSQLCreator;
 use PHPSQLParser\PHPSQLParser;
+use X\Tools\Strings;
 use X\C;
 use X\Data\Persistent\Cache;
 use \X\Data\DB\Iterator;
@@ -87,7 +88,7 @@ class Collection extends \ArrayObject{
       $group=[];
       $fields=[];
       $limit='';
-      foreach($this->magicSploder($expr) as $part){
+      foreach(Strings::explodeSelective($expr) as $part){
         $part = trim($part);
         if (Values::isSQLname($part) || ($this->strfind($part, ":")!==false && substr_count($part, ":")==1)){
           $from[]=$part;
@@ -173,7 +174,7 @@ class Collection extends \ArrayObject{
 
   public function fields($fields){
     if (!is_array($fields)){
-      $fields = $this->magicSploder($fields);
+      $fields = Strings::explodeSelective($fields);
     }
     foreach($fields as $f){
       $tmp = explode(" ", trim($f));
@@ -559,7 +560,7 @@ class Collection extends \ArrayObject{
   public function from($tables){
     $this->resetRes();
     if (!is_array($tables)){
-      $tables = $this->magicSploder($tables);
+      $tables = Strings::explodeSelective($tables);
     }else{
       array_walk($tables, function(&$v){$v=strtolower(trim($v));});
     }
@@ -1078,25 +1079,6 @@ class Collection extends \ArrayObject{
         $this->fieldNames[$name][]=$fieldData["fullName"];
       }
     }
-  }
-
-  private function magicSploder($string){
-    $string = strtolower($string);
-    $string = preg_replace('/\s\s+/', ' ', trim($string));
-    $string = str_replace([" =", "= "], "=", $string);
-    $reg = '/[^(,]*(?:\([^)]+\))?[^),]*[\)]*/';
-    preg_match_all($reg, $string, $matches);
-    $answer=array_filter($matches[0]);
-    array_walk($answer, function(&$v){$v=trim($v);});
-    $pn=0;
-    $parts=[];
-    foreach($answer as $chunk){
-      $parts[$pn].=$chunk;
-      if (substr_count($parts[$pn], '(')==substr_count($parts[$pn], ')')){
-        $pn++;
-      }
-    }
-    return $parts;
   }
 
   private function strfind($haystack, $needle, $offset=0){

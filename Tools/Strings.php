@@ -89,11 +89,11 @@ class Strings {
         break;
       }
       if (is_array($i)){
-        $answer[]=substr($string, $offset, $i[0]);
-        $offset+=$i[0]+$i[1];
+        $answer[]=substr($string, $offset, $i[0]-$offset);
+        $offset=$i[0]+$i[1];
       }else{
         $answer[]=substr($string, $offset, $i);
-        $offset+=$i;
+        $offset=$i;
       }
     }
     $answer[]=substr($string, $offset);
@@ -118,12 +118,7 @@ class Strings {
     $nearestB=null;
     $nearestBpos=0;
     $bracesStack=[];
-    $q=0;
     while($offset<$length){
-      $q++;
-      if ($q>10){
-        break;
-      }
       if (!$ignore){
         $nearestD=null;
         $nearestDpos=$length;
