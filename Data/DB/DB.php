@@ -148,7 +148,12 @@ class DB extends PrivateInstantiation{
     $connection = &self::$connections[$alias];
     if (!array_key_exists("connection", $connection)){
       if (!class_exists($connection['driver'])){
-        throw new \RuntimeException("Driver for DB '".$alias."' wasn't set or invalid");
+        if (!$connection['driver']){
+          static::setDriver($alias, "mysql");
+          return static::connectionByAlias($alias);
+        }else{
+          throw new \RuntimeException("Driver for DB '".$alias."' wasn't set or invalid");
+        }
       }
       $connection['connection']=
         (
