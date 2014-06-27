@@ -965,4 +965,15 @@ class Values extends PrivateInstantiation{
   public static function unHTML($string){
     return htmlspecialchars($string);
   }
+
+  public static function isFilename(&$name, $fix=false){
+    $disallowedSymbols="\\/?*:;{}\\\\";
+    if (preg_match("/^[^".$disallowedSymbols."]+$/", $name)){
+      return true;
+    }elseif($fix){
+      $name = preg_replace("/[".$disallowedSymbols."]/", "_", $name);
+      return true;
+    }
+    return false;
+  }
 } 
