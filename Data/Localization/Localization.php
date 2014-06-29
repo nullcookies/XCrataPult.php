@@ -10,8 +10,6 @@ use X\Data\Localization\Languages;
 use X\Data\SmartObjects\PlaceholdersString;
 use X\Data\SmartObjects\PluralString;
 use \x\debug\Logger;
-use \x\abstractClasses\PrivateInstantiation;
-use \x\tools\Validators;
 use \x\tools\FileSystem;
 use \x\x;
 
@@ -23,46 +21,47 @@ class Localization{
   private static $displayKeys=false;
 
   public static function setFolder($path){
-    self::$paths[] = C::checkDir($path);
+    static::$paths[] = C::checkDir($path);
+    static::update();
   }
 
   public static function setLanguages($languages){
     $languages = explode(",", $languages);
     array_walk($languages, function(&$el){$el=trim($el);});
     foreach($languages as $language){
-      self::addLanguage($language, Languages::$code2local[$language]);
+      static::addLanguage($language, Languages::$code2local[$language]);
     }
   }
 
   public static function addLanguage($code, $name=null){
-    self::$languages[$code]  = $name?:Languages::$code2local[$code];
-    self::$dictionary[$code] = [];
-    if (self::$currentLanguage===null){
-      self::$currentLanguage = $code; // first registered language is current by default
+    static::$languages[$code]  = $name?:Languages::$code2local[$code];
+    static::$dictionary[$code] = [];
+    if (static::$currentLanguage===null){
+      static::$currentLanguage = $code; // first registered language is current by default
     }
-    return self::loadFromConfig($code);
+    return static::loadFromConfig($code);
   }
 
   public static function languageExists($code){
-    return array_key_exists($code, self::$languages);
+    return array_key_exists($code, static::$languages);
   }
 
   public static function setLanguage($code){
-    if (array_key_exists($code, self::$dictionary)){
-      self::$currentLanguage = $code;
+    if (array_key_exists($code, static::$dictionary)){
+      static::$currentLanguage = $code;
     }else{
       throw new \InvalidArgumentException("There is no registered language with code '".$code."'");
     }
   }
 
   public static function displayUnknownKeys($displayKeys=true){
-    self::$displayKeys=$displayKeys;
+    static::$displayKeys=$displayKeys;
   }
 
   public static function hasKey($path){
-    $language = $language ?: self::$currentLanguage;
-    if (array_key_exists($language, self::$dictionary)){
-      $root = &self::$dictionary[$language];
+    $language = static::$currentLanguage;
+    if (array_key_exists($language, static::$dictionary)){
+      $root = &static::$dictionary[$language];
       $path_ = explode(".", $path);
       for($i=0; $i<count($path_); $i++){
         if (is_array($root) && array_key_exists($path_[$i], $root)){
@@ -79,10 +78,10 @@ class Localization{
   }
 
   public static function get($path, $data=[]){
-    $language = $language ?: self::$currentLanguage;
-    if (array_key_exists($language, self::$dictionary)){
+    $language = static::$currentLanguage;
+    if (array_key_exists($language, static::$dictionary)){
       //TODO: check cache
-      $root = &self::$dictionary[$language];
+      $root = &static::$dictionary[$language];
       $path_ = explode(".", $path);
       for($i=0; $i<count($path_); $i++){
         if (is_array($root) && array_key_exists($path_[$i], $root)){
@@ -100,29 +99,30 @@ class Localization{
           break;
         }
       }
+      return null;
       //TODO: cache null;
     }
 
-    return self::$displayKeys ? $path : null;
+    return static::$displayKeys ? $path : null;
   }
 
   public static function getCurrentLanguageCode(){
-    return self::$currentLanguage;
+    return static::$currentLanguage;
   }
 
   public static function &getLanguageData($code=null){
     if ($code===null){
-      $code = self::$currentLanguage;
+      $code = static::$currentLanguage;
     }
-    if (array_key_exists($code, self::$dictionary)){
-      return self::$dictionary[$code];
+    if (array_key_exists($code, static::$dictionary)){
+      return static::$dictionary[$code];
     }else{
       return [];
     }
   }
 
   public static function hasLanguage($code){
-    return array_key_exists($code, self::$dictionary);
+    return array_key_exists($code, static::$dictionary);
   }
 
   private static function gobbleDir($path, $code, $base=null){
@@ -136,9 +136,9 @@ class Localization{
     foreach ($files as $file){
       Logger::add("Language file: " . $file . " (loading)");
       if (is_dir($file)){
-        self::gobbleDir($file, $code, $base);
+        static::gobbleDir($file, $code, $base);
       }else{
-        if (self::fromFile($code, $file, $base)){
+        if (static::fromFile($code, $file, $base)){
           Logger::add("Language file: " . $file . " (OK)");
         }else{
           Logger::add("Language file: " . $file . " (ERROR)");
@@ -148,11 +148,11 @@ class Localization{
   }
 
   private static function loadFromConfig($code){
-    if (!self::$paths){
+    if (!static::$paths){
       throw new \InvalidArgumentException("Localization folder is not configured (l10n.folder). Language ".$code." was not added.");
     }
 
-    foreach(self::$paths as $base){
+    foreach(static::$paths as $base){
       $base   = FileSystem::finalizeDirPath($base).$code;
       $files  = Array();
 
@@ -161,10 +161,17 @@ class Localization{
         continue;
       }
 
-      self::gobbleDir($base, $code);
+      static::gobbleDir($base, $code);
     }
 
     return true;
+  }
+  
+  private static function update(){
+    foreach(static::$languages as $code=>$data){
+      static::$dictionary[$code]=[];
+      static::loadFromConfig($code);
+    }
   }
 
   private static function fromFile($code, $filename, $base){
@@ -176,7 +183,8 @@ class Localization{
       case 'yml':$data = yaml_parse_file($filename, 0, $ndocs, ["!pl"=>function($data){return new PluralString($data);},"!ps"=>function($data){return new PlaceholdersString($data);}]);break;
       default:   throw new \InvalidArgumentException("Can't parse language file '".$filename."'");
     }
-    self::insertData($code, $path, $data);
+    static::insertData($code, $path, $data);
+    return true;
   }
 
   private static function insertData($code, $path, $data){
@@ -185,7 +193,7 @@ class Localization{
         $path = substr($path,1);
       }
       $path = explode(DIRECTORY_SEPARATOR, $path);
-      $root = &self::$dictionary[$code];
+      $root = &static::$dictionary[$code];
       foreach($path as $part){
         if (!array_key_exists($part, $root)){
           $root[$part]=[];
