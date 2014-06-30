@@ -4,11 +4,14 @@ namespace X\Data\DB;
 
 use X\C;
 use X\Data\DB\Structure\Field;
+use X\Traits\TFullClassName;
 use \X\Validators\Values;
 use \X\Data\DB\Interfaces\IDB;
 use \X\Data\DB\Interfaces\ICRUD;
 
 abstract class CRUD implements ICRUD{
+
+  use TFullClassName;
 
   const ERR_WRONG_PRIMARY_FIELD=2001;
 
@@ -71,11 +74,19 @@ abstract class CRUD implements ICRUD{
     throw new \Exception("Static method Connection in class \\X\\Data\\DB\\CRUD should be overridden!");
   }
 
-  public static function classByTable($tableName, $database){
+  public static function classByTable($tableName, $database='main'){
     if ($database instanceof IDB){
       $connection = $database;
-    }elseif (!($connection = DB::connectionByDatabase($database))){
-      return false;
+    }else{
+      try{
+        $connection = DB::connectionByDatabase($database);
+      }catch(\RuntimeException $e){
+        try{
+          $connection = DB::connectionByAlias($database);
+        }catch(\RuntimeException $e){
+          return false;
+        }
+      }
     }
     if (!($alias = $connection->getAlias())){
       return false;
