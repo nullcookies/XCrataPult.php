@@ -75,6 +75,10 @@ class X extends \X\AbstractClasses\PrivateInstantiation{
   }
 
   public static function URI2path($uri){
+    $uri = trim($uri);
+    if (strpos($uri, "/x_media/")===0){
+      return __X_CMF_DIR__.substr($uri,3);
+    }
     if (substr($uri, 0, strlen(self::getScriptURI()))==self::getScriptURI()){
       $uri = substr($uri, strlen(self::getScriptURI()));
     }
