@@ -106,6 +106,30 @@ class C extends \X\AbstractClasses\PrivateInstantiation{
     return "app\\".FileSystem::finalizeDirPath(self::$config["db_namespace"]);
   }
 
+  public static function setDbSocket($socket, $alias='main'){
+    DB::setSocket($alias, $socket);
+  }
+
+  public static function setDbDriver($driver, $alias='main'){
+    DB::setDriver($alias, $driver);
+  }
+
+  public static function setDbDatabase($database, $alias='main'){
+    DB::setDatabase($alias, $database);
+  }
+
+  public static function setDbCharset($charset, $alias='main'){
+    DB::setCharset($alias, $charset);
+  }
+
+  public static function setDbLogin($login, $alias='main'){
+    DB::setLogin($alias, $login);
+  }
+
+  public static function setDbPassword($password, $alias='main'){
+    DB::setPassword($alias, $password);
+  }
+
   public static function setDb($db, $options){
     foreach($options as $var=>$val){
       $var = "set".str_replace(" ", "", ucwords(strtolower(str_replace("_", " ", $var))));
@@ -236,6 +260,7 @@ class C extends \X\AbstractClasses\PrivateInstantiation{
   }
 
   public static function checkDir($path){
+    $path = trim($path);
     if ($path[0]!='/'){
       $path = X::getScriptDir().$path;
     }
