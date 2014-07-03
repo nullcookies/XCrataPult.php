@@ -11,6 +11,7 @@ use X\Data\SmartObjects\PlaceholdersString;
 use X\Data\SmartObjects\PluralString;
 use \x\debug\Logger;
 use \x\tools\FileSystem;
+use X\Validators\Values;
 use \x\x;
 
 class Localization{
@@ -19,6 +20,12 @@ class Localization{
   private static $paths=[];
   private static $currentLanguage=null;
   private static $displayKeys=false;
+
+  private static $fallback = false;
+
+  public static function setFallback($fallback){
+    self::$fallback = $fallback;
+  }
 
   public static function setFolder($path){
     static::$paths[] = C::checkDir($path);
@@ -97,6 +104,15 @@ class Localization{
           }
         }else{
           break;
+        }
+      }
+      if (isset(self::$fallback)){
+        if (is_bool(self::$fallback)){
+          if (self::$fallback){
+            return $path;
+          }
+        }elseif(Values::isCallback(self::$fallback)){
+          return call_user_func(self::$fallback, $path);
         }
       }
       return null;
