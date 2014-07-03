@@ -63,7 +63,7 @@ class C extends \X\AbstractClasses\PrivateInstantiation{
   }
 
   public static function setSessionPath($path){
-    self::$config["session_path"] = $parh;
+    self::$config["session_path"] = $path;
   }
 
   public static function getSessionPath(){
