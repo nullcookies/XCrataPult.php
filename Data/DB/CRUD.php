@@ -101,9 +101,18 @@ abstract class CRUD implements ICRUD{
 
   public function fieldValue($fieldName){
     $fieldName=strtolower($fieldName);
-    if (static::$Fields[$fieldName]){
+    if (array_key_exists($fieldName, static::$Fields)){
       $getter = static::$Fields[$fieldName]["getter"];
       return $this->$getter();
+    }
+    throw new \RuntimeException("There is no field ".$fieldName." in ".static::TABLE_NAME);
+  }
+
+  public function setFieldValue($fieldName, $value){
+    $fieldName=strtolower($fieldName);
+    if (array_key_exists($fieldName, static::$Fields)){
+      $setter = static::$Fields[$fieldName]["setter"];
+      return $this->$setter($value);
     }
     throw new \RuntimeException("There is no field ".$fieldName." in ".static::TABLE_NAME);
   }
