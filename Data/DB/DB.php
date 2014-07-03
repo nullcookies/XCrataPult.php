@@ -10,7 +10,7 @@ use \X\Debug\Logger;
 use \X\Tools\FileSystem;
 use \X\Validators\Values;
 use \X\AbstractClasses\PrivateInstantiation;
-use \X\Data\DB\Structure\CRUDGenerator;
+use \X\Data\DB\CRUDGenerator;
 
 
 class DB extends PrivateInstantiation{

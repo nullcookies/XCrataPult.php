@@ -383,6 +383,7 @@ class Collection extends \ArrayObject{
     if ($this->expr){
       return $this->expr;
     }
+
     if (!count($this->tables)){
       return false;
     }
@@ -453,7 +454,6 @@ class Collection extends \ArrayObject{
 //      $cacheKey = md5($sqlExpr.$options["instantiator"]);
 //    }
 //    $collection = new JoinedCollection($sqlExpr, $this, $options['tables'], $ttl ? $cacheKey : null, $ttl);
-
     return ($this->expr = new Expr($sqlExpr));
   }
 
