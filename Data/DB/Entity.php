@@ -19,11 +19,12 @@ abstract class Entity {
 
   const FIELD_TYPE_AUTO='auto';
   const FIELD_TYPE_STRING='string';
+  const FIELD_TYPE_TEXT='text';
+  const FIELD_TYPE_NUMBER='number';
   const FIELD_TYPE_ENUM='enum';
   const FIELD_TYPE_IMAGE='image';
   const FIELD_TYPE_EXTERNAL='external';
   const FIELD_TYPE_PROPERTY='property';
-  const FIELDS_GROUP='fieldsgroup';
 
   const ERROR_INCORRECT='incorrect';
   const ERROR_TOOLONG = 'too_long';
@@ -84,7 +85,7 @@ abstract class Entity {
           $myCRUD = static::$CRUD;
           $targetCRUD = CRUD::classByTable($table, $myCRUD::connection());
           $PKs = array_keys($targetCRUD::getPrimaryFields());
-          foreach(DB::get($table.',('.$fieldData['origin'].')')->resetScope() as $f){
+          foreach(DB::get($table.(array_key_exists('proxy', $fieldData) ? ', '.$fieldData['proxy'] :'').',('.$fieldData['origin'].')')->resetScope() as $f){
             $value=[];
             foreach($PKs as $pk){
               $value[]=$f->Raw()[$table.'.'.$pk];
