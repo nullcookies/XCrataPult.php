@@ -100,7 +100,7 @@ abstract class {%CLASSNAME%} extends CRUD{
   }
 
   private static function getByOneField($varCondition, $val, $limit=0, $groupBy=null){
-    return static::get($varCondition.($limit ? ', #'.$limit : '').($groupBy ? ',('.$groupBy.')': ''),["val"=>$val]);
+    return static::get($varCondition.($limit ? ', #'.$limit : '').($groupBy ? ',('.$groupBy.')': ''), is_array($val) ? $val : ["val"=>$val]);
   }
 
   public static function getFields(){
