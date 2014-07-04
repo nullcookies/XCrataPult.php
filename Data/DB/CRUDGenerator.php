@@ -354,6 +354,34 @@ class CRUDGenerator extends PrivateInstantiation{
       $selectors[] = "\treturn static::getByOneField('".$field->getName()." BETWEEN ::val1 AND ::val2', ['val1'=>\$val1, 'val2'=>\$val2], \$limit, \$groupBy);";
       $selectors[] = "}";
 
+      if ($field->getPHPType()=='int'){
+        $selectors[] = "/**";
+        $selectors[] = " * @return \\".$namespaceName."\\".$className."\n";
+        $selectors[] = " */";
+        $selectors[] = "public function shiftBy".$field->getCamelName()."Down(){";
+        $selectors[] = "\t\$obj=self::get('".$field->getName().">?, ".$field->getName()." asc, #1');";
+        $selectors[] = "\tif (\$obj->count()){";
+        $selectors[] = "\t\t\$tmp=\$obj->get".$field->getCamelName()."();";
+        $selectors[] = "\t\t\$obj->set".$field->getCamelName()."(\$this->get".$field->getCamelName()."())->save();";
+        $selectors[] = "\t\t\$this->set".$field->getCamelName()."(\$tmp)->save();";
+        $selectors[] = "\t}";
+        $selectors[] = "\treturn \$this;";
+        $selectors[] = "}";
+
+        $selectors[] = "/**";
+        $selectors[] = " * @return \\".$namespaceName."\\".$className."\n";
+        $selectors[] = " */";
+        $selectors[] = "public function shiftBy".$field->getCamelName()."Up(){";
+        $selectors[] = "\t\$obj=self::get('".$field->getName()."<?, ".$field->getName()." desc, #1');";
+        $selectors[] = "\tif (\$obj->count()){";
+        $selectors[] = "\t\t\$tmp=\$obj->get".$field->getCamelName()."();";
+        $selectors[] = "\t\t\$obj->set".$field->getCamelName()."(\$this->get".$field->getCamelName()."())->save();";
+        $selectors[] = "\t\t\$this->set".$field->getCamelName()."(\$tmp)->save();";
+        $selectors[] = "\t}";
+        $selectors[] = "\treturn \$this;";
+        $selectors[] = "}";
+      }
+
       $fieldNames[]="\tconst f_".$field->getName()." = '`".$table->getName()."`.`".$field->getName()."`';";
       $fields[]= "\t'" . $field->getName() . "'=>[";
       $fields[]= "\t\t'camelName'=>'".$field->getCamelName()."',";
