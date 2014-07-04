@@ -6,9 +6,6 @@ if (!defined('__XDIR__')) die();
 // TODO: add cache support
 
 use X\C;
-use X\Data\Localization\Languages;
-use X\Data\SmartObjects\PlaceholdersString;
-use X\Data\SmartObjects\PluralString;
 use \x\debug\Logger;
 use \x\tools\FileSystem;
 use X\Validators\Values;
