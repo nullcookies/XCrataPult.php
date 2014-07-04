@@ -6,7 +6,7 @@
  * Time: 14:35
  */
 
-namespace X\Data\SmartObjects;
+namespace X\Data\Localization;
 
 class PlaceholdersString {
   private $expression;

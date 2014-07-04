@@ -95,7 +95,10 @@ class Localization{
             //TODO: cache answer
             if (is_string($answer) || is_array($answer)){
               return $answer;
-            }elseif (is_object($answer) && in_array(get_class($answer),["X\\Data\\SmartObjects\\PlaceholdersString","X\\Data\\SmartObjects\\PluralString"])){
+            }elseif (is_object($answer) && in_array(get_class($answer),["X\\Data\\Localization\\PlaceholdersString","X\\Data\\Localization\\PluralString"])){
+              if (!is_array($data)){
+                $data = [$data];
+              }
               return call_user_func_array([$answer,'render'], $data);
             }
           }

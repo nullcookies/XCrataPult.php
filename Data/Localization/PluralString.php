@@ -6,7 +6,7 @@
  * Time: 19:59
  */
 
-namespace X\Data\SmartObjects;
+namespace X\Data\Localization;
 use X\Validators\Values;
 
 
@@ -81,7 +81,7 @@ class PluralString {
             if (Values::isSignedInteger($min) && Values::isSignedInteger($max)){
               $start = min($min, $max);
               $end = max($min, $max);
-              $this->rulesEndingIntervals[$min][$max]=$expression;
+              $this->rulesEndingIntervals[$start][$end]=$expression;
             }
           }else{
             throw new \InvalidArgumentException("Condition '".$condition."' cannot be parsed.");
@@ -109,7 +109,7 @@ class PluralString {
           if (Values::isSignedInteger($min) && Values::isSignedInteger($max)){
             $start = min($min, $max);
             $end = max($min, $max);
-            $this->rulesIntervals[$min][$max]=$expression;
+            $this->rulesIntervals[$start][$end]=$expression;
           }
         }else{
           throw new \InvalidArgumentException("Condition '".$condition."' cannot be parsed.");
@@ -132,6 +132,7 @@ class PluralString {
    * @return string
    */
   public function render($number){
+
     if (array_key_exists($number, $this->rulesExact)){
       return (new PlaceholdersString($this->rulesExact[$number]))->render($number);
     }
