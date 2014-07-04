@@ -90,10 +90,10 @@ class Collection extends \ArrayObject{
       $limit='';
       foreach(Strings::explodeSelective($expr) as $part){
         $part = trim($part);
-        if (Values::isSQLname($part) || ($this->strfind($part, ":")!==false && substr_count($part, ":")==1)){
-          $from[]=$part;
-        }elseif($this->strfind(" ".$part, " by ")!==false || $this->strfind(" ".$part." ", " asc ")!==false || $this->strfind(" ".$part." ", " desc ")!==false){
+        if($this->strfind(" ".$part, " by ")!==false || $this->strfind(" ".$part." ", " asc ")!==false || $this->strfind(" ".$part." ", " desc ")!==false){
           $order[]=$part;
+        }elseif (Values::isSQLname($part) || ($this->strfind($part, ":")!==false && substr_count($part, ":")==1)){
+          $from[]=$part;
         }elseif($this->strfind($part, "#")!==false){
           $limit=$part;
         }elseif($part[0]=='+'){
@@ -146,7 +146,8 @@ class Collection extends \ArrayObject{
           if (strpos($part, ".")===false){
             $words = preg_split('/\b/is', $part);
             foreach($words as $word){
-              if (Values::isSQLname($word) && CRUD::classByTable($word,$this->driver)){
+              $word = trim($word);
+              if ($word && Values::isSQLname($word) && CRUD::classByTable($word,$this->driver)){
                 $isTable=true;
                 break;
               }
