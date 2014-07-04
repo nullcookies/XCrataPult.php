@@ -18,7 +18,6 @@ use X_CMF\Client\Request;
 abstract class Entity {
 
   const FIELD_TYPE_AUTO='auto';
-  const FIELD_TYPE_STRING='string';
   const FIELD_TYPE_TEXT='text';
   const FIELD_TYPE_NUMBER='number';
   const FIELD_TYPE_ENUM='enum';
@@ -141,7 +140,7 @@ abstract class Entity {
     if (array_key_exists($name, static::$fields)){
       if (array_key_exists('edit', static::$fields[$name]) && static::$fields[$name]['edit']){
 
-        if (static::$fields[$name]['type']==self::FIELD_TYPE_STRING){
+        if (static::$fields[$name]['type']==self::FIELD_TYPE_TEXT){
           $val = trim($val);
         }
 
@@ -163,7 +162,7 @@ abstract class Entity {
         }
 
         if (array_key_exists('min', static::$fields[$name])){
-          if (static::$fields[$name]['type']==self::FIELD_TYPE_STRING){
+          if (static::$fields[$name]['type']==self::FIELD_TYPE_TEXT){
             if (strlen($val)<static::$fields[$name]['min']){
               $this->saveErrors[$name][]=self::ERROR_TOOSHORT;
               $isOK=false;
@@ -177,7 +176,7 @@ abstract class Entity {
         }
 
         if (array_key_exists('max', static::$fields[$name])){
-          if (static::$fields[$name]['type']==self::FIELD_TYPE_STRING){
+          if (static::$fields[$name]['type']==self::FIELD_TYPE_TEXT){
             if (strlen($val)>static::$fields[$name]['max']){
               $this->saveErrors[$name][]=self::ERROR_TOOLONG;
               $isOK=false;
