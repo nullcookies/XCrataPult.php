@@ -90,6 +90,9 @@ class Collection extends \ArrayObject{
       $limit='';
       foreach(Strings::explodeSelective($expr) as $part){
         $part = trim($part);
+        if (!strlen($part)){
+          continue;
+        }
         if($this->strfind(" ".$part, " by ")!==false || $this->strfind(" ".$part." ", " asc ")!==false || $this->strfind(" ".$part." ", " desc ")!==false){
           $order[]=$part;
         }elseif (Values::isSQLname($part) || ($this->strfind($part, ":")!==false && substr_count($part, ":")==1)){
