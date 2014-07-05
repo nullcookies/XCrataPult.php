@@ -96,7 +96,10 @@ abstract class CRUD implements ICRUD{
     }
     $path= "\\".str_replace('/',"\\", C::getDbNamespace().ucfirst($alias))."\\";
     $tableName = ucfirst(strtolower($tableName));
-    return $path.$tableName;
+    if (class_exists($path.$tableName)){
+      return $path.$tableName;
+    }
+    return false;
   }
 
   public function fieldValue($fieldName){
