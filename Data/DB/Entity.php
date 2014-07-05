@@ -267,12 +267,22 @@ abstract class Entity {
     }
 
     foreach(static::$fields as $field=>$data){
-      if (($val = Request::post($field))!==null){
-        $entity->setField($field, $val);
+      if (!array_key_exists('proxy', $data)){
+        if (($val = Request::post($field))!==null){
+          $entity->setField($field, $val);
+        }
       }
     }
+
     if (!$entity->getSaveErrors()){
       $entity->save();
+      foreach(static::$fields as $field=>$data){
+        if (array_key_exists('proxy', $data)){
+          if (($val = Request::post($field))!==null){
+            $entity->setField($field, $val);
+          }
+        }
+      }
     }
     return $entity;
   }
