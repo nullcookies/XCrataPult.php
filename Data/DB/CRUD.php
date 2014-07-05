@@ -50,6 +50,7 @@ abstract class CRUD implements ICRUD{
         'type'=>'string',
         'camelName'=>$camelName,
         'getter'=>'get'.$camelName,
+        'setter'=>'set'.$camelName,
         'userfield'=>true
       ];
       static::$UserFields[$name]=null;
