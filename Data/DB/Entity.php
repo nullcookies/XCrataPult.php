@@ -49,9 +49,14 @@ abstract class Entity {
 
   protected $saveErrors=[];
 
-  public function __construct(){
+  public function __construct($object=null){
     $crud = static::$CRUD;
-    $this->object = $crud::create();
+    if ($object!==null && $object instanceof $crud){
+      $this->object=$object;
+      $this->isNew=false;
+    }else{
+      $this->object = $crud::create();
+    }
     $this->hook_constructor_after();
   }
 
@@ -84,7 +89,13 @@ abstract class Entity {
           $myCRUD = static::$CRUD;
           $targetCRUD = CRUD::classByTable($table, $myCRUD::connection());
           $PKs = array_keys($targetCRUD::getPrimaryFields());
-          foreach(DB::get($table.(array_key_exists('proxy', $fieldData) ? ', '.$fieldData['proxy'] :'').',('.$fieldData['origin'].')')->resetScope() as $f){
+          foreach(
+              DB::get(
+                $table.
+                (array_key_exists('proxy', $fieldData) ? ', '.$fieldData['proxy'] :'').
+                (array_key_exists('condition', $fieldData) ? ', '.$fieldData['condition'] :'').
+                ',('.$fieldData['origin'].')'
+              )->resetScope() as $f){
             $value=[];
             foreach($PKs as $pk){
               $value[]=$f->Raw()[$table.'.'.$pk];
@@ -120,7 +131,7 @@ abstract class Entity {
     return new $classname;
   }
 
-  public function getByPKKey(){
+  public static function getByPKKey(){
     $crudName = static::$CRUD;
     $args = [];
     if (func_num_args()==1 && is_array(func_get_arg(0))){
@@ -130,10 +141,12 @@ abstract class Entity {
     }
     $object = call_user_func_array([$crudName, 'getByPKKey'], $args);
     if ($object){
-      $this->isNew=false;
-      $this->object=$object;
+      $class = get_called_class();
+      $entity = new $class($object);
+    }else{
+      $entity = null;
     }
-    return $this;
+    return $entity;
   }
 
   public function setField($name, $val){
@@ -247,7 +260,7 @@ abstract class Entity {
         }
       }
 
-      $entity = static::create()->getBYPKKey($pk);
+      $entity = static::getBYPKKey($pk);
       if (!$entity){
         return null;
       }
