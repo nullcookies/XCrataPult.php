@@ -1,3 +1,9 @@
-[submodule "x.cfg"]
-	path = x.cfg
-	url = git@github.com:mrXCray/XCrataPult.CFG.git
+[submodule "cfg"]
+	path = cfg
+	url = https://github.com/mrXCray/XCrataPult.CFG.git
+[submodule "orm"]
+	path = orm
+	url = https://github.com/mrXCray/XCrataPult.ORM.git
+[submodule "cache"]
+	path = cache
+	url = https://github.com/mrXCray/XCrataPult.Cache.git

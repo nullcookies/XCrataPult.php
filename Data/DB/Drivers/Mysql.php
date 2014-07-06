@@ -378,7 +378,6 @@ class Mysql implements IDB{
   }
 
   public function delete(ICRUD &$object){
-
     foreach($object->getFields() as $fieldName=>$fieldRules){
       $fieldNames[]=$fieldName;
       $data[$fieldName]=$object->{'get'.ucwords($fieldName)}();
