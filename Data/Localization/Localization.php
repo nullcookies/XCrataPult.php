@@ -222,6 +222,7 @@ class Localization{
       $root = array_replace_recursive($root, $data);
       return true;
     }
+    return false;
   }
 }
 
