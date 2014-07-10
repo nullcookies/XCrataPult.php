@@ -24,6 +24,8 @@ abstract class Entity {
   const FIELD_TYPE_IMAGE='image';
   const FIELD_TYPE_EXTERNAL='external';
   const FIELD_TYPE_PROPERTY='property';
+  const FIELD_TYPE_ENTITY_LIST='entity_list';
+  const FIELD_TYPE_SORT_POSITION = 'sortpos';
 
   const ERROR_INCORRECT='incorrect';
   const ERROR_TOOLONG = 'too_long';
@@ -77,6 +79,14 @@ abstract class Entity {
     return $this->isNew;
   }
 
+  public static function getCRUD(){
+    return static::$CRUD;
+  }
+
+  public static function getJoins(){
+    return static::$joins;
+  }
+
   public static function getEnum($fieldName){
     $fieldData = static::getFieldInfo($fieldName);
     if ($fieldData['type']==Entity::FIELD_TYPE_ENUM){
@@ -107,6 +117,77 @@ abstract class Entity {
       }
     }
     return null;
+  }
+
+  public function getList($fieldName){
+    $fieldData = static::getFieldInfo($fieldName);
+    switch($fieldData['type']){
+      case Entity::FIELD_TYPE_ENTITY_LIST:
+        if ($this->object===null){
+          return [];
+        }
+        $entityName = implode("\\", array_slice(explode("\\", get_called_class()),0, -1))."\\".ucfirst(strtolower($fieldData['origin']));
+        $crudName = $entityName::getCrud();
+        $table = $crudName::TABLE_NAME;
+
+        $keyName=null;
+        if (array_key_exists($fieldData['origin'], static::getJoins())){
+          $keyName = static::getJoins()[$fieldData['origin']];
+        }
+
+        if (!is_array($keyName)){
+          $crud = static::$CRUD;
+          $table = $crud::TABLE_NAME;
+          if (array_key_exists($table, $crudName::$refTables)){
+            if ($keyName && array_key_exists($keyName, $crudName::$refTables[$table])){
+              $conditions = $crudName::$refTables[$table][$keyName];
+            }else{
+              reset($crudName::$refTables[$table]);
+              $conditions = current($crudName::$refTables[$table]);
+            }
+          }
+        }else{
+          $conditions=$keyName;
+        }
+
+        $FKfields=[];
+        foreach($conditions as $to=>$from){
+          $to = str_replace("`", "", $to);
+          $from = str_replace("`", "", $from);
+          list(,$fieldTo) = explode(".", $to);
+          list(,$fieldFrom) = explode(".", $from);
+          $FKfields[$fieldTo]=$this->object->fieldValue($fieldFrom);
+        }
+
+        $object = $this->object;
+        $table = $fieldData['origin'];
+        $query=[];
+        $query[]=$object::TABLE_NAME;
+        $query[]=$table;
+        if ($conditions = static::getJoinConditions($table)){
+          $query[]=$conditions;
+        }
+        $tableCrud = CRUD::classByTable($table, $object::connection());
+        $fields = $tableCrud::getPrimaryFields() ?: $tableCrud::getFields();
+        foreach($fields as $field){
+          $where[]=$field['fullName']." is not NULL";
+        }
+        if ($where){
+          $query[]=implode(" and ", $where);
+        }
+        $answer=["fields"=>$FKfields, "entity_name"=>$fieldData['origin'], "entity"=>new $entityName(), "objects"=>[]];
+        $expr = DB::get(implode(",", $query))->scope($table);
+        //echo $expr->expr();
+        foreach($expr as $obj){
+          $answer["objects"][]=new $entityName($obj);
+        }
+        return $answer;
+        break;
+    }
+  }
+
+  public static function getJoinConditions($tableName){
+    return false; //TODO
   }
 
   public static function getFields(){
@@ -151,7 +232,7 @@ abstract class Entity {
 
   public function setField($name, $val){
     if (array_key_exists($name, static::$fields)){
-      if (array_key_exists('edit', static::$fields[$name]) && static::$fields[$name]['edit']){
+      if ((array_key_exists('edit', static::$fields[$name]) && static::$fields[$name]['edit']) || array_key_exists('fk', static::$fields[$name])){
 
         if (static::$fields[$name]['type']==self::FIELD_TYPE_TEXT){
           $val = trim($val);
@@ -210,7 +291,6 @@ abstract class Entity {
             }
           }
         }
-
         if ($isOK){
 
           if (array_key_exists('sanitizer', static::$fields[$name])){
@@ -276,12 +356,17 @@ abstract class Entity {
 
     if (!$entity->getSaveErrors()){
       $entity->save();
+      $proxy=false;
       foreach(static::$fields as $field=>$data){
         if (array_key_exists('proxy', $data)){
           if (($val = Request::post($field))!==null){
             $entity->setField($field, $val);
+            $proxy=true;
           }
         }
+      }
+      if ($proxy && count(static::getPK())){
+        $entity->save();
       }
     }
     return $entity;
