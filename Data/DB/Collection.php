@@ -1103,7 +1103,7 @@ class Collection extends \ArrayObject{
   }
 
   private function checkTableClass($tableClass){
-
+	$tableClass=str_replace("`", "", $tableClass);
     if (!class_exists($tableClass)){
       $tmp = CRUD::classByTable($tableClass, $this->driver->getDatabase()->getName());
       if (!class_exists($tmp)){
