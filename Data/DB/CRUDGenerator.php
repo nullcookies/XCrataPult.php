@@ -117,7 +117,7 @@ class CRUDGenerator extends PrivateInstantiation{
       case 'smallint':
       case 'bigint':
       case 'serial':
-        $setter.= "\t\$this->".$field->getAlias()." = ".($field->getNull() ? "(\$val===null) ? null : ":"")."intval(\$val);"."\n";
+        $setter.= "\t\$this->".$field->getAlias()." = ".($field->getNull() ? "(!is_numeric(\$val)) ? null : ":"")."intval(\$val);"."\n";
         break;
       case 'float':
       case 'double':
