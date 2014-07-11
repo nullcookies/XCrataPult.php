@@ -12,6 +12,7 @@ namespace X\Data\DB;
 use app\model\Main\Users;
 use X\Debug\Logger;
 use X\Validators\Values;
+use X\X;
 use X_CMF\Admin\Icons;
 use X_CMF\Client\Request;
 
@@ -33,6 +34,13 @@ abstract class Entity {
   const ERROR_TOOMUCH = 'too_much';
   const ERROR_TOOFEW = 'too_few';
   const ERROR_REQUIRED = 'required';
+  const ERROR_FILE_TYPE_UNSUPPORTED = 'filetype_unsupported';
+  const ERROR_FILE_TOO_BIG = 'filesize_too_big';
+  const ERROR_FILE_NOT_IMAGE = 'not_image';
+  const ERROR_IMAGE_WIDTH_BIG = 'image_width_exeeds';
+  const ERROR_IMAGE_HEIGHT_BIG = 'image_height_exeeds';
+  const ERROR_IMAGE_WIDTH_SMALL = 'image_width_small';
+  const ERROR_IMAGE_HEIGHT_SMALL = 'image_height_small';
 
   protected static $icon = Icons::ICON_list_alt;
 
@@ -145,6 +153,8 @@ abstract class Entity {
               reset($crudName::$refTables[$table]);
               $conditions = current($crudName::$refTables[$table]);
             }
+          }else{
+            throw new \RuntimeException("there is no FK to join '".$crud."' with '".$crudName."'");
           }
         }else{
           $conditions=$keyName;
@@ -232,18 +242,47 @@ abstract class Entity {
 
   public function setField($name, $val){
     if (array_key_exists($name, static::$fields)){
-      if ((array_key_exists('edit', static::$fields[$name]) && static::$fields[$name]['edit']) || array_key_exists('fk', static::$fields[$name])){
 
-        if (static::$fields[$name]['type']==self::FIELD_TYPE_TEXT){
+      $fieldData = static::$fields[$name];
+      $fieldType = $fieldData['type'];
+      
+      if ((array_key_exists('edit', $fieldData) && $fieldData['edit']) || array_key_exists('fk', $fieldData)){
+
+        if ($fieldType==self::FIELD_TYPE_TEXT){
           $val = trim($val);
         }
 
         $isOK=true;
-        if (array_key_exists('validator', static::$fields[$name])){
-          if (!is_array(static::$fields[$name]['validator'])){
-            static::$fields[$name]['validator']=[static::$fields[$name]['validator']];
+
+        if ($fieldType==self::FIELD_TYPE_IMAGE){
+          $files = X::uploadedFiles();
+          $isOK=false;
+          if ($file = $files[$name]){
+            if (!$file['is_image']){
+              $this->saveErrors[$name][]=self::ERROR_FILE_NOT_IMAGE;
+            }elseif (array_key_exists('width_min', $fieldData) && $file['width']<$fieldData['width_min']){
+              $this->saveErrors[$name][]=self::ERROR_IMAGE_WIDTH_SMALL;
+            }elseif (array_key_exists('width_max', $fieldData) && $file['width']>$fieldData['width_max']){
+              $this->saveErrors[$name][]=self::ERROR_IMAGE_WIDTH_BIG;
+            }elseif (array_key_exists('height_min', $fieldData) && $file['height']<$fieldData['height_min']){
+              $this->saveErrors[$name][]=self::ERROR_IMAGE_HEIGHT_SMALL;
+            }elseif (array_key_exists('height_max', $fieldData) && $file['height']>$fieldData['height_max']){
+              $this->saveErrors[$name][]=self::ERROR_IMAGE_HEIGHT_BIG;
+            }elseif (array_key_exists('mime_types', $fieldData) && !in_array($file['real_type'], $fieldData['mime_types'])){
+              $this->saveErrors[$name][]=self::ERROR_FILE_TYPE_UNSUPPORTED;
+            }elseif (array_key_exists('max_size', $fieldData) && $file['size']>$fieldData['max_size']){
+              $this->saveErrors[$name][]=self::ERROR_FILE_TOO_BIG;
+            }else{
+              $isOk=true;
+            }
           }
-          foreach(static::$fields[$name]['validator'] as $validator){
+        }
+
+        if (array_key_exists('validator', $fieldData) && $isOK){
+          if (!is_array($fieldData['validator'])){
+            $fieldData['validator']=[$fieldData['validator']];
+          }
+          foreach($fieldData['validator'] as $validator){
             if (Values::isCallback($validator)){
               $isOK = $isOK && call_user_func($validator, $val);
             }elseif(is_string($validator) && $validator[0]=='/'){
@@ -255,36 +294,36 @@ abstract class Entity {
           }
         }
 
-        if (array_key_exists('min', static::$fields[$name])){
-          if (static::$fields[$name]['type']==self::FIELD_TYPE_TEXT){
-            if (strlen($val)<static::$fields[$name]['min']){
+        if (array_key_exists('min', $fieldData) && $isOK){
+          if ($fieldType==self::FIELD_TYPE_TEXT){
+            if (strlen($val)<$fieldData['min']){
               $this->saveErrors[$name][]=self::ERROR_TOOSHORT;
               $isOK=false;
             }
           }else{
-            if ($val<static::$fields[$name]['min']){
+            if ($val<$fieldData['min']){
               $this->saveErrors[$name][]=self::ERROR_TOOFEW;
               $isOK=false;
             }
           }
         }
 
-        if (array_key_exists('max', static::$fields[$name])){
-          if (static::$fields[$name]['type']==self::FIELD_TYPE_TEXT){
-            if (strlen($val)>static::$fields[$name]['max']){
+        if (array_key_exists('max', $fieldData) && $isOK){
+          if ($fieldType==self::FIELD_TYPE_TEXT){
+            if (strlen($val)>$fieldData['max']){
               $this->saveErrors[$name][]=self::ERROR_TOOLONG;
               $isOK=false;
             }
           }else{
-            if ($val<static::$fields[$name]['max']){
+            if ($val<$fieldData['max']){
               $this->saveErrors[$name][]=self::ERROR_TOOMUCH;
               $isOK=false;
             }
           }
         }
 
-        if (array_key_exists('required', static::$fields[$name]) && static::$fields[$name]['required']){
-          if (!array_key_exists('keep_if_no_changes', static::$fields[$name]) || $this->isNew()){
+        if (array_key_exists('required', $fieldData) && $fieldData['required'] && $isOK){
+          if (!array_key_exists('keep_if_no_changes', $fieldData) || $this->isNew()){
             if (!$val){
               $isOK=false;
               $this->saveErrors[$name][]=self::ERROR_REQUIRED;
@@ -292,12 +331,11 @@ abstract class Entity {
           }
         }
         if ($isOK){
-
-          if (array_key_exists('sanitizer', static::$fields[$name])){
-            if (!is_array(static::$fields[$name]['sanitizer'])){
-              static::$fields[$name]['sanitizer'] = [static::$fields[$name]['sanitizer']];
+          if (array_key_exists('sanitizer', $fieldData)){
+            if (!is_array($fieldData['sanitizer'])){
+              $fieldData['sanitizer'] = [$fieldData['sanitizer']];
             }
-            foreach(static::$fields[$name]['sanitizer'] as $sanitizer){
+            foreach($fieldData['sanitizer'] as $sanitizer){
               $val = call_user_func($sanitizer, $val);
             }
           }
