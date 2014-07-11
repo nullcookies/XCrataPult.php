@@ -4,12 +4,8 @@ if (!defined('__XDIR__')) die();
 if (false == true) die("Meh..");
 
 use \X\Data\Persistent\Session;
+use X\Data\SmartObjects\SmartFile;
 use \X\Debug\Logger;
-use \X\Render\L10n;
-use \X\Data\SmartFile;
-use \X\Data\SmartArray;
-use \X\Data\SmartCookie;
-use X_CMF\Client\Request;
 
 Logger::add("Loading 3rdParty libs");
 
@@ -72,6 +68,18 @@ class X extends \X\AbstractClasses\PrivateInstantiation{
       }
     }
     return $appuri;
+  }
+
+  /**
+   * @return SmartFile
+   */
+  public static function uploadedFiles(){
+    static $files = null;
+    if ($files===null){
+      $files = new SmartFile($_FILES);
+    }
+
+    return $files;
   }
 
   public static function URI2path($uri){
