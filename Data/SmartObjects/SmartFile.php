@@ -49,7 +49,7 @@ class SmartFile extends SmartArray{
       $assignItem($file, 'width', $imagedata[0]);
       $assignItem($file, 'height', $imagedata[1]);
       $assignItem($file, 'is_image', true);
-      $assignItem($file, 'real_type', $imagedata['mime']);
+      $assignItem($file, 'real_type', strtolower($imagedata['mime']));
       $assignItem($file, 'bits', $imagedata['bits']);
       $assignItem($file, 'colors', $imagedata['channels']==3 ? 'RGB' : 'CMYK');
       $assignItem($file, 'channels', $imagedata['channels']);
