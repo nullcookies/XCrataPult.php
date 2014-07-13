@@ -911,7 +911,7 @@ class Collection extends \ArrayObject{
       $field = strtolower(substr($tableField, strlen($name)));
       if ($className = $this->getTable($name)){
         if (array_key_exists($field, $className::getFields())){
-          return ['table'=>$className, 'field'=>$field];
+          return ['alias'=>$name, 'table'=>$className, 'field'=>$field];
         }
       }
     }
@@ -991,6 +991,10 @@ class Collection extends \ArrayObject{
     return $index >= 0 && $index < $this->count();
   }
 
+  /**
+   * @param mixed $index
+   * @return mixed|CollectionMember
+   */
   public function offsetGet($index){
     return $this->Row($index);
   }

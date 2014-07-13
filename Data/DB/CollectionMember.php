@@ -24,6 +24,16 @@ class CollectionMember {
     return $this->rawData;
   }
 
+  /**
+   * $object->Table() for CRUD
+   * $object->Table()->getField() for CRUD field
+   * or
+   * $object->TableField()
+   *
+   * @param $method
+   * @param $args
+   * @return mixed
+   */
   public function __call($method, $args){
     $original = $method;
     $method = strtolower($method);
@@ -33,7 +43,7 @@ class CollectionMember {
     if ($className = $this->collection->getTable($method)){
       return $this->objectsCache[$method]=$className::createFromRaw($this->rawData, $method.'.');
     }elseif ($tableField = $this->collection->getTableField($original)){
-      $tableName = $tableField['table']::TABLE_NAME;
+      $tableName = $tableField['alias'];
       return $this->$tableName()->fieldValue($tableField['field']);
     }
   }
