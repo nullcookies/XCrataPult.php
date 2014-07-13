@@ -216,10 +216,10 @@ class Localization{
         $path = substr($path,1);
       }
       $path = explode(DIRECTORY_SEPARATOR, $path);
-      $root = &static::$dictionary[$languageCode];
-      if (!$root){
-        throw new \RuntimeException("There is no language with code '".$languageCode."' registered");
+      if (!array_key_exists($languageCode, static::$dictionary)){
+        static::$dictionary[$languageCode]=[];
       }
+      $root = &static::$dictionary[$languageCode];
       foreach($path as $part){
         if (!array_key_exists($part, $root)){
           $root[$part]=[];
