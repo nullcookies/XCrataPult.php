@@ -26,6 +26,7 @@ abstract class Entity {
   const FIELD_TYPE_EXTERNAL='external';
   const FIELD_TYPE_PROPERTY='property';
   const FIELD_TYPE_ENTITY_LIST='entity_list';
+  const FIELD_TYPE_YESNO = 'yes_no';
   const FIELD_TYPE_SORT_POSITION = 'sortpos';
 
   const ERROR_INCORRECT='incorrect';
@@ -57,7 +58,7 @@ abstract class Entity {
   protected $object=null;
   protected $isNew=true;
 
-  protected $saveErrors=[];
+  public $saveErrors=[];
 
   public function __construct($object=null){
     $crud = static::$CRUD;
@@ -134,9 +135,12 @@ abstract class Entity {
         if ($this->object===null){
           return [];
         }
-        $entityName = implode("\\", array_slice(explode("\\", get_called_class()),0, -1))."\\".ucfirst(strtolower($fieldData['origin']));
-        $crudName = $entityName::getCrud();
-        $table = $crudName::TABLE_NAME;
+        $subEntityName = implode("\\", array_slice(explode("\\", get_called_class()),0, -1))."\\".ucfirst(strtolower($fieldData['origin']));
+        if (!class_exists($subEntityName)){
+          throw new \RuntimeException("sub entity ".$fieldData['origin']." doesn't exist");
+        }
+        $subCrudName = $subEntityName::getCrud();
+        $subTable = $subCrudName::TABLE_NAME;
 
         $keyName=null;
         if (array_key_exists($fieldData['origin'], static::getJoins())){
@@ -146,27 +150,29 @@ abstract class Entity {
         if (!is_array($keyName)){
           $crud = static::$CRUD;
           $table = $crud::TABLE_NAME;
-          if (array_key_exists($table, $crudName::$refTables)){
-            if ($keyName && array_key_exists($keyName, $crudName::$refTables[$table])){
-              $conditions = $crudName::$refTables[$table][$keyName];
+          if (array_key_exists($table, $subCrudName::$refTables)){
+            if ($keyName && array_key_exists($keyName, $subCrudName::$refTables[$table])){
+              $conditions = $subCrudName::$refTables[$table][$keyName];
             }else{
-              reset($crudName::$refTables[$table]);
-              $conditions = current($crudName::$refTables[$table]);
+              reset($subCrudName::$refTables[$table]);
+              $conditions = current($subCrudName::$refTables[$table]);
             }
           }else{
-            throw new \RuntimeException("there is no FK to join '".$crud."' with '".$crudName."'");
+            throw new \RuntimeException("there is no FK to join '".$crud."' with '".$subCrudName."'");
           }
         }else{
           $conditions=$keyName;
         }
 
         $FKfields=[];
+        $where=[];
         foreach($conditions as $to=>$from){
           $to = str_replace("`", "", $to);
           $from = str_replace("`", "", $from);
           list(,$fieldTo) = explode(".", $to);
           list(,$fieldFrom) = explode(".", $from);
           $FKfields[$fieldTo]=$this->object->fieldValue($fieldFrom);
+          $where[]=$to."=::".$fieldTo;
         }
 
         $object = $this->object;
@@ -174,30 +180,19 @@ abstract class Entity {
         $query=[];
         $query[]=$object::TABLE_NAME;
         $query[]=$table;
-        if ($conditions = static::getJoinConditions($table)){
-          $query[]=$conditions;
-        }
-        $tableCrud = CRUD::classByTable($table, $object::connection());
-        $fields = $tableCrud::getPrimaryFields() ?: $tableCrud::getFields();
-        foreach($fields as $field){
-          $where[]=$field['fullName']." is not NULL";
-        }
+
         if ($where){
           $query[]=implode(" and ", $where);
         }
-        $answer=["fields"=>$FKfields, "entity_name"=>$fieldData['origin'], "entity"=>new $entityName(), "objects"=>[]];
-        $expr = DB::get(implode(",", $query))->scope($table);
+        $answer=["fields"=>$FKfields, "entity_name"=>$fieldData['origin'], "entity"=>new $subEntityName(), "objects"=>[]];
+        $expr = DB::get(implode(",", $query), $FKfields)->scope($table);
         //echo $expr->expr();
         foreach($expr as $obj){
-          $answer["objects"][]=new $entityName($obj);
+          $answer["objects"][]=new $subEntityName($obj);
         }
         return $answer;
         break;
     }
-  }
-
-  public static function getJoinConditions($tableName){
-    return false; //TODO
   }
 
   public static function getFields(){
@@ -240,13 +235,21 @@ abstract class Entity {
     return $entity;
   }
 
-  public function setField($name, $val){
+  public function setField($name, $val=null){
     if (array_key_exists($name, static::$fields)){
 
       $fieldData = static::$fields[$name];
       $fieldType = $fieldData['type'];
+
+      if (in_array($fieldType, [self::FIELD_TYPE_ENTITY_LIST])){
+        return;
+      }
       
       if ((array_key_exists('edit', $fieldData) && $fieldData['edit']) || array_key_exists('fk', $fieldData)){
+
+        if ($fieldType==self::FIELD_TYPE_YESNO){
+          $val = $val ? $fieldData['yes'] : $fieldData['no'];
+        }
 
         if ($fieldType==self::FIELD_TYPE_TEXT){
           $val = trim($val);
@@ -254,6 +257,7 @@ abstract class Entity {
 
         $isOK=true;
 
+        // independent check for files
         if ($fieldType==self::FIELD_TYPE_IMAGE){
           $files = X::uploadedFiles();
           $isOK=false;
@@ -273,51 +277,55 @@ abstract class Entity {
             }elseif (array_key_exists('max_size', $fieldData) && $file['size']>$fieldData['max_size']){
               $this->saveErrors[$name][]=self::ERROR_FILE_TOO_BIG;
             }else{
-              $isOk=true;
+              $isOK=true;
+            }
+            if ($isOK){
+              $val = $files->store($file, $fieldData['upload_path']);
             }
           }
-        }
+        }else{
 
-        if (array_key_exists('validator', $fieldData) && $isOK){
-          if (!is_array($fieldData['validator'])){
-            $fieldData['validator']=[$fieldData['validator']];
-          }
-          foreach($fieldData['validator'] as $validator){
-            if (Values::isCallback($validator)){
-              $isOK = $isOK && call_user_func($validator, $val);
-            }elseif(is_string($validator) && $validator[0]=='/'){
-              $isOK = $isOK && preg_match($validator, $val);
+          if (array_key_exists('validator', $fieldData) && $isOK){
+            if (!is_array($fieldData['validator'])){
+              $fieldData['validator']=[$fieldData['validator']];
+            }
+            foreach($fieldData['validator'] as $validator){
+              if (Values::isCallback($validator)){
+                $isOK = $isOK && call_user_func($validator, $val);
+              }elseif(is_string($validator) && $validator[0]=='/'){
+                $isOK = $isOK && preg_match($validator, $val);
+              }
+            }
+            if (!$isOK){
+              $this->saveErrors[$name][]=self::ERROR_INCORRECT;
             }
           }
-          if (!$isOK){
-            $this->saveErrors[$name][]=self::ERROR_INCORRECT;
-          }
-        }
 
-        if (array_key_exists('min', $fieldData) && $isOK){
-          if ($fieldType==self::FIELD_TYPE_TEXT){
-            if (strlen($val)<$fieldData['min']){
-              $this->saveErrors[$name][]=self::ERROR_TOOSHORT;
-              $isOK=false;
-            }
-          }else{
-            if ($val<$fieldData['min']){
-              $this->saveErrors[$name][]=self::ERROR_TOOFEW;
-              $isOK=false;
+          if (array_key_exists('min', $fieldData) && $isOK){
+            if ($fieldType==self::FIELD_TYPE_TEXT){
+              if (strlen($val)<$fieldData['min']){
+                $this->saveErrors[$name][]=self::ERROR_TOOSHORT;
+                $isOK=false;
+              }
+            }else{
+              if ($val<$fieldData['min']){
+                $this->saveErrors[$name][]=self::ERROR_TOOFEW;
+                $isOK=false;
+              }
             }
           }
-        }
 
-        if (array_key_exists('max', $fieldData) && $isOK){
-          if ($fieldType==self::FIELD_TYPE_TEXT){
-            if (strlen($val)>$fieldData['max']){
-              $this->saveErrors[$name][]=self::ERROR_TOOLONG;
-              $isOK=false;
-            }
-          }else{
-            if ($val<$fieldData['max']){
-              $this->saveErrors[$name][]=self::ERROR_TOOMUCH;
-              $isOK=false;
+          if (array_key_exists('max', $fieldData) && $isOK){
+            if ($fieldType==self::FIELD_TYPE_TEXT){
+              if (strlen($val)>$fieldData['max']){
+                $this->saveErrors[$name][]=self::ERROR_TOOLONG;
+                $isOK=false;
+              }
+            }else{
+              if ($val<$fieldData['max']){
+                $this->saveErrors[$name][]=self::ERROR_TOOMUCH;
+                $isOK=false;
+              }
             }
           }
         }
@@ -339,7 +347,9 @@ abstract class Entity {
               $val = call_user_func($sanitizer, $val);
             }
           }
-          $this->object->setFieldValue($name, $val);
+          if ($val || !array_key_exists('keep_if_no_changes', $fieldData) || $this->isNew()){
+            $this->object->setFieldValue($name, $val);
+          }
         }
       }
     }
@@ -359,10 +369,6 @@ abstract class Entity {
       $this->isNew=false;
     }
     $this->hook_save_after();
-  }
-
-  public function getSaveErrors(){
-    return $this->saveErrors;
   }
 
   public static function processSave(){
@@ -386,13 +392,15 @@ abstract class Entity {
 
     foreach(static::$fields as $field=>$data){
       if (!array_key_exists('proxy', $data)){
-        if (($val = Request::post($field))!==null){
-          $entity->setField($field, $val);
+        if ($data['type']==self::FIELD_TYPE_IMAGE && X::uploadedFiles()->exists($field)){
+          $entity->setField($field);
+        }else{
+          $entity->setField($field, Request::post($field));
         }
       }
     }
 
-    if (!$entity->getSaveErrors()){
+    if (!$entity->saveErrors){
       $entity->save();
       $proxy=false;
       foreach(static::$fields as $field=>$data){
