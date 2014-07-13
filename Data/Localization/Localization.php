@@ -203,13 +203,23 @@ class Localization{
     return true;
   }
 
-  private static function insertData($code, $path, $data){
+  /**
+   * @param $languageCode (e.g. 'en')
+   * @param $path (e.g. 'admin.menu'
+   * @param $data (e.g. ['menu_1'=>['menu_title'=>'Menu One', 'page_title'=>'Page title'], 'menu_2'...]
+   * @return bool
+   * @throws \RuntimeException
+   */
+  public static function insertData($languageCode, $path, $data){
     if (strlen($path)>1){
       if($path[0]==DIRECTORY_SEPARATOR){
         $path = substr($path,1);
       }
       $path = explode(DIRECTORY_SEPARATOR, $path);
-      $root = &static::$dictionary[$code];
+      $root = &static::$dictionary[$languageCode];
+      if ($root){
+        throw new \RuntimeException("There is no language with code '".$languageCode."' registered");
+      }
       foreach($path as $part){
         if (!array_key_exists($part, $root)){
           $root[$part]=[];
