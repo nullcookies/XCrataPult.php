@@ -217,7 +217,7 @@ class Localization{
       }
       $path = explode(DIRECTORY_SEPARATOR, $path);
       $root = &static::$dictionary[$languageCode];
-      if ($root){
+      if (!$root){
         throw new \RuntimeException("There is no language with code '".$languageCode."' registered");
       }
       foreach($path as $part){
