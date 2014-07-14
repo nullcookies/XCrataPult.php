@@ -445,6 +445,14 @@ abstract class Entity {
     return $entity;
   }
 
+  public function delete(){
+    if (!$this->isNew()){
+      $this->object->delete();
+      $this->object=null;
+      $this->isNew=true;
+    }
+  }
+
 
   public static function hook_constructor_before(){}
   public function hook_constructor_after(){}
