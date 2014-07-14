@@ -51,6 +51,7 @@ abstract class Entity {
   protected static $pk=[];
 
   protected static $CRUD='';
+  protected static $listTemplate = 'admin/pages/entity/list.html';
 
   /**
    * @var CRUD[]
@@ -90,6 +91,10 @@ abstract class Entity {
 
   public static function getCRUD(){
     return static::$CRUD;
+  }
+
+  public static function getListTemplate(){
+    return static::$listTemplate;
   }
 
   public static function getJoins(){
@@ -184,15 +189,31 @@ abstract class Entity {
         if ($where){
           $query[]=implode(" and ", $where);
         }
+
+        foreach($subEntityName::getSortBy() as $sortBy){
+          $query[]=$sortBy;
+        }
+
         $answer=["fields"=>$FKfields, "entity_name"=>$fieldData['origin'], "entity"=>new $subEntityName(), "objects"=>[]];
         $expr = DB::get(implode(",", $query), $FKfields)->scope($table);
-        //echo $expr->expr();
+        //echo $expr->expr()."<bR><br>";
         foreach($expr as $obj){
           $answer["objects"][]=new $subEntityName($obj);
         }
         return $answer;
         break;
     }
+  }
+
+  public static function getSortBy(){
+    $sortBy=[];
+    $crud = static::$CRUD;
+    foreach(static::$fields as $name=>$field){
+      if ($field['type']==self::FIELD_TYPE_SORT_POSITION){
+        $sortBy[]=$crud::getFields()[$name]['fullName'].(strtolower($field['direction'])=='desc' ? " desc" : " asc");
+      }
+    }
+    return $sortBy;
   }
 
   public static function getFields(){
