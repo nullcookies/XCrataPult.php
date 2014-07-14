@@ -255,6 +255,14 @@ abstract class Entity {
           $val = trim($val);
         }
 
+        if ($fieldType==self::FIELD_TYPE_NUMBER){
+          if ($fieldData['decimal']){
+            $val = doubleval($val);
+          }else{
+            $val = intval($val);
+          }
+        }
+
         $isOK=true;
 
         // independent check for files
