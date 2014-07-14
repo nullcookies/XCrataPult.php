@@ -322,7 +322,7 @@ abstract class Entity {
                 $isOK=false;
               }
             }else{
-              if ($val<$fieldData['max']){
+              if ($val>$fieldData['max']){
                 $this->saveErrors[$name][]=self::ERROR_TOOMUCH;
                 $isOK=false;
               }
@@ -405,10 +405,8 @@ abstract class Entity {
       $proxy=false;
       foreach(static::$fields as $field=>$data){
         if (array_key_exists('proxy', $data)){
-          if (($val = Request::post($field))!==null){
-            $entity->setField($field, $val);
-            $proxy=true;
-          }
+          $entity->setField($field, Request::post($field));
+          $proxy=true;
         }
       }
       if ($proxy && count(static::getPK())){
