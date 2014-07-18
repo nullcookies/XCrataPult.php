@@ -11,12 +11,15 @@ namespace X\Data\DB;
 
 use app\model\Main\Users;
 use X\Debug\Logger;
+use X\Traits\TFullClassName;
 use X\Validators\Values;
 use X\X;
 use X_CMF\Admin\Icons;
 use X_CMF\Client\Request;
 
 abstract class Entity {
+
+  use TFullClassName;
 
   const FIELD_TYPE_AUTO='auto';
   const FIELD_TYPE_TEXT='text';
