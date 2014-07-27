@@ -7,6 +7,34 @@ use \X\Data\Persistent\Session;
 use X\Data\SmartObjects\SmartFile;
 use \X\Debug\Logger;
 
+Logger::add("Loading 3rdParty libs");
+
+Logger::add("Loading 'Imagine' Autoloader");
+if (file_exists(__XDIR__ . '3rdparty/Imagine/Autoloader.php')){
+  require_once(__XDIR__ . '3rdparty/Imagine/Autoloader.php');
+  if (class_exists("\\Imagine_Autoloader")){
+    \Imagine_Autoloader::register();
+    Logger::add("'Imagine' Autoloader loaded");
+  }else{
+    Logger::add("'Imagine' Autoloader FAILED TO LOAD");
+  }
+}
+
+Logger::add("Loading 'Afigenius' Autoloader");
+if (file_exists(__XDIR__ . '3rdparty/Afigenius/Autoloader.php')){
+  require_once(__XDIR__ . '3rdparty/Afigenius/Autoloader.php');
+  Logger::add("'Afi' Autoloader loaded");
+}
+
+Logger::add("Loading 'PHPExcel' Autoloader");
+if (file_exists(__XDIR__ . '3rdparty/PHPExcel/PHPExcel.php')){
+  require_once(__XDIR__ . '3rdparty/PHPExcel/PHPExcel.php');
+  Logger::add("'PHPExcel' Autoloader loaded");
+}
+
+require_once(__XDIR__.'3rdparty/PHPSQLParser/PHPSQLParser.php');
+require_once(__XDIR__.'3rdparty/PHPSQLParser/PHPSQLCreator.php');
+
 class X extends \X\AbstractClasses\PrivateInstantiation{
   const METHOD_HTTP = "HTTP";
   const METHOD_HTTPS = "HTTPS";
