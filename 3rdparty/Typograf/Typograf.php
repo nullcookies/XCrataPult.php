@@ -8,29 +8,24 @@
 
 namespace Typograf;
 
-
 class Typograf {
   public static function process($text){
-    $host = "www.typograf.ru";
-    $script = "/webservice/";
-    $data = "text=".urlencode($text);
     $buf = $text;
-    $fp = fsockopen($host,80,$errno, $errstr, 30 );
+    $url = 'http://www.typograf.ru/webservice/';
+    $data = array('text' => $text, 'chr'=>'UTF-8');
 
-    if ($fp) {
-      fputs($fp, "POST $script HTTP/1.1\n");
-      fputs($fp, "Host: $host\n");
-      fputs($fp, "Content-type: application/x-www-form-urlencoded\n");
-      fputs($fp, "Content-length: " . strlen($data) . "\n");
-      fputs($fp, "User-Agent: PHP Script\n");
-      fputs($fp, "Connection: close\n\n");
-      fputs($fp, $data);
-      while(fgets($fp,2048) != "\r\n" && !feof($fp));
-      $buf='';
-      while(!feof($fp)) $buf .= fread($fp,2048);
-      fclose($fp);
+    $options = array(
+      'http' => array(
+        'header'  => "Content-type: application/x-www-form-urlencoded",
+        'method'  => 'POST',
+        'content' => http_build_query($data),
+      ),
+    );
+    $context  = stream_context_create($options);
+    $buf = file_get_contents($url, false, $context);
+    if (!$buf){
+      $buf = $text;
     }
-
     return $buf;
   }
 } 
