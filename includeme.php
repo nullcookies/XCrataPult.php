@@ -40,4 +40,5 @@ function registerAutoloader($namespaceName, $rootDirectory){
 }
 
 registerAutoloader("X", __XDIR__);
+\X\registerAutoloader("Typograph", __X_DIR__.'3rdparty/Typograph/');
 X::isOk();
