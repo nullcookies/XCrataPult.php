@@ -8,8 +8,7 @@
 
 namespace X\Data\DB;
 
-
-use app\model\Main\Users;
+use Typograf\Typograf;
 use X\Debug\Logger;
 use X\Traits\TFullClassName;
 use X\Validators\Values;
@@ -312,7 +311,12 @@ abstract class Entity {
               $isOK=true;
             }
             if ($isOK){
-              $val = $files->store($file, $fieldData['upload_path']);
+              if (array_key_exists('filename', $fieldData)){
+                $filename = call_user_func($fieldData['filename'], $file['name']);
+              }else{
+                $filename = null;
+              }
+              $val = $files->store($file, $fieldData['upload_path'], $filename, true);
             }
           }
         }else{
@@ -378,6 +382,9 @@ abstract class Entity {
             foreach($fieldData['sanitizer'] as $sanitizer){
               $val = call_user_func($sanitizer, $val);
             }
+          }
+          if (array_key_exists("typograph", $fieldData) && $fieldData['typograph']){
+            $val = Typograf::process($val);
           }
           if ($val || !array_key_exists('keep_if_no_changes', $fieldData) || $this->isNew()){
             $this->object->setFieldValue($name, $val);
