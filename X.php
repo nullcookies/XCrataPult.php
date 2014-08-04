@@ -155,8 +155,17 @@ class X extends \X\AbstractClasses\PrivateInstantiation{
     return strtoupper($_SERVER['REQUEST_METHOD']);
   }
 
-  public static function getURI(){
-    return $_SERVER["REQUEST_URI"];
+  public static function getURI($withQuery=true){
+    $answer=$_SERVER["REQUEST_URI"];
+    if (!$withQuery){
+      $answer = explode("?", $answer);
+      $answer=$answer[0];
+    }
+    return $answer;
+  }
+
+  public static function getReferrer(){
+    return $_SERVER['HTTP_REFERER'];
   }
 
   public static function isHTTPS(){
