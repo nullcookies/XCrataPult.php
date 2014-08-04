@@ -42,4 +42,5 @@ function registerAutoloader($namespaceName, $rootDirectory){
 registerAutoloader("X", __XDIR__);
 \X\registerAutoloader("Typograf", __XDIR__.'3rdparty/Typograf/');
 \X\registerAutoloader("Parsedown", __XDIR__.'3rdparty/Parsedown/');
+\X\registerAutoloader("Clickatell", __XDIR__.'3rdparty/Clickatell/');
 X::isOk();
