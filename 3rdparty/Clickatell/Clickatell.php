@@ -45,12 +45,12 @@ class Clickatell {
     return $mb_hex;
   }
 
-  public function send($to, $message, $from){
+  public function send($to, $message, $from='', $retry=false){
     $data = array(
       'text' => $this->encode($message),
       'to'=>$to,
       'from'=>$from,
-      '?session_id'=>$this->sessid,
+      'session_id'=>$this->sessid,
       'unicode'=>1
     );
 
@@ -65,9 +65,9 @@ class Clickatell {
     } else {
       if ($result[0]=="ERR"){
         $errCode = intval($result[1]);
-        if ($errCode==1){
+        if ($errCode<=5 && !$retry){
           $this->connect();
-          $this->send($to, $message, $from);
+          return $this->send($to, $message, $from, true);
         }else{
           throw new \RuntimeException("Clickatell error: ".$result[1], $errCode);
         }
