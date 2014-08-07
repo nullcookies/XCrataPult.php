@@ -74,5 +74,7 @@ if (file_exists(__XDIR__ . '3rdparty/PHPExcel/PHPExcel.php')){
 require_once(__XDIR__.'3rdparty/PHPSQLParser/PHPSQLParser.php');
 require_once(__XDIR__.'3rdparty/PHPSQLParser/PHPSQLCreator.php');
 
+require_once(__XDIR__.'3rdparty/PHPMailer/PHPMailerAutoload.php');
+
 
 X::isOk();
