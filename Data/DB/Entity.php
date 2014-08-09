@@ -143,6 +143,7 @@ abstract class Entity {
           return [];
         }
         $subEntityName = implode("\\", array_slice(explode("\\", get_called_class()),0, -1))."\\".ucfirst(strtolower($fieldData['origin']));
+
         if (!class_exists($subEntityName)){
           throw new \RuntimeException("sub entity ".$fieldData['origin']." doesn't exist");
         }
@@ -269,7 +270,9 @@ abstract class Entity {
       }
       
       if ((array_key_exists('edit', $fieldData) && $fieldData['edit']) || array_key_exists('fk', $fieldData)){
-
+        if (array_key_exists('fk', $fieldData) && $val===null && !$this->isNew()){
+          return;
+        }
         if ($fieldType==self::FIELD_TYPE_YESNO){
           $val = $val ? $fieldData['yes'] : $fieldData['no'];
         }
@@ -313,10 +316,23 @@ abstract class Entity {
             if ($isOK){
               if (array_key_exists('filename', $fieldData)){
                 $filename = call_user_func($fieldData['filename'], $file['name']);
+              }elseif (array_key_exists('prefix', $fieldData)){
+                if (strpos($fieldData['prefix'], ":")){
+                  list($type, $val) = explode(":", $fieldData['prefix'], 2);
+                  if ($type=='function'){
+                    $filename = call_user_func($val).$file['name'];
+                  }
+                }else{
+                  $filename = call_user_func($fieldData['prefix']).$file['name'];
+                }
               }else{
                 $filename = null;
               }
               $val = $files->store($file, $fieldData['upload_path'], $filename, true);
+            }elseif (array_key_exists('keep_if_no_changes', $fieldData) && $fieldData['keep_if_no_changes'] && !$this->isNew()){
+              $this->saveErrors[$name]=[];
+              unset($this->saveErrors[$name]);
+              $isOK=true;
             }
           }
         }else{
@@ -336,7 +352,6 @@ abstract class Entity {
               $this->saveErrors[$name][]=self::ERROR_INCORRECT;
             }
           }
-
           if (array_key_exists('min', $fieldData) && $isOK){
             if ($fieldType==self::FIELD_TYPE_TEXT){
               if (strlen($val)<$fieldData['min']){
