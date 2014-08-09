@@ -7,6 +7,9 @@
  */
 
 namespace X\Tools;
+use PHPSQLParser\utils\PHPSQLParserConstants;
+use X\Validators\Values;
+
 if (!defined('__XDIR__')) die();
 
 
@@ -189,5 +192,35 @@ class Strings {
     }
 
     return self::explodeByIndex($string, $cutPoints);
+  }
+
+  public static function processString($text, $processor, $prefix=null, $postfix=null){
+
+    function process($text, $processor, $default=''){
+      $answer='';
+      if (Values::isCallback($processor)){
+        $answer = call_user_func($processor, $text);
+      }elseif(is_array($processor)){
+        foreach($processor as $task){
+          if (is_string($task)){
+            if (strpos($task, ":")){
+              $task_ = explode(":", $task, 2);
+              if ($task_[0]=="function"){
+                $answer.= call_user_func($task_[1], $text);
+                continue;
+              }
+            }
+            $answer.=$task;
+          }elseif(Values::isCallback($task)){
+            $answer.= call_user_func($task, $text);
+          }
+        }
+      }else{
+        $answer = $default;
+      }
+      return $answer;
+    }
+
+    return process($text, $prefix).process($text, $processor, $text).process($text, $postfix);
   }
 } 

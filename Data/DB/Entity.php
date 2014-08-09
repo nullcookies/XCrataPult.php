@@ -10,6 +10,7 @@ namespace X\Data\DB;
 
 use Typograf\Typograf;
 use X\Debug\Logger;
+use X\Tools\Strings;
 use X\Traits\TFullClassName;
 use X\Validators\Values;
 use X\X;
@@ -314,21 +315,11 @@ abstract class Entity {
               $isOK=true;
             }
             if ($isOK){
-              if (array_key_exists('filename', $fieldData)){
-                $filename = call_user_func($fieldData['filename'], $file['name']);
-              }elseif (array_key_exists('prefix', $fieldData)){
-                if (strpos($fieldData['prefix'], ":")){
-                  list($type, $val) = explode(":", $fieldData['prefix'], 2);
-                  if ($type=='function'){
-                    $filename = call_user_func($val).$file['name'];
-                  }
-                }else{
-                  $filename = call_user_func($fieldData['prefix']).$file['name'];
-                }
-              }else{
-                $filename = null;
-              }
-              $val = $files->store($file, $fieldData['upload_path'], $filename, true);
+              $filename = explode(".", $file['name']);
+              $ext = array_pop($filename);
+              $filename = Strings::processString(implode(".", $filename), $fieldData['filename'], $fieldData['prefix'], $fieldData['postfix']).'.'.$ext;
+
+              $val = $files->store($file, $fieldData['upload_path'], $filename);
             }elseif (array_key_exists('keep_if_no_changes', $fieldData) && $fieldData['keep_if_no_changes'] && !$this->isNew()){
               $this->saveErrors[$name]=[];
               unset($this->saveErrors[$name]);
