@@ -11,16 +11,20 @@
 
 namespace Imagine\Gd;
 
-use Imagine\Image\LayersInterface;
+use Imagine\Image\AbstractLayers;
 use Imagine\Exception\RuntimeException;
+use Imagine\Image\Metadata\MetadataBag;
+use Imagine\Image\Palette\PaletteInterface;
+use Imagine\Exception\NotSupportedException;
 
-class Layers implements LayersInterface
+class Layers extends AbstractLayers
 {
     private $image;
     private $offset;
     private $resource;
+    private $palette;
 
-    public function __construct(Image $image, $resource)
+    public function __construct(Image $image, PaletteInterface $palette, $resource)
     {
         if (!is_resource($resource)) {
             throw new RuntimeException('Invalid Gd resource provided');
@@ -29,8 +33,12 @@ class Layers implements LayersInterface
         $this->image = $image;
         $this->resource = $resource;
         $this->offset = 0;
+        $this->palette = $palette;
     }
 
+    /**
+     * {@inheritdoc}
+     */
     public function merge()
     {
     }
@@ -38,9 +46,24 @@ class Layers implements LayersInterface
     /**
      * {@inheritdoc}
      */
+    public function coalesce()
+    {
+    }
+
+    /**
+     * {@inheritdoc}
+     */
+    public function animate($format, $delay, $loops)
+    {
+        return $this;
+    }
+
+    /**
+     * {@inheritdoc}
+     */
     public function current()
     {
-        return new Image($this->resource);
+        return new Image($this->resource, $this->palette, new MetadataBag());
     }
 
     /**
@@ -81,5 +104,41 @@ class Layers implements LayersInterface
     public function count()
     {
         return 1;
+    }
+
+    /**
+     * {@inheritdoc}
+     */
+    public function offsetExists($offset)
+    {
+        return 0 === $offset;
+    }
+
+    /**
+     * {@inheritdoc}
+     */
+    public function offsetGet($offset)
+    {
+        if (0 === $offset) {
+            return new Image($this->resource, $this->palette, new MetadataBag());
+        }
+
+        throw new RuntimeException('GD only supports one layer at offset 0');
+    }
+
+    /**
+     * {@inheritdoc}
+     */
+    public function offsetSet($offset, $value)
+    {
+        throw new NotSupportedException('GD does not support layer set');
+    }
+
+    /**
+     * {@inheritdoc}
+     */
+    public function offsetUnset($offset)
+    {
+        throw new NotSupportedException('GD does not support layer unset');
     }
 }
