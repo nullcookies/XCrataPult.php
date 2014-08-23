@@ -94,8 +94,11 @@ class Localization{
             $answer = $root;
             //TODO: cache answer
             if (is_string($answer) || is_array($answer)){
+              if (is_string($data[0]) && is_array($answer) && array_key_exists($data[0], $answer)){
+                return $answer[$data[0]];
+              }
               return $answer;
-            }elseif (is_object($answer) && in_array(get_class($answer),["X\\Data\\Localization\\PlaceholdersString","X\\Data\\Localization\\PluralString"])){
+            }elseif(is_object($answer) && in_array(get_class($answer),["X\\Data\\Localization\\PlaceholdersString","X\\Data\\Localization\\PluralString"])){
               if (!is_array($data)){
                 $data = [$data];
               }
@@ -170,7 +173,6 @@ class Localization{
 
     foreach(static::$paths as $base){
       $base   = FileSystem::finalizeDirPath($base).$code;
-      $files  = Array();
 
       if (!is_dir($base)){
         Logger::add("Language folder: ".$base. " doesn't exists.");
