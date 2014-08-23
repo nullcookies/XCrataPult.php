@@ -286,6 +286,17 @@ class Collection extends \ArrayObject{
   }
 
   public function by($where){
+    $vars=[];
+    if (func_num_args()>1){
+      if (func_num_args()==2 && is_array(func_get_arg(1))){
+        $vars = func_get_arg(1);
+      }else{
+        $vars = array_slice(func_get_args(),1);
+      }
+      $this->whereVars=array_replace_recursive($this->whereVars, $vars);
+    }
+
+
     $this->resetRes();
     if (func_num_args()>1){
       $lastPH='';
