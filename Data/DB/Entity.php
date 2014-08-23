@@ -21,6 +21,8 @@ abstract class Entity {
 
   use TFullClassName;
 
+  const FIELD_TYPE_CONST='const';
+
   const FIELD_TYPE_AUTO='auto';
   const FIELD_TYPE_TEXT='text';
   const FIELD_TYPE_NUMBER='number';
@@ -31,6 +33,8 @@ abstract class Entity {
   const FIELD_TYPE_ENTITY_LIST='entity_list';
   const FIELD_TYPE_YESNO = 'yes_no';
   const FIELD_TYPE_SORT_POSITION = 'sortpos';
+  const FIELD_TYPE_DATE = 'date';
+  const FIELD_TYPE_TIME = 'time';
 
   const ERROR_INCORRECT='incorrect';
   const ERROR_TOOLONG = 'too_long';
@@ -63,6 +67,7 @@ abstract class Entity {
   protected $isNew=true;
 
   public $saveErrors=[];
+  public $saved=false;
 
   public function __construct($object=null){
     $crud = static::$CRUD;
@@ -212,7 +217,7 @@ abstract class Entity {
   public static function getSortBy(){
     $sortBy=[];
     $crud = static::$CRUD;
-    foreach(static::$fields as $name=>$field){
+    foreach(static::getFields() as $name=>$field){
       if ($field['type']==self::FIELD_TYPE_SORT_POSITION){
         $sortBy[]=$crud::getFields()[$name]['fullName'].(strtolower($field['direction'])=='desc' ? " desc" : " asc");
       }
@@ -229,7 +234,7 @@ abstract class Entity {
   }
 
   public static function getFieldInfo($fieldName){
-    return static::$fields[$fieldName];
+    return static::getFields()[$fieldName];
   }
 
   public static function getPK(){
@@ -261,9 +266,9 @@ abstract class Entity {
   }
 
   public function setField($name, $val=null){
-    if (array_key_exists($name, static::$fields)){
+    if (array_key_exists($name, static::getFields())){
 
-      $fieldData = static::$fields[$name];
+      $fieldData = static::getFields()[$name];
       $fieldType = $fieldData['type'];
 
       if (in_array($fieldType, [self::FIELD_TYPE_ENTITY_LIST])){
@@ -276,6 +281,10 @@ abstract class Entity {
         }
         if ($fieldType==self::FIELD_TYPE_YESNO){
           $val = $val ? $fieldData['yes'] : $fieldData['no'];
+        }
+
+        if ($fieldType==self::FIELD_TYPE_DATE || $fieldType==self::FIELD_TYPE_TIME){
+          $val = strtotime($val);
         }
 
         if ($fieldType==self::FIELD_TYPE_TEXT){
@@ -345,7 +354,7 @@ abstract class Entity {
           }
           if (array_key_exists('min', $fieldData) && $isOK){
             if ($fieldType==self::FIELD_TYPE_TEXT){
-              if (strlen($val)<$fieldData['min']){
+              if (strlen($val)<$fieldData['min'] && !(!strlen($val) && $fieldData['keep_if_no_changes'] && !$this->isNew())){
                 $this->saveErrors[$name][]=self::ERROR_TOOSHORT;
                 $isOK=false;
               }
@@ -396,13 +405,15 @@ abstract class Entity {
             $this->object->setFieldValue($name, $val);
           }
         }
+      }elseif($fieldType==self::FIELD_TYPE_CONST){
+        $this->object->setFieldValue($name, $fieldData['value']);
       }
     }
     return $this;
   }
 
   public function getField($name){
-    if (array_key_exists($name, static::$fields)){
+    if (array_key_exists($name, static::getFields())){
       return $this->object->fieldValue($name);
     }
     return null;
@@ -435,7 +446,7 @@ abstract class Entity {
       }
     }
 
-    foreach(static::$fields as $field=>$data){
+    foreach(static::getFields() as $field=>$data){
       if (!array_key_exists('proxy', $data)){
         if ($data['type']==self::FIELD_TYPE_IMAGE && X::uploadedFiles()->exists($field)){
           $entity->setField($field);
@@ -447,8 +458,9 @@ abstract class Entity {
 
     if (!$entity->saveErrors){
       $entity->save();
+      $entity->saved=true;
       $proxy=false;
-      foreach(static::$fields as $field=>$data){
+      foreach(static::getFields() as $field=>$data){
         if (array_key_exists('proxy', $data)){
           $entity->setField($field, Request::post($field));
           $proxy=true;
@@ -468,7 +480,6 @@ abstract class Entity {
       $this->isNew=true;
     }
   }
-
 
   public static function hook_constructor_before(){}
   public function hook_constructor_after(){}
