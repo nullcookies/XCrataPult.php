@@ -123,7 +123,9 @@ abstract class {%CLASSNAME%} extends CRUD{
 
   public function save(){
   	try{
+  	  $this->hook_save_before();
   		static::connection()->store($this);
+  		$this->hook_save_after();
   	}catch(\Exception $e){
   		throw new \Exception('Could not save to table '.static::TABLE_NAME.'!', $e->getCode(), $e);
   	}
@@ -167,5 +169,8 @@ abstract class {%CLASSNAME%} extends CRUD{
 
   public function hook_asArray_before(){}
   public function hook_asArray_after(&$answer){}
+
+  public function hook_save_before(){}
+  public function hook_save_after(){}
 
 }
