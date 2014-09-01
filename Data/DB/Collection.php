@@ -196,19 +196,24 @@ class Collection extends \ArrayObject{
       $order = explode(", ", $order);
     }
     foreach($order as $o){
-      $o=" ".strtolower($o)." ";
-      $o=str_replace(" by ", "", $o);
-      $o = " ".$o." ";
-      $direction="ASC";
-      if (strpos($o, " desc ")!==false){
-        $direction="DESC";
-      }
-      $o=str_replace([" asc "," desc "], "", $o);
       $o = trim($o);
-      if ($field = $this->isField($o)){
-        $this->order[]=$field.' '.$direction;
+      if ($o=="*"){
+        $this->order[]="RAND()";
       }else{
-        $this->order[]=$o.' '.$direction; //we assume that the user can provide us with function inside
+        $o=" ".strtolower($o)." ";
+        $o=str_replace(" by ", "", $o);
+        $o = " ".$o." ";
+        $direction="ASC";
+        if (strpos($o, " desc ")!==false){
+          $direction="DESC";
+        }
+        $o=str_replace([" asc "," desc "], "", $o);
+        $o = trim($o);
+        if ($field = $this->isField($o)){
+          $this->order[]=$field.' '.$direction;
+        }else{
+          $this->order[]=$o.' '.$direction; //we assume that the user can provide us with function inside
+        }
       }
     }
     return $this;
