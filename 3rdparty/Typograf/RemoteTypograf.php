@@ -126,6 +126,9 @@ SOAPAction: "http://typograf.artlebedev.ru/webservices/ProcessText"
 
     $startsAt = strpos ($typografResponse, '<ProcessTextResult>') + 19;
     $endsAt = strpos ($typografResponse, '</ProcessTextResult>');
+    if ($endsAt==$startsAt){
+      return '<empty></empty>';
+    }
     $typografResponse = substr ($typografResponse, $startsAt, $endsAt - $startsAt - 1);
 
     $typografResponse = str_replace ('&amp;', '&', $typografResponse);
