@@ -305,7 +305,7 @@ abstract class Entity {
         if ($fieldType==self::FIELD_TYPE_IMAGE){
           $files = X::uploadedFiles();
           $isOK=false;
-          if ($file = $files[$name]){
+          if (($file = $files[$name]) && $file['name']){
             if (!$file['is_image']){
               $this->saveErrors[$name][]=self::ERROR_FILE_NOT_IMAGE;
             }elseif (array_key_exists('width_min', $fieldData) && $file['width']<$fieldData['width_min']){
@@ -334,6 +334,10 @@ abstract class Entity {
               unset($this->saveErrors[$name]);
               $isOK=true;
             }
+          }elseif(array_key_exists('required', $fieldData) && $fieldData['required']){
+            $this->saveErrors[$name][]=self::ERROR_REQUIRED;
+          }else{
+            $isOK=true;
           }
         }else{
 
