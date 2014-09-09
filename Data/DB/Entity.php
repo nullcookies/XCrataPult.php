@@ -267,7 +267,6 @@ abstract class Entity {
 
   public function setField($name, $val=null){
     if (array_key_exists($name, static::getFields())){
-
       $fieldData = static::getFields()[$name];
       $fieldType = $fieldData['type'];
 
@@ -335,7 +334,11 @@ abstract class Entity {
               $isOK=true;
             }
           }elseif(array_key_exists('required', $fieldData) && $fieldData['required']){
-            $this->saveErrors[$name][]=self::ERROR_REQUIRED;
+            if (array_key_exists('keep_if_no_changes', $fieldData) && $fieldData['keep_if_no_changes'] && !$this->isNew()){
+              $isOK=true;
+            }else{
+              $this->saveErrors[$name][]=self::ERROR_REQUIRED;
+            }
           }else{
             $isOK=true;
           }
