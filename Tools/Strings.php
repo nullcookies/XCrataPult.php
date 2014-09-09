@@ -49,7 +49,7 @@ class Strings {
     return round($val, $dec).$prefix.$names[$names_c];
   }
 
-  public static function translitRuEn($string){
+  public static function translitRuEn($string, $nonLatin="'"){
     $converter = array(
       'а' => 'a',   'б' => 'b',   'в' => 'v',
       'г' => 'g',   'д' => 'd',   'е' => 'e',
@@ -60,7 +60,7 @@ class Strings {
       'с' => 's',   'т' => 't',   'у' => 'u',
       'ф' => 'f',   'х' => 'h',   'ц' => 'c',
       'ч' => 'ch',  'ш' => 'sh',  'щ' => 'sch',
-      'ь' => '\'',  'ы' => 'y',   'ъ' => '\'',
+      'ь' => $nonLatin,  'ы' => 'y',   'ъ' => $nonLatin,
       'э' => 'e',   'ю' => 'yu',  'я' => 'ya',
 
       'А' => 'A',   'Б' => 'B',   'В' => 'V',
@@ -72,7 +72,7 @@ class Strings {
       'С' => 'S',   'Т' => 'T',   'У' => 'U',
       'Ф' => 'F',   'Х' => 'H',   'Ц' => 'C',
       'Ч' => 'Ch',  'Ш' => 'Sh',  'Щ' => 'Sch',
-      'Ь' => '\'',  'Ы' => 'Y',   'Ъ' => '\'',
+      'Ь' => $nonLatin,  'Ы' => 'Y',   'Ъ' => $nonLatin,
       'Э' => 'E',   'Ю' => 'Yu',  'Я' => 'Ya',
     );
 
