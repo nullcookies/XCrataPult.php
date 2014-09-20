@@ -267,6 +267,7 @@ abstract class Entity {
 
   public function setField($name, $val=null){
     if (array_key_exists($name, static::getFields())){
+
       $fieldData = static::getFields()[$name];
       $fieldType = $fieldData['type'];
 
@@ -402,13 +403,23 @@ abstract class Entity {
               $fieldData['sanitizer'] = [$fieldData['sanitizer']];
             }
             foreach($fieldData['sanitizer'] as $sanitizer){
-              $val = call_user_func($sanitizer, $val);
+              if (Values::isCallback($sanitizer)){
+                $val = call_user_func($sanitizer, $val);
+              }
             }
           }
           if (array_key_exists("typograph", $fieldData) && $fieldData['typograph']){
             $val = Typograf::process($val);
           }
           if ($val || !array_key_exists('keep_if_no_changes', $fieldData) || $this->isNew()){
+            if (!is_array($fieldData['processor'])){
+              $fieldData['processor'] = [$fieldData['processor']];
+            }
+            foreach($fieldData['processor'] as $processor){
+              if (Values::isCallback($processor)){
+                $val = call_user_func($processor, $val);
+              }
+            }
             $this->object->setFieldValue($name, $val);
           }
         }
@@ -436,6 +447,7 @@ abstract class Entity {
 
   public static function processSave(){
     $pk = [];
+
     if (Request::post("ent_new")){
       $entity = static::create();
     }else{
