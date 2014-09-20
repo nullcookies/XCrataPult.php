@@ -27,8 +27,27 @@ class C extends \X\AbstractClasses\PrivateInstantiation{
     'session_domain'=>null,
     'session_ip_check'=>true,
 
+    'scss_input'=>'',
+    'scss_output'=>'',
+
     'template_folders'=>[]
   ];
+
+  public static function setScssInput($folder){
+    self::$config["scss_input"] = self::checkDir($folder);
+  }
+
+  public static function getScssInput(){
+    return self::$config["scss_input"];
+  }
+
+  public static function setScssOutput($folder){
+    self::$config["scss_output"] = self::checkDir($folder);
+  }
+
+  public static function getScssOutput(){
+    return self::$config["scss_output"];
+  }
 
   public static function setSessionIpCheck($check){
     self::$config["session_ip_check"] = !!$check;
