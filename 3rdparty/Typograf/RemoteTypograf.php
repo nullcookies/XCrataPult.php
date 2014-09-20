@@ -127,7 +127,7 @@ SOAPAction: "http://typograf.artlebedev.ru/webservices/ProcessText"
     $startsAt = strpos ($typografResponse, '<ProcessTextResult>') + 19;
     $endsAt = strpos ($typografResponse, '</ProcessTextResult>');
     if ($endsAt==$startsAt){
-      return '<empty></empty>';
+      return '';
     }
     $typografResponse = substr ($typografResponse, $startsAt, $endsAt - $startsAt - 1);
 
