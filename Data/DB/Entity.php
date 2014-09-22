@@ -329,7 +329,7 @@ abstract class Entity {
               $filename = Strings::processString(implode(".", $filename), $fieldData['filename'], $fieldData['prefix'], $fieldData['postfix']).'.'.$ext;
 
               $val = $files->store($file, $fieldData['upload_path'], $filename);
-            }elseif (array_key_exists('keep_if_no_changes', $fieldData) && $fieldData['keep_if_no_changes'] && !$this->isNew()){
+            }elseif ( !array_key_exists('required', $fieldData) || !$fieldData['required'] || array_key_exists('keep_if_no_changes', $fieldData) && $fieldData['keep_if_no_changes'] && !$this->isNew()){
               $this->saveErrors[$name]=[];
               unset($this->saveErrors[$name]);
               $isOK=true;
