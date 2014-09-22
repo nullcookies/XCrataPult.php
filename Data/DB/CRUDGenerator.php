@@ -298,6 +298,14 @@ class CRUDGenerator extends PrivateInstantiation{
       $selectors[] = " * @param \$val";
       $selectors[] = " * @return Collection";
       $selectors[] = " */";
+      $selectors[] = "public static function getBy".$field->getCamelName()."isNull(\$limit=0, \$groupBy=null, \$ttl=null){";
+      $selectors[] = "\treturn static::getByOneField('".$field->getName()." is NULL', \$val, \$limit, \$groupBy);";
+      $selectors[] = "}";
+
+      $selectors[] = "/**";
+      $selectors[] = " * @param \$val";
+      $selectors[] = " * @return Collection";
+      $selectors[] = " */";
       $selectors[] = "public static function getBy".$field->getCamelName()."(\$val, \$limit=0, \$groupBy=null, \$ttl=null){";
       $selectors[] = "\treturn static::getByOneField('".$field->getName()."=::val', \$val, \$limit, \$groupBy);";
       $selectors[] = "}";
