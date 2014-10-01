@@ -38,10 +38,12 @@ class Localization{
   }
 
   public static function addLanguage($code, $name=null){
-    static::$languages[$code]  = $name?:Languages::$code2local[$code];
-    static::$dictionary[$code] = [];
-    if (static::$currentLanguage===null){
-      static::$currentLanguage = $code; // first registered language is current by default
+    if (!array_key_exists($code, static::$languages)){
+      static::$languages[$code]  = $name?:Languages::$code2local[$code];
+      static::$dictionary[$code] = [];
+      if (static::$currentLanguage===null){
+        static::$currentLanguage = $code; // first registered language is current by default
+      }
     }
     return static::loadFromConfig($code);
   }
@@ -185,9 +187,11 @@ class Localization{
     return true;
   }
   
-  private static function update(){
+  private static function update($erase=false){
     foreach(static::$languages as $code=>$data){
-      static::$dictionary[$code]=[];
+      if ($erase){
+        static::$dictionary[$code]=[];
+      }
       static::loadFromConfig($code);
     }
   }
@@ -218,8 +222,8 @@ class Localization{
         $path = substr($path,1);
       }
       $path = explode(DIRECTORY_SEPARATOR, $path);
-      if (!array_key_exists($languageCode, static::$dictionary)){
-        static::$dictionary[$languageCode]=[];
+      if (!static::hasLanguage($languageCode)){
+        static::addLanguage($languageCode);
       }
       $root = &static::$dictionary[$languageCode];
       foreach($path as $part){
