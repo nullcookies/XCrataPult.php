@@ -35,6 +35,7 @@ abstract class {%CLASSNAME%} extends CRUD{
 {%REFS%}
 
 {%FIELDS%}
+{%FIELDSCNAMES%}
 {%PRIMARYFIELDS%}
 {%PROPERTIES%}
 
@@ -89,6 +90,7 @@ abstract class {%CLASSNAME%} extends CRUD{
 {%ASARRAY%}
 
   public static function get($conditions=''){
+    $vars=null;
     if (func_num_args()>1){
       if (func_num_args()==2 && is_array(func_get_arg(1))){
         $vars = func_get_arg(1);
@@ -96,7 +98,11 @@ abstract class {%CLASSNAME%} extends CRUD{
         $vars = array_slice(func_get_args(),1);
       }
     }
-    return (new Collection(static::connection(), '{%TABLENAME%},'.$conditions, $vars))->scope("{%TABLENAME%}");
+    if ($vars!==null){
+      return (new Collection(static::connection(), '{%TABLENAME%},'.$conditions, $vars))->scope("{%TABLENAME%}");
+    }else{
+      return (new Collection(static::connection(), '{%TABLENAME%},'.$conditions))->scope("{%TABLENAME%}");
+    }
   }
 
   private static function getByOneField($varCondition, $val, $limit=0, $groupBy=null){
@@ -106,6 +112,11 @@ abstract class {%CLASSNAME%} extends CRUD{
   public static function getFields(){
     static::mutate();
     return static::$Fields;
+  }
+
+  public static function getCFields(){
+    static::mutate();
+    return static::$FieldsCnames;
   }
 
   public static function getPrimaryFields(){

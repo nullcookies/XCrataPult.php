@@ -177,10 +177,36 @@ class Mysql implements IDB{
           ->fieldByName($key['REFERENCED_COLUMN_NAME']);
         $keys[$key['CONSTRAINT_NAME']]->addRefField($keyField, $keyRefField);
         $keys[$key['CONSTRAINT_NAME']]->setRefTable($key['REFERENCED_TABLE_NAME']);
+        $keys[$key['CONSTRAINT_NAME']]->unUnique();
       }//else{
         $keys[$key['CONSTRAINT_NAME']]->addField($keyField);
       //}
-      Logger::add("- - key '".$key['TABLE_NAME']."_".$key['COLUMN_NAME']."'... OK");
+      Logger::add("- - key \"".$key['CONSTRAINT_NAME']."\": '".$key['TABLE_NAME']."_".$key['COLUMN_NAME']."'... OK");
+    }
+    //SHOW INDEX FROM `data`.`object_names`
+    foreach(new Collection($this, new Expr("SHOW INDEX FROM `".$this->dbname."`.`".$tableName."`")) as $key){
+
+      if ($key['Key_name']=="PRIMARY"){
+        continue;
+      }
+      if (!array_key_exists($key['Key_name'], $keys)){
+        $keys[$key['Key_name']] = new Key($this, $key['Key_name']);
+        $keys[$key['Key_name']]->unUnique();
+      }
+
+      $type = 0;
+      if ($key['Non_unique']){
+        $type = Key::KEY_TYPE_INDEX;
+      }else{
+        $type = Key::KEY_TYPE_UNIQUE;
+      }
+
+      $keyField = &DB::connectionByDatabase($key['TABLE_SCHEMA'])
+        ->getDatabase()
+        ->tableByName($key['Table'])
+        ->fieldByName($key['Column_name']);
+      $keys[$key['Key_name']]->addField($keyField);
+      Logger::add("- - key \"".$key['Key_name']."\": '".$key['Table']."_".$key['Column_name']."'... OK");
     }
     return $keys;
   }

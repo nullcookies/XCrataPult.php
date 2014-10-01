@@ -44,10 +44,15 @@ class Collection extends \ArrayObject{
   protected $whereVars=[];
   protected $fields=[];
 
+  protected $fieldsToSelect=[];
+
   const BAD_CALLBACK = 801;
   const BAD_QUERY_RESOURCE = 802;
 
   public function __construct(&$driver=null, $expr=null){
+
+    Logger::add('function '.__CLASS__.'::'.__FUNCTION__.'.begin');
+
     if (!$driver){
       $driver = DB::connectionByDatabase();
     }
@@ -62,7 +67,10 @@ class Collection extends \ArrayObject{
       $expr=$expr[0];
     }
 
-    if ($expr instanceof Expr){
+    if ($expr instanceof Collection){
+      $this->expr = $expr->expr();
+      $this->exprRestriced=true;
+    }elseif ($expr instanceof Expr){
       $this->expr = $expr;
       $this->exprRestriced=true;
     }elseif(is_array($expr)){
@@ -80,7 +88,11 @@ class Collection extends \ArrayObject{
         }
       }
     }
-    $this->whereVars=$vars;
+
+    if (is_array($vars) && count($vars)){
+      $this->whereVars=$vars;
+    }
+
     if (is_string($expr)){
       $from=[];
       $where=[];
@@ -174,9 +186,11 @@ class Collection extends \ArrayObject{
       reset($this->tableNames);
       $this->scope(key($this->tableNames));
     }
+    Logger::add('function '.__CLASS__.'::'.__FUNCTION__.'.end');
   }
 
   public function fields($fields){
+    Logger::add('function '.__CLASS__.'::'.__FUNCTION__.'.begin');
     if (!is_array($fields)){
       $fields = Strings::explodeSelective($fields);
     }
@@ -188,13 +202,32 @@ class Collection extends \ArrayObject{
         $this->whereVars[$name]=new Expr(str_replace(" ".$tmp, " as ".$tmp, $f));
       }
     }
+    Logger::add('function '.__CLASS__.'::'.__FUNCTION__.'.end');
     return $this;
   }
 
   public function order($order){
+    Logger::add('function '.__CLASS__.'::'.__FUNCTION__.'.begin');
     if (!is_array($order)){
-      $order = explode(", ", $order);
+      $order = Strings::explodeSelective($order);
     }
+
+    if (func_num_args()>1){
+      if (func_num_args()==2 && is_array(func_get_arg(1))){
+        $vars = func_get_arg(1);
+      }else{
+        $vars = array_slice(func_get_args(),1);
+      }
+      if (!Values::isAssoc($vars)){
+        foreach($vars as $v){
+          $this->whereVars[]=$v;
+        }
+      }else{
+        $this->whereVars=array_replace_recursive($this->whereVars, $vars);
+      }
+    }
+
+    $this->resetRes();
     foreach($order as $o){
       $o = trim($o);
       if ($o=="*"){
@@ -216,28 +249,35 @@ class Collection extends \ArrayObject{
         }
       }
     }
+    Logger::add('function '.__CLASS__.'::'.__FUNCTION__.'.end');
     return $this;
   }
 
   public function resetScope(){
+    Logger::add('function '.__CLASS__.'::'.__FUNCTION__.'.begin');
     $this->scope=null;
+    Logger::add('function '.__CLASS__.'::'.__FUNCTION__.'.end');
     return $this;
   }
 
   public function scope($scope){
+    Logger::add('function '.__CLASS__.'::'.__FUNCTION__.'.begin');
     if (!array_key_exists($scope, $this->tableNames)){
       throw new \RuntimeException("There is no table/alias '".$scope."' to scope results");
     }
     $this->scope = $scope;
+    Logger::add('function '.__CLASS__.'::'.__FUNCTION__.'.end');
     return $this;
   }
 
   public function group($group){
+    Logger::add('function '.__CLASS__.'::'.__FUNCTION__.'.begin');
     $this->resetRes();
     if (is_array($group)){
       foreach($group as $g){
         $this->group($g);
       }
+      Logger::add('function '.__CLASS__.'::'.__FUNCTION__.'.end');
       return $this;
     }
     if ($group[0]=='(' && substr($group, -1)==')'){
@@ -250,10 +290,12 @@ class Collection extends \ArrayObject{
         $this->group[]=$g; //we assume that the user can provide us with function inside
       }
     }
+    Logger::add('function '.__CLASS__.'::'.__FUNCTION__.'.end');
     return $this;
   }
 
   public function limit($lim){
+    Logger::add('function '.__CLASS__.'::'.__FUNCTION__.'.begin');
     $this->resetRes();
     if (is_array($lim)){
       if (count($lim)==1){
@@ -261,6 +303,7 @@ class Collection extends \ArrayObject{
       }elseif(count($lim)==2){
         $this->lim=[intval($lim[0]), intval($lim[1])];
       }
+      Logger::add('function '.__CLASS__.'::'.__FUNCTION__.'.end');
       return $this;
     }
     $lim = trim($lim);
@@ -277,89 +320,90 @@ class Collection extends \ArrayObject{
         $this->lim=[intval($lim)];
       }
     }
+    Logger::add('function '.__CLASS__.'::'.__FUNCTION__.'.end');
     return $this;
   }
 
   public function resetConditions(){
+    Logger::add('function '.__CLASS__.'::'.__FUNCTION__.'.begin');
     $this->resetRes();
     $this->where=[];
     $this->lim=[];
     $this->order=[];
     $this->group=[];
     $this->whereVars=[];
+    Logger::add('function '.__CLASS__.'::'.__FUNCTION__.'.end');
     return $this;
   }
 
   public function by($where){
-    $vars=[];
+    Logger::add('function '.__CLASS__.'::'.__FUNCTION__.'.begin');
     if (func_num_args()>1){
       if (func_num_args()==2 && is_array(func_get_arg(1))){
         $vars = func_get_arg(1);
       }else{
         $vars = array_slice(func_get_args(),1);
       }
-      $this->whereVars=array_replace_recursive($this->whereVars, $vars);
-    }
+      if (!Values::isAssoc($vars)){
+        foreach($vars as $v){
+          $this->whereVars[]=$v;
+        }
+      }else{
+        $this->whereVars=array_replace_recursive($this->whereVars, $vars);
+      }
 
+    }
 
     $this->resetRes();
     if (func_num_args()>1){
-      $lastPH='';
-      for ($i=0; $i<func_num_args(); $i++){
-        $op='=';
-        $newPH = 'auto_'.md5(uniqid(true));
+      $newPH = 'auto_'.md5(uniqid(true));
 
-        $part = func_get_arg($i);
-        if (is_array($part)){
-          $this->whereVars = array_merge($this->whereVars, $part);
-          continue;
-        }
-        $part = trim($part);
-        if (!$lastPH){
-          if ($part[0]=='%'){
-            $op=' LIKE "%::'.$newPH.'"';
-            $part = substr($part, 1);
-          }else{
-            switch(substr($part,-1)){
-              case '=':
-                if (substr($part, -2, 1)=='!'){
-                  $op="!=";
-                  $part = substr($part, 0, -2);
-                  break;
-                }
-              case '>':
-              case '<':
-                $op = substr($part,-1).'::'.$newPH;
-                $part = substr($part, 0, -1);
-                break;
-              case '%':
-                if (substr($part, -2, 1)=='%'){
-                  $op=' LIKE "%::'.$newPH.'%"';
-                  $part = substr($part, 0, -2);
-                }else{
-                  $op=' LIKE "::'.$newPH.'%"';
-                  $part = substr($part, 0, -1);
-                }
-                break;
-              default:
-                $op=false;
+      $part = func_get_arg(0);
+      $part = trim($part);
+      if ($part[0]=='%'){
+        $op=' LIKE "%::'.$newPH.'"';
+        $part = substr($part, 1);
+      }else{
+        switch(substr($part,-1)){
+          case '=':
+            if (substr($part, -2, 1)=='!'){
+              $op="!=";
+              $part = substr($part, 0, -2);
+              break;
             }
-          }
-          if ($op===false){
-            $this->where[]=$part;
-            continue;
-          }
-          $part = trim($part);
-          if ($field = $this->isField($part)){
-            $this->where[]=$field.$op;
-          }else{
-            throw new \RuntimeException("Expected field, got '".$part."' which is either not field or has ambiguous name");
-          }
-          $lastPH = $newPH;
-        }else{
-          $this->whereVars[$lastPH]=$part;
-          $lastPH='';
+          case '>':
+          case '<':
+            $op = substr($part,-1).'::'.$newPH;
+            $part = substr($part, 0, -1);
+            break;
+          case '%':
+            if (substr($part, -2, 1)=='%'){
+              $op=' LIKE "%::'.$newPH.'%"';
+              $part = substr($part, 0, -2);
+            }else{
+              $op=' LIKE "::'.$newPH.'%"';
+              $part = substr($part, 0, -1);
+            }
+            break;
+          default:
+            $op=false;
         }
+      }
+      if ($op===false){
+        if ($this->isField($part)){
+          $op='=::'.$newPH;
+          $this->whereVars[$newPH]=func_get_arg(1);
+        }else{
+          $this->where[]=$part;
+          Logger::add('function '.__CLASS__.'::'.__FUNCTION__.'.end');
+          return $this;
+        }
+      }
+      $part = trim($part);
+      if ($field = $this->isField($part)){
+        $this->where[]=$field.$op;
+      }else{
+        throw new \RuntimeException("Expected field, got '".$part."' which is either not field or has ambiguous name");
       }
     }else{
       if (is_array($where)){
@@ -368,18 +412,22 @@ class Collection extends \ArrayObject{
         }
 
         $where = "WHERE ".implode(" and ", array_filter($this->where,'trim'));
-        $parsed = (new PHPSQLParser($where))->parsed;
+        $parser = new PHPSQLParser($where);
+        $parsed = $parser->parsed;
         if ($parsed && array_key_exists("WHERE", $parsed)){
           $this->parseWhere($parsed["WHERE"]);
         }
+        unset($parser);
       }else{
         $this->where[]=$where;
       }
     }
+    Logger::add('function '.__CLASS__.'::'.__FUNCTION__.'.end');
     return $this;
   }
 
-  public function parseWhere($subtree){
+  public function parseWhere(&$subtree){
+    Logger::add('function '.__CLASS__.'::'.__FUNCTION__.'.begin');
     foreach ($subtree as &$item){
       if ($item["expr_type"]=="colref"){
         $item["base_expr"] = trim($item["base_expr"]);
@@ -388,31 +436,54 @@ class Collection extends \ArrayObject{
           if (!array_key_exists($tmp[0], $this->tableNames) && !array_key_exists($tmp[0], $this->fieldNames)){
             $this->addTable($tmp[0]);
           }
+          $item["base_expr"] = '`'.$tmp[0].'`.`'.$tmp[1].'`';
         }
       }
       if (array_key_exists("sub_tree", $item) && $item["sub_tree"]){
         $this->parseWhere($item["sub_tree"]);
       }
     }
+    Logger::add('function '.__CLASS__.'::'.__FUNCTION__.'.end');
+  }
+  
+  public function addFieldsToSelect($field){
+    Logger::add('function '.__CLASS__.'::'.__FUNCTION__.'.begin');
+    $fields = explode(",", $field);
+    $fields = array_filter($fields);
+    foreach($fields as &$f){
+      if (!($tmp = $this->isField($f))){
+        throw new \RuntimeException("The field '".$f."' cannot be added to the list of fields to select since it is ambiguous");
+      }
+      $this->fieldsToSelect[]=$tmp;
+    }
+    Logger::add('function '.__CLASS__.'::'.__FUNCTION__.'.end');
+    return $this;
   }
 
   /**
    * @return Expr
    */
   public function expr(){
+    Logger::add('function '.__CLASS__.'::'.__FUNCTION__.'.begin');
     if ($this->expr){
+      Logger::add('function '.__CLASS__.'::'.__FUNCTION__.'.end');
       return $this->expr;
     }
 
     if (!count($this->tables)){
+      Logger::add('function '.__CLASS__.'::'.__FUNCTION__.'.end');
       return false;
     }
     $fieldsWeNeed=[];
-    foreach($this->tables as $tableData){
-      $class = $tableData['class'];
-      foreach($class::getFields() as $fieldName=>$field){
-        if (array_key_exists('fullName', $field) && $field['fullName']){
-          $fieldsWeNeed[]="`".$tableData['alias'].'`.`'.$fieldName."` as '".$tableData['alias'].".".$fieldName."'";
+    if (count($this->fieldsToSelect)){
+      $fieldsWeNeed=$this->fieldsToSelect;
+    }else{
+      foreach($this->tables as $tableData){
+        $class = $tableData['class'];
+        foreach($class::getFields() as $fieldName=>$field){
+          if (array_key_exists('fullName', $field) && $field['fullName']){
+            $fieldsWeNeed[]="`".$tableData['alias'].'`.`'.$fieldName."` as '".$tableData['alias'].".".$fieldName."'";
+          }
         }
       }
     }
@@ -433,7 +504,6 @@ class Collection extends \ArrayObject{
         $joinedTables.=")";
       }
     }
-
     $where='';
     if (count($this->where)){
       $where = "WHERE ". implode($this->where, " AND ");
@@ -459,27 +529,35 @@ class Collection extends \ArrayObject{
 
     $sqlExpr = 'SELECT '.$fieldsWeNeed.' FROM '.$joinedTables.' '.$where.' '.$groupBy.' '.$orderBy.' '.$limit;
 
-    $parsed = (new PHPSQLParser($sqlExpr))->parsed;
+    $parser = new PHPSQLParser($sqlExpr);
+    $parsed = $parser->parsed;
+
     if (count($this->whereVars) && $parsed){
-      $this->collapseVars($parsed["WHERE"], $this->whereVars);
+      if (array_key_exists("WHERE", $parsed)){
+        $this->collapseVars($parsed["WHERE"], $this->whereVars);
+      }
+      if (array_key_exists("ORDER", $parsed)){
+        $this->collapseVars($parsed["ORDER"], $this->whereVars);
+      }
     }
-    $sqlExpr = (new PHPSQLCreator())->create($parsed);
+    $creator = new PHPSQLCreator();
+    $sqlExpr = $creator->create($parsed);
 
     foreach($this->whereVars as $name=>$val){
-      $sqlExpr = str_replace("::".$name, $val instanceof Expr ? $val->get() : $val, $sqlExpr);
+      $sqlExpr = str_replace("::".$name, $val instanceof Expr ? $val->get() : ($val instanceof Collection ? $val->expr()->get() : $val), $sqlExpr);
     }
-
-    //echo $sqlExpr;
-    //if (($ttl = intval($options["cache_ttl"]))>0){
-//      $cacheKey = md5($sqlExpr.$options["instantiator"]);
-//    }
-//    $collection = new JoinedCollection($sqlExpr, $this, $options['tables'], $ttl ? $cacheKey : null, $ttl);
+    unset($parser);
+    unset($creator);
+    Logger::add('function '.__CLASS__.'::'.__FUNCTION__.'.end');
     return ($this->expr = new Expr($sqlExpr));
   }
 
-  private function collapseVars(&$subtree, $vars, $n=0){
+  private function collapseVars(&$subtree, $vars, &$n=0){
+    $valname=0;
+    Logger::add('function '.__CLASS__.'::'.__FUNCTION__.'.begin');
     if (!$subtree || !is_array($subtree)){
-      return;
+      Logger::add('function '.__CLASS__.'::'.__FUNCTION__.'.end');
+      return $valname;
     }
     foreach ($subtree as &$item){
       switch ($item["expr_type"]){
@@ -502,7 +580,7 @@ class Collection extends \ArrayObject{
             }
 
             $item["expr_type"]="colref";
-            $item["base_expr"]= ($replacement===null ? "NULL": (is_numeric($replacement) ? $replacement : (is_bool($replacement) ? ($replacement ? "TRUE" : "FALSE") : ($replacement instanceof Expr ? $replacement->get() : "\"".$this->driver->escape($replacement)."\""))));
+            $item["base_expr"]= ($replacement===null ? "NULL": (is_numeric($replacement) ? $replacement : (is_bool($replacement) ? ($replacement ? "TRUE" : "FALSE") : ($replacement instanceof Expr ? $replacement->get() : ($replacement instanceof Collection ? $replacement->expr()->get() : "\"".$this->driver->escape($replacement)."\"")))));
             //unset($item["no_quotes"]);
           }
           break;
@@ -537,14 +615,20 @@ class Collection extends \ArrayObject{
         $this->collapseVars($item["sub_tree"], $vars, $n);
       }
     }
+    Logger::add('function '.__CLASS__.'::'.__FUNCTION__.'.end');
+    return $n;
   }
 
   private function isField($field){
+    Logger::add('function '.__CLASS__.'::'.__FUNCTION__.'.begin');
     if (is_numeric($field)){
+      Logger::add('function '.__CLASS__.'::'.__FUNCTION__.'.end');
       return false;
     }
+    $exists=array_key_exists($field, $this->fieldNames);
     if (strpos($field, "`")===false && strpos($field, ".")===false){
-      if (!Values::isSQLname($field)){
+      if (!Values::isSQLname($field) && !$exists){
+        Logger::add('function '.__CLASS__.'::'.__FUNCTION__.'.end');
         return false;
       }
     }
@@ -569,15 +653,17 @@ class Collection extends \ArrayObject{
         if (count($this->fieldNames[$field])==1){
           $fieldName = $this->fieldNames[$field][0];
         }else{
+          Logger::add('function '.__CLASS__.'::'.__FUNCTION__.'.end');
           return false;
         }
       }
     }
-
+    Logger::add('function '.__CLASS__.'::'.__FUNCTION__.'.end');
     return $fieldName?:false;
   }
 
   public function from($tables){
+    Logger::add('function '.__CLASS__.'::'.__FUNCTION__.'.begin');
     $this->resetRes();
     if (!is_array($tables)){
       $tables = Strings::explodeSelective($tables);
@@ -671,11 +757,12 @@ class Collection extends \ArrayObject{
       }
       $this->addTable([$tableName, $alias, $conditions]);
     }
+    Logger::add('function '.__CLASS__.'::'.__FUNCTION__.'.end');
     return $this;
   }
 
   public function addTable($tableClass, $alias=null, $conditions=null){
-
+    Logger::add('function '.__CLASS__.'::'.__FUNCTION__.'.begin');
 
     $this->resetRes();
     if (is_array($tableClass)){
@@ -701,6 +788,7 @@ class Collection extends \ArrayObject{
       ];
       $this->tableNames[$alias]=$tClass;
       $this->parseFields($tClass);
+      Logger::add('function '.__CLASS__.'::'.__FUNCTION__.'.end');
       return $this;
     }
 
@@ -753,7 +841,7 @@ class Collection extends \ArrayObject{
       }
 
       if ($fields===null){
-        throw new \RuntimeException("The table '".$tClass::TABLE_NAME."' cannot be joined without specifying FK since it is ambigous");
+        throw new \RuntimeException("The table '".$tClass::TABLE_NAME."' cannot be joined without specifying FK since it is ambiguous");
       }
 
     }elseif(is_string($conditions)){ // FK name stated
@@ -830,25 +918,30 @@ class Collection extends \ArrayObject{
     ];
     $this->tableNames[$alias]=$tClass;
     $this->parseFields($tClass);
-
+    Logger::add('function '.__CLASS__.'::'.__FUNCTION__.'.end');
     return $this;
   }
 
   public function __destruct(){
+    Logger::add('function '.__CLASS__.'::'.__FUNCTION__.'.begin');
     if ($this->res){
       $this->driver->freeResource($this->res);
     }
+    Logger::add('function '.__CLASS__.'::'.__FUNCTION__.'.end');
   }
 
   public function prefetch(){
+    Logger::add('function '.__CLASS__.'::'.__FUNCTION__.'.begin');
     $i=0;
     $this->rowCache=[];
     while($a = $this->driver->getNext($this->res)){
       $this->rowCache[$i++]=$a;
     }
+    Logger::add('function '.__CLASS__.'::'.__FUNCTION__.'.end');
   }
 
   public function run(){
+    Logger::add('function '.__CLASS__.'::'.__FUNCTION__.'.begin');
     if ($this->res===null && $this->expr()){
       //echo $this->expr()->get()."<br><br>";
       $this->res = $this->expr()->run($this->driver);
@@ -862,6 +955,7 @@ class Collection extends \ArrayObject{
       }
       $this->eof= $this->count===0;
     }
+    Logger::add('function '.__CLASS__.'::'.__FUNCTION__.'.end');
   }
 
   /**
@@ -869,6 +963,7 @@ class Collection extends \ArrayObject{
    * @return CollectionMember
    */
   public function row($num = null){
+    Logger::add('function '.__CLASS__.'::'.__FUNCTION__.'.begin');
     if ($num === null){
       $num = $this->row;
     }
@@ -889,9 +984,11 @@ class Collection extends \ArrayObject{
     $this->eof = $this->lastRow===false;
 
     if ($this->exprRestriced){
+      Logger::add('function '.__CLASS__.'::'.__FUNCTION__.'.end');
       return $this->lastRow;
     }else{
       if (!$this->lastRow){
+        Logger::add('function '.__CLASS__.'::'.__FUNCTION__.'.end');
         return false;
       }
       if ($this->lastRow instanceof CollectionMember){
@@ -904,20 +1001,25 @@ class Collection extends \ArrayObject{
         $tableName = ucwords($this->scope);
         $answer = $answer->$tableName();
       }
+      Logger::add('function '.__CLASS__.'::'.__FUNCTION__.'.end');
       return $answer;
     }
   }
 
   public function getTable($alias){
+    Logger::add('function '.__CLASS__.'::'.__FUNCTION__.'.begin');
     $alias = strtolower($alias);
     if (array_key_exists($alias, $this->tableNames)){
+      Logger::add('function '.__CLASS__.'::'.__FUNCTION__.'.end');
       return $this->tableNames[$alias];
     }else{
+      Logger::add('function '.__CLASS__.'::'.__FUNCTION__.'.end');
       return false;
     }
   }
 
   public function getTableField($tableField){
+    Logger::add('function '.__CLASS__.'::'.__FUNCTION__.'.begin');
     $tableField=ucwords($tableField);
     $chunks = preg_split('/(?=[A-Z])/', $tableField);
     array_shift($chunks);
@@ -926,51 +1028,64 @@ class Collection extends \ArrayObject{
       $name.=$c;
       $field = strtolower(substr($tableField, strlen($name)));
       if ($className = $this->getTable($name)){
-        if (array_key_exists($field, $className::getFields())){
+        if (array_key_exists($field, $className::getFields()) || array_key_exists($field, $className::getCFields())){
+          Logger::add('function '.__CLASS__.'::'.__FUNCTION__.'.end');
           return ['alias'=>$name, 'table'=>$className, 'field'=>$field];
         }
       }
     }
+    Logger::add('function '.__CLASS__.'::'.__FUNCTION__.'.end');
     return false;
   }
 
   public function resetRes(){
+    Logger::add('function '.__CLASS__.'::'.__FUNCTION__.'.begin');
     $this->res = null;
     if (!$this->exprRestriced){
       $this->expr = null;
     }
+    Logger::add('function '.__CLASS__.'::'.__FUNCTION__.'.end');
   }
 
   public function reset(){
+    Logger::add('function '.__CLASS__.'::'.__FUNCTION__.'.begin');
     $this->row = 0;
     $this->lastRow=null;
     $this->eof = ($this->count()==0);
+    Logger::add('function '.__CLASS__.'::'.__FUNCTION__.'.end');
   }
 
   public function next(){
+    Logger::add('function '.__CLASS__.'::'.__FUNCTION__.'.begin');
     if ($this->lastRow === null){
       $n = $this->row;
     }else{
       $n = $this->row + 1;
     }
+    Logger::add('function '.__CLASS__.'::'.__FUNCTION__.'.end');
     return $this->row($n);
   }
 
   public function position($num=null){
+    Logger::add('function '.__CLASS__.'::'.__FUNCTION__.'.begin');
     if ($num===null){
+      Logger::add('function '.__CLASS__.'::'.__FUNCTION__.'.end');
       return $this->row;
     }
 
     if ($num >= $this->count()) {
       $this->eof = true;
+      Logger::add('function '.__CLASS__.'::'.__FUNCTION__.'.end');
       return $this->lastRow = false;
     }
 
     if ($num < 0){
       $this->row = 0;
+      Logger::add('function '.__CLASS__.'::'.__FUNCTION__.'.end');
       return false;
     }
 
+    Logger::add('function '.__CLASS__.'::'.__FUNCTION__.'.end');
     return $this->row=$num;
   }
 
@@ -1097,15 +1212,18 @@ class Collection extends \ArrayObject{
 
 
   private function parseFields($tableClass){
+    Logger::add('function '.__CLASS__.'::'.__FUNCTION__.'.begin');
     $tableClass = $this->checkTableClass($tableClass);
     foreach($tableClass::getFields() as $name=>$fieldData){
       if (array_key_exists("fullName", $fieldData) && $fieldData["fullName"]){
         $this->fieldNames[$name][]=$fieldData["fullName"];
       }
     }
+    Logger::add('function '.__CLASS__.'::'.__FUNCTION__.'.end');
   }
 
   private function strfind($haystack, $needle, $offset=0){
+    Logger::add('function '.__CLASS__.'::'.__FUNCTION__.'.begin');
     if (($pos=strpos($haystack, $needle, $offset))!==false){
       $chunk = substr($haystack, 0, $pos);
       if (
@@ -1114,16 +1232,20 @@ class Collection extends \ArrayObject{
         substr_count($chunk, "\"")%2!=0 ||
         substr_count($chunk, "`")%2!=0
       ){
+        Logger::add('function '.__CLASS__.'::'.__FUNCTION__.'.end');
         return $this->strfind($haystack, $needle, $pos+1);
       }else{
+        Logger::add('function '.__CLASS__.'::'.__FUNCTION__.'.end');
         return $pos;
       }
     }
+    Logger::add('function '.__CLASS__.'::'.__FUNCTION__.'.end');
     return false;
   }
 
   private function checkTableClass($tableClass){
-	$tableClass=str_replace("`", "", $tableClass);
+    Logger::add('function '.__CLASS__.'::'.__FUNCTION__.'.begin');
+	  $tableClass=str_replace("`", "", $tableClass);
     if (!class_exists($tableClass)){
       $tmp = CRUD::classByTable($tableClass, $this->driver->getDatabase()->getName());
       if (!class_exists($tmp)){
@@ -1139,6 +1261,7 @@ class Collection extends \ArrayObject{
     if (!$reflection->implementsInterface("\\X\\Data\\DB\\Interfaces\\ICRUD")){
       throw new \RuntimeException("Class '".$tableClass."' doesn't implement \"\\X\\Data\\DB\\Interfaces\\ICRUD\" interface");
     }
+    Logger::add('function '.__CLASS__.'::'.__FUNCTION__.'.end');
     return $tableClass;
   }
 }

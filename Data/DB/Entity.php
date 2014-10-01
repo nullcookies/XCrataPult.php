@@ -136,6 +136,18 @@ abstract class Entity {
           }
           return $answer;
         }
+      }else{
+        $object = static::getCRUD();
+        if (array_key_exists($fieldName, $object::getFields())){
+          $field = $object::getFields()[$fieldName];
+          if ($field['type']=='enum'){
+            $answer=[];
+            foreach($field['enum'] as $v){
+              $answer[$v]=$v;
+            }
+            return $answer;
+          }
+        }
       }
     }
     return null;

@@ -32,15 +32,28 @@ class CRUDGenerator extends PrivateInstantiation{
                 "\t\$cacheKey = ".$cacheKey.";"."\n".
                 "\tif (!Cache::enabled() || !C::getDbCacheTtl() || !(\$answer = Cache::getInstance()->groupGetItem('DB_".$db->getAlias()."_".$table->getName()."', \$cacheKey))){"."\n".
                 "\t\tLogger::add('DB_".$db->getAlias()."_".$table->getName().": no key '.\$cacheKey.' in cache. Loading from DB');"."\n".
-                "\t\t\$answer=new Collection(static::connection(),'".$table->getName().", ".Strings::smartImplode($fields, " AND ", function(Field &$value){$value = $value->getName()."=::".$value->getName();}).", #1', [".Strings::smartImplode($fields, " , ", function(Field &$value){$value = "'".$value->getName()."' => \$".$value->getAlias();})."]);"."\n".
-                "\t\tif (!\$answer->EOF()){"."\n".
-                "\t\t\t\$answer=\$answer->First();"."\n".
+      (!$key->isUnique() ?
+                "\t\t\$answer=[];"."\n".
+                "\t\t\$collection=new Collection(static::connection(),'".$table->getName().", ".Strings::smartImplode($fields, " AND ", function(Field &$value){$value = $value->getName()."=::".$value->getName();})."', [".Strings::smartImplode($fields, " , ", function(Field &$value){$value = "'".$value->getName()."' => \$".$value->getAlias();})."]);"."\n".
+                "\t\tforeach(\$collection as \$answerData){"."\n".
+                "\t\t\t\$answer[]=\$answerData;"."\n".
+                "\t\t}"."\n".
+                "\t\tunset(\$collection);"."\n".
+                "\t\tif (Cache::enabled() && C::getDbCacheTtl()){"."\n".
+                "\t\t\tCache::getInstance()->groupSetItem('DB_".$db->getAlias()."_".$table->getName()."', \$cacheKey, \$answer, C::getDbCacheTtl());"."\n".
+                "\t\t}"."\n"
+        :
+                "\t\t\$collection=new Collection(static::connection(),'".$table->getName().", ".Strings::smartImplode($fields, " AND ", function(Field &$value){$value = $value->getName()."=::".$value->getName();}).", #1', [".Strings::smartImplode($fields, " , ", function(Field &$value){$value = "'".$value->getName()."' => \$".$value->getAlias();})."]);"."\n".
+                "\t\tif (!\$collection->EOF()){"."\n".
+                "\t\t\t\$answer=\$collection->First();"."\n".
+                "\t\t\tunset(\$collection);"."\n".
                 "\t\t\tif (Cache::enabled() && C::getDbCacheTtl()){"."\n".
                 "\t\t\t\tCache::getInstance()->groupSetItem('DB_".$db->getAlias()."_".$table->getName()."', \$cacheKey, \$answer, C::getDbCacheTtl());"."\n".
                 "\t\t\t}"."\n".
                 "\t\t}else{"."\n".
                 "\t\t\t\$answer=null;"."\n".
-                "\t\t}"."\n".
+                "\t\t}"."\n"
+      ).
                 "\t}else{"."\n".
                 "\t\tLogger::add('DB_".$db->getAlias()."_".$table->getName().": key '.\$cacheKey.' found in cache. Loading from cache');"."\n".
                 "\t}"."\n".
@@ -249,6 +262,8 @@ class CRUDGenerator extends PrivateInstantiation{
 
     $fields=[];
     $fields[]="protected static \$Fields = [";
+    $fieldsCnames=[];
+    $fieldsCnames[]="protected static \$FieldsCnames = [";
     $fieldNames=[];
 
     $pFields=[];
@@ -393,6 +408,7 @@ class CRUDGenerator extends PrivateInstantiation{
       $fieldNames[]="\tconst f_".$field->getName()." = '`".$table->getName()."`.`".$field->getName()."`';";
       $fields[]= "\t'" . $field->getName() . "'=>[";
       $fields[]= "\t\t'camelName'=>'".$field->getCamelName()."',";
+      $fieldsCnames[]= "\t'".strtolower($field->getCamelName())."'=>'" . $field->getName() . "',";
       $fields[]= "\t\t'fullName'=>'`".$table->getName()."`.`".$field->getName()."`',";
       $fields[]= "\t\t'getter'=>'get".$field->getCamelName()."',";
       $fields[]= "\t\t'setter'=>'set".$field->getCamelName()."',";
@@ -407,6 +423,7 @@ class CRUDGenerator extends PrivateInstantiation{
       $fields[]= "\t],";
     }
     $fields[]= "];";
+    $fieldsCnames[]= "];";
 
     $primaryFields = [];
     try{
@@ -429,6 +446,7 @@ class CRUDGenerator extends PrivateInstantiation{
     $glue = function (&$value){$value = implode("\n", $value);};
 
     $glue($fieldNames);
+    $glue($fieldsCnames);
     $glue($fields);
     $glue($pFields);
     $glue($properties);
@@ -483,6 +501,7 @@ class CRUDGenerator extends PrivateInstantiation{
     $result = str_replace("{%REFS%}",           $referenceData,       $result);
     $result = str_replace("{%CLASSNAME%}",      $className,           $result);
     $result = str_replace("{%FIELDS%}",         $fields,              $result);
+    $result = str_replace("{%FIELDSCNAMES%}",   $fieldsCnames,        $result);
     $result = str_replace("{%FIELDNAMES%}",     $fieldNames,          $result);
     $result = str_replace("{%PRIMARYFIELDS%}",  $pFields,             $result);
     $result = str_replace("{%AUTOINCREMENT%}",  self::gAutoincrement($table->getFields()), $result);

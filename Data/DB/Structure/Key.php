@@ -9,6 +9,7 @@ class Key {
   const KEY_TYPE_PRIMARY = "PRIMARY KEY";
   const KEY_TYPE_FOREIGN = "FOREIGN KEY";
   const KEY_TYPE_UNIQUE = "UNIQUE KEY";
+  const KEY_TYPE_INDEX = "INDEX KEY";
 
   const ERR_NO_FIELDS_ASSOCIATED = 501;
 
@@ -16,11 +17,12 @@ class Key {
   private $name;
   private $driver;
   private $refTable;
-
+  private $unique=true;
   /**
    * @var Field[]
    */
   private $fields = [];
+  private $fieldsNames=[];
   /**
    * @var Field[]
    */
@@ -40,7 +42,10 @@ class Key {
   }
 
   public function addField(Field &$field){
-    $this->fields[] = $field;
+    if (!array_key_exists($field->getName(), $this->fieldsNames)){
+      $this->fields[] = $field;
+      $this->fieldsNames[$field->getName()]=1;
+    }
     return $this;
   }
 
@@ -71,8 +76,16 @@ class Key {
     }elseif(count($this->refFields)){
       return self::KEY_TYPE_FOREIGN;
     }else{
-      return self::KEY_TYPE_UNIQUE;
+      return $this->unique ? self::KEY_TYPE_UNIQUE : self::KEY_TYPE_INDEX;
     }
+  }
+
+  public function unUnique(){
+    $this->unique=false;
+  }
+
+  public function isUnique(){
+    return $this->unique;
   }
 
   /**

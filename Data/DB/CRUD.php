@@ -15,7 +15,10 @@ abstract class CRUD implements ICRUD{
 
   const ERR_WRONG_PRIMARY_FIELD=2001;
 
+  protected static $persistent=[];
+
   protected static $Fields = [];
+  protected static $FieldsCnames = [];
   protected static $PrimaryFields = [];
   protected static $UserFields = [];
   protected static $UserFieldsInterface = [];
@@ -107,6 +110,10 @@ abstract class CRUD implements ICRUD{
     $fieldName=strtolower($fieldName);
     if (array_key_exists($fieldName, static::$Fields)){
       $getter = static::$Fields[$fieldName]["getter"];
+      return $this->$getter();
+    }
+    if (array_key_exists($fieldName, static::$FieldsCnames)){
+      $getter = static::$Fields[static::$FieldsCnames[$fieldName]]["getter"];
       return $this->$getter();
     }
     throw new \RuntimeException("There is no field ".$fieldName." in ".static::TABLE_NAME);
