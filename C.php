@@ -243,17 +243,22 @@ class C extends \X\AbstractClasses\PrivateInstantiation{
     }
 
     foreach($options as $var=>$val){
+      $_var = $var;
+      $_val = $val;
       $var = "set".str_replace(" ", "", ucwords(strtolower(str_replace("_", " ", $var))));
       if (strpos($var, ".")!==false){
         list($var, $subvar) = explode(".", $var);
         if (method_exists(get_called_class(),$var)){
           self::$var($subvar, $val);
+          continue;
         }
       }else{
         if (method_exists(get_called_class(),$var)){
           self::$var($val);
+          continue;
         }
       }
+      self::$config[$_var]=$_val;
     }
   }
 
