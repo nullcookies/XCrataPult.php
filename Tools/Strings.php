@@ -79,6 +79,10 @@ class Strings {
     return strtr($string, $converter);
   }
 
+  public static function mb_ucwords($str){
+    return mb_convert_case($str, MB_CASE_TITLE, "UTF-8");
+  }
+
   public static function offset($val, $minLength=2, $fillChar='0'){
     return str_repeat($fillChar, $minLength-strlen($val)).$val;
   }
