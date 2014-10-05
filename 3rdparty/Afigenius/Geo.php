@@ -12,15 +12,24 @@
 namespace Afi;
 
 class Geo {
-  /**
-   * Returns array of Cities which has $name as part of their names in any language
-   *
-   * @param $name - part or full name of cities
-   * @param array $fields - fields you need to receive (leave empty to receive everything)
-   * @return array - list of cities
-   */
-  public static function citylistByCityname($name, $fields=[], $limit=10){
-    $uri="geo/citylist-by-cityname/".urlencode($name);
-    return Base::request($uri, [], $fields, $limit);
+
+  public static function countryIdByName($name){
+    $answer = Base::request("geo/countrylist", $name, "id");
+    if ($answer["status"]=="ok"){
+      if (count($answer["data"])){
+        return $answer["data"][0]["id"];
+      }
+    }
+    return 0;
+  }
+
+  public static function cityIdByName($cityName, $countryName='', $regionName=''){
+    $answer = Base::request("geo/citylist", $cityName.'/'.$countryName.'/'.$regionName, "id");
+    if ($answer["status"]=="ok"){
+      if (count($answer["data"])){
+        return $answer["data"][0]["id"];
+      }
+    }
+    return 0;
   }
 } 
