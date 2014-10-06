@@ -45,6 +45,7 @@ registerAutoloader("X", __XDIR__);
 \X\registerAutoloader("Typograf", __XDIR__.'3rdparty/Typograf/');
 \X\registerAutoloader("Parsedown", __XDIR__.'3rdparty/Parsedown/');
 \X\registerAutoloader("Clickatell", __XDIR__.'3rdparty/Clickatell/');
+\X\registerAutoloader("Afi", __XDIR__.'3rdparty/Afigenius/');
 
 Logger::add("Loading 3rdParty libs");
 
@@ -57,12 +58,6 @@ if (file_exists(__XDIR__ . '3rdparty/Imagine/Autoloader.php')){
   }else{
     Logger::add("'Imagine' Autoloader FAILED TO LOAD");
   }
-}
-
-Logger::add("Loading 'Afigenius' Autoloader");
-if (file_exists(__XDIR__ . '3rdparty/Afigenius/Autoloader.php')){
-  require_once(__XDIR__ . '3rdparty/Afigenius/Autoloader.php');
-  Logger::add("'Afi' Autoloader loaded");
 }
 
 Logger::add("Loading 'PHPExcel' Autoloader");

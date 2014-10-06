@@ -32,4 +32,24 @@ class Geo {
     }
     return 0;
   }
+
+  public static function cityById($id){
+    $answer = Base::request("geo/citybyid", $id);
+    if ($answer["status"]=="ok"){
+      if (count($answer["data"])){
+        return $answer["data"];
+      }
+    }
+    return null;
+  }
+
+  public static function countryById($id){
+    $answer = Base::request("geo/countrybyid", $id);
+    if ($answer["status"]=="ok"){
+      if (count($answer["data"])){
+        return $answer["data"];
+      }
+    }
+    return null;
+  }
 } 
