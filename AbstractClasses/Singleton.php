@@ -6,6 +6,10 @@ abstract class Singleton{
 
   protected function __construct() {;}
 
+  /**
+   * @param bool $forceNew
+   * @return static
+   */
   public static function x($forceNew=false){
     static $classInstance = NULL;
     if (NULL === $classInstance || $forceNew){
