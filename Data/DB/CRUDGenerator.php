@@ -115,7 +115,7 @@ class CRUDGenerator extends PrivateInstantiation{
     $setter   = "/**"."\n".
                 " * Setter for field '".$field->getName()."'"."\n".
                 " *"."\n".
-                " * @param ".$field->getPHPType()." \$val"."\n".
+                " * @param ".$field->getPHPType().($field->getType()=='set' ? "|array" : "")." \$val"."\n".
                 " *"."\n".
                 " * @return \\".$namespaceName."\\".$className."\n".
                 " */"."\n".
@@ -157,8 +157,11 @@ class CRUDGenerator extends PrivateInstantiation{
                   "\t\$this->".$field->getAlias()." = \$val;"."\n";
         break;
       case 'set':
-        $setter.= "\tforeach(explode(',', \$val) as \$token){"."\n".
-                  "\t\tif (!in_array(\$token, ['".implode("','", $field->getRange())."']){"."\n".
+        $setter.= "\tif (is_array(\$val)){"."\n".
+                  "\t\t\$val=implode(',', \$val);"."\n".
+                  "\t}"."\n".
+                  "\tforeach(explode(',', \$val) as \$token){"."\n".
+                  "\t\tif (!in_array(\$token, ['".implode("','", $field->getRange())."'])){"."\n".
                   "\t\t\tthrow new \\Exception(\"Value for '".$field->getName()."' should be one of ['".implode("','", $field->getRange())."']\");"."\n".
                   "\t\t}"."\n".
                   "\t}"."\n".
