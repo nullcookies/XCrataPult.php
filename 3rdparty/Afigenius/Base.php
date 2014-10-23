@@ -15,7 +15,7 @@ use X\Tools\Strings;
 class Base {
 
   const HOST = "http://data.afigenius.ru/web-api/1.0/";
-  const TTL = 10;
+  const TTL = 60000;
 
   public static function request($uri, $params='', $fieldsNeeded=[], $limit=10){
     if (!is_array($fieldsNeeded)){
