@@ -7,6 +7,7 @@ use \X\Data\DB\DB;
 use \X\Data\Persistent\Cache;
 use \X\Debug\Logger;
 use \X\Tools\FileSystem;
+use X\Validators\Values;
 
 class C extends \X\AbstractClasses\PrivateInstantiation{
 
@@ -27,11 +28,21 @@ class C extends \X\AbstractClasses\PrivateInstantiation{
     'session_domain'=>null,
     'session_ip_check'=>true,
 
+    'static_domain'=>null,
+
     'scss_input'=>'',
     'scss_output'=>'',
 
     'template_folders'=>[]
   ];
+
+  public static function setStaticDomain($domain){
+    self::$config["static_domain"] = $domain;
+  }
+
+  public static function getStaticDomain(){
+    return self::$config["static_domain"];
+  }
 
   public static function setScssInput($folder){
     self::$config["scss_input"] = self::checkDir($folder);
