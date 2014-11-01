@@ -33,6 +33,12 @@ class C extends \X\AbstractClasses\PrivateInstantiation{
     'scss_input'=>'',
     'scss_output'=>'',
 
+    'js_minifier_input'=>'',
+    'js_minifier_output'=>'',
+
+    'css_minifier_input'=>'',
+    'css_minifier_output'=>'',
+
     'template_folders'=>[]
   ];
 
@@ -42,6 +48,38 @@ class C extends \X\AbstractClasses\PrivateInstantiation{
 
   public static function getStaticDomain(){
     return self::$config["static_domain"];
+  }
+
+  public static function setJsMinifierInput($folder){
+    self::$config["js_minifier_input"] = self::checkDir($folder);
+  }
+
+  public static function getJsMinifierInput(){
+    return self::$config["js_minifier_input"];
+  }
+
+  public static function setJsMinifierOutput($folder){
+    self::$config["js_minifier_output"] = self::checkDir($folder);
+  }
+
+  public static function getJsMinifierOutput(){
+    return self::$config["js_minifier_output"];
+  }
+
+  public static function setCssMinifierInput($folder){
+    self::$config["css_minifier_input"] = self::checkDir($folder);
+  }
+
+  public static function getCssMinifierInput(){
+    return self::$config["css_minifier_input"];
+  }
+
+  public static function setCssMinifierOutput($folder){
+    self::$config["css_minifier_output"] = self::checkDir($folder);
+  }
+
+  public static function getCssMinifierOutput(){
+    return self::$config["css_minifier_output"];
   }
 
   public static function setScssInput($folder){
