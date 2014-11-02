@@ -18,7 +18,6 @@ class C extends \X\AbstractClasses\PrivateInstantiation{
     'db_cache_maxrows'=>10000,
     'cache_tech_prefix'=>"_X_:",
 
-    'cmf_cookie_free_subdomain'=>'cf',
     'cmf_x_media_folder'=>'x_media',
 
     'session_ttl'=>86400,
