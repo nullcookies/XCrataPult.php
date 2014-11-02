@@ -46,6 +46,7 @@ registerAutoloader("X", __XDIR__);
 \X\registerAutoloader("Parsedown", __XDIR__.'3rdparty/Parsedown/');
 \X\registerAutoloader("Clickatell", __XDIR__.'3rdparty/Clickatell/');
 \X\registerAutoloader("Afi", __XDIR__.'3rdparty/Afigenius/');
+\X\registerAutoloader("Barzo\\Password", __XDIR__.'3rdparty/PasswordGenerator/');
 
 Logger::add("Loading 3rdParty libs");
 
