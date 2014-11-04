@@ -575,12 +575,13 @@ class Collection extends \ArrayObject{
               $replacement=null;
             }
 
-            if (is_array($replacement)){
-              throw new \InvalidArgumentException("Replacement in condition shouldn't be an array");
-            }
-
             $item["expr_type"]="colref";
-            $item["base_expr"]= ($replacement===null ? "NULL": (is_numeric($replacement) ? $replacement : (is_bool($replacement) ? ($replacement ? "TRUE" : "FALSE") : ($replacement instanceof Expr ? $replacement->get() : ($replacement instanceof Collection ? $replacement->expr()->get() : "\"".$this->driver->escape($replacement)."\"")))));
+
+            if (is_array($replacement)){
+              $item["base_expr"] = Strings::smartImplode($replacement, ",", function($var){return $this->driver->escape($var);});
+            }else{
+              $item["base_expr"]= ($replacement===null ? "NULL": (is_numeric($replacement) ? $replacement : (is_bool($replacement) ? ($replacement ? "TRUE" : "FALSE") : ($replacement instanceof Expr ? $replacement->get() : ($replacement instanceof Collection ? $replacement->expr()->get() : "\"".$this->driver->escape($replacement)."\"")))));
+            }
             //unset($item["no_quotes"]);
           }
           break;
