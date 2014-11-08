@@ -49,7 +49,7 @@ class Collection extends \ArrayObject{
   const BAD_CALLBACK = 801;
   const BAD_QUERY_RESOURCE = 802;
 
-  public function __construct(&$driver=null, $expr=null){
+  public function __construct($driver=null, $expr=null){
 
     Logger::add('function '.__CLASS__.'::'.__FUNCTION__.'.begin');
 
