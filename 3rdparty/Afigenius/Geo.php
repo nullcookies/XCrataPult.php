@@ -13,6 +13,16 @@ namespace Afi;
 
 class Geo {
 
+  public static function countryIdByCityId($id){
+    $answer = Base::request("geo/citybyid", $id, "country_id");
+    if ($answer["status"]=="ok"){
+      if (count($answer["data"])){
+        return $answer["data"]["country_id"];
+      }
+    }
+    return 0;
+  }
+
   public static function countryIdByName($name){
     $answer = Base::request("geo/countrylist", $name, "id");
     if ($answer["status"]=="ok"){
