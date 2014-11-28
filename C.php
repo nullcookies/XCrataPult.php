@@ -20,7 +20,7 @@ class C extends \X\AbstractClasses\PrivateInstantiation{
 
     'cmf_x_media_folder'=>'x_media',
 
-    'session_ttl'=>86400,
+    'session_ttl'=>864000,
     'session_https'=>false,
     'session_http_only'=>true,
     'session_path'=>'/',
