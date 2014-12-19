@@ -457,8 +457,9 @@ abstract class Entity {
     $this->hook_save_after();
   }
 
-  public static function processSave(){
+  public static function processSave($addData=[]){
     $pk = [];
+
 
     if (Request::post("ent_new")){
       $entity = static::create();
@@ -485,6 +486,9 @@ abstract class Entity {
           $entity->setField($field, Request::post($field));
         }
       }
+    }
+    foreach($addData as $field=>$value){
+      $entity->setField($field, $value);
     }
 
     if (!$entity->saveErrors){
