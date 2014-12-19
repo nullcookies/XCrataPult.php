@@ -99,9 +99,9 @@ abstract class {%CLASSNAME%} extends CRUD{
       }
     }
     if ($vars!==null){
-      return (new Collection(static::connection(), '{%TABLENAME%},'.$conditions, $vars))->scope("{%TABLENAME%}");
+      return (new Collection(static::connection(), '{%TABLENAME%}'.($conditions ? ', '.$conditions : ''), $vars))->scope("{%TABLENAME%}");
     }else{
-      return (new Collection(static::connection(), '{%TABLENAME%},'.$conditions))->scope("{%TABLENAME%}");
+      return (new Collection(static::connection(), '{%TABLENAME%}'.($conditions ? ', '.$conditions : '')))->scope("{%TABLENAME%}");
     }
   }
 
