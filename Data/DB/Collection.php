@@ -944,7 +944,7 @@ class Collection extends \ArrayObject{
   public function run(){
     Logger::add('function '.__CLASS__.'::'.__FUNCTION__.'.begin');
     if ($this->res===null && $this->expr()){
-      //echo $this->expr()->get()."<br><br>";
+      //$this->expr()->get()."<br><br>";
       $this->res = $this->expr()->run($this->driver);
       if ($this->res){
         $this->count = $this->driver->numRows($this->res);
