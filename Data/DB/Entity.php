@@ -27,6 +27,7 @@ abstract class Entity {
   const FIELD_TYPE_TEXT='text';
   const FIELD_TYPE_NUMBER='number';
   const FIELD_TYPE_ENUM='enum';
+  const FIELD_TYPE_SET='set';
   const FIELD_TYPE_IMAGE='image';
   const FIELD_TYPE_EXTERNAL='external';
   const FIELD_TYPE_PROPERTY='property';
@@ -149,6 +150,22 @@ abstract class Entity {
           }
         }
       }
+    }elseif ($fieldData['type']==Entity::FIELD_TYPE_SET){
+      if (array_key_exists('values', $fieldData)){
+        return $fieldData['values'];
+      }
+      $object = static::getCRUD();
+      if (array_key_exists($fieldName, $object::getFields())){
+        $field = $object::getFields()[$fieldName];
+        if ($field['type']=='set'){
+          $answer=[];
+          foreach($field['enum'] as $v){
+            $answer[$v]=$v;
+          }
+          return $answer;
+        }
+      }
+      //TODO: add m:n proxy
     }
     return null;
   }
@@ -420,7 +437,7 @@ abstract class Entity {
               }
             }
           }
-          if (array_key_exists("typograph", $fieldData) && $fieldData['typograph']){
+          if (array_key_exists("typograph", $fieldData) && $fieldData['typograph']){//TODO: remove
             $val = Typograf::process($val);
           }
           if ($val || !array_key_exists('keep_if_no_changes', $fieldData) || $this->isNew()){
@@ -459,7 +476,6 @@ abstract class Entity {
 
   public static function processSave($addData=[]){
     $pk = [];
-
 
     if (Request::post("ent_new")){
       $entity = static::create();

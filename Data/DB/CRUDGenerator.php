@@ -162,7 +162,7 @@ class CRUDGenerator extends PrivateInstantiation{
                   "\t\$this->".$field->getAlias()." = \$val;"."\n";
         break;
       case 'set':
-        $setter.= ($field->getNull() ? "\tif (\$val===null){"."\n".
+        $setter.= ($field->getNull() ? "\tif (\$val===null || \$val===''){"."\n".
                   "\t\t\$this->".$field->getAlias()." = \$val;"."\n".
                   "\t\treturn \$this;"."\n".
                   "\t}"."\n" : "").
