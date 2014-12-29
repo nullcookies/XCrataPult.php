@@ -228,6 +228,10 @@ class Cache{
     $this->redisObject->del("LOCK_" . $lockName);
   }
 
+  public function flushAll(){
+    $this->redisObject->flushAll();
+  }
+
   public function __isset($name){
     return $this->exists($name);
   }
