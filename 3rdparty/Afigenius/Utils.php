@@ -11,10 +11,11 @@ namespace Afi;
 
 class Utils {
 
-  public static function validatePhone($phone){
+  public static function validatePhone($phone, &$ret=null){
     $answer = Base::request("utils/validatephone", $phone);
     if ($answer["status"]=="ok"){
-      return true;
+      $ret = $answer['data']['phone'];
+      return $answer['data']['valid'];
     }
     return false;
   }
