@@ -79,10 +79,13 @@ class CRUDGenerator extends PrivateInstantiation{
         " */"."\n".
         "public function get".$field->getCamelName()."_unixtime(){"."\n".
         ($field->getType()=='timestamp' || $field->getType()=='datetime' ?
+        "\tif (\$this->".$field->getAlias()."===null){\n".
+        "\t\treturn 0;\n".
+        "\t}\n".
         "\tlist(\$date, \$time) = explode(' ', \$this->".$field->getAlias().");\n".
         "\tlist(\$year, \$month, \$day) = explode('-', \$date);\n".
         "\tlist(\$hour, \$minute, \$second) = explode(':', \$time);\n".
-        "\treturn (\$year=='0000' ? 0 : mktime(\$hour, \$minute, \$second, \$month, \$day, \$year));\n" :
+        "\treturn (\$year=='0000' ? 0 : mktime(intval(\$hour), intval(\$minute), intval(\$second), intval(\$month), intval(\$day), intval(\$year)));\n" :
         "\treturn strtotime(\$this->".$field->getAlias().");"."\n").
         "}"."\n";
     }elseif($field->getType()=='year'){
