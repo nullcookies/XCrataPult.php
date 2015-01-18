@@ -227,4 +227,8 @@ class Strings {
 
     return process($text, $prefix).process($text, $processor, $text).process($text, $postfix);
   }
+
+  public static function fillBefore($string, $filler, $length){
+    return str_repeat($filler, max(0, $length-strlen($string))).$string;
+  }
 } 
