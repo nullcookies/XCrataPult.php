@@ -27,6 +27,7 @@ abstract class {%CLASSNAME%} extends CRUD{
   const TABLE_NAME = '{%TABLENAME%}';
   protected $className;
   protected $listeners=[];
+  protected $_fromCache_=false;
 
   const BAD_CALLBACK = 2002;
 
@@ -43,21 +44,30 @@ abstract class {%CLASSNAME%} extends CRUD{
 {%ISVALID%}
 {%INVALIDATE%}
 
+  public function isFromCache(){
+    return !!$this->_fromCache_;
+  }
+
+  public function setFromCache(){
+    return $this->_fromCache_=true;
+  }
+
   public function invalidateCache(){
     if (!$this->cacheKey()){
       return false;
     }
     if (Cache::getInstance()->enabled() && $this->isValid()){
-      return Cache::getInstance()->groupRemoveItem('DB_{%DATABASE_ALIAS%}_{%TABLENAME%}', $this->cacheKey());
+      Cache::getInstance()->groupRemoveItem('DB_{%DATABASE_ALIAS%}_{%TABLENAME%}', $this->cacheKey());
+      return true;
     }
   }
 
-  protected function cache(){
+  protected function cache($noTrigger=false){
     if (!$this->cacheKey() || !C::getDbCacheTtl()){
       return false;
     }
     if (Cache::getInstance()->enabled() && $this->isValid()){
-      return Cache::getInstance()->groupSetItem('DB_{%DATABASE_ALIAS%}_{%TABLENAME%}', $this->cacheKey(), $this, C::getDbCacheTtl());
+      return Cache::getInstance()->groupSetItem('DB_{%DATABASE_ALIAS%}_{%TABLENAME%}', $this->cacheKey(), $this, C::getDbCacheTtl(),$noTrigger);
     }
   }
 
@@ -144,6 +154,10 @@ abstract class {%CLASSNAME%} extends CRUD{
   		$this->invalidateCache();
   	}
     $this->pretendReal();
+
+    if (Cache::getInstance()->enabled()){
+      Cache::getInstance()->fireModifyTrigger('DB_{%DATABASE_ALIAS%}_{%TABLENAME%}::CHANGE');
+    }
     return $this;
   }
 

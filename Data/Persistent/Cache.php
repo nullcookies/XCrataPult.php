@@ -56,6 +56,30 @@ class Cache{
     return $this->redisObject!==null;
   }
 
+  public function addModifyTrigger($trigger, $deleteElement){
+    if (is_array($trigger)){
+      $trigger=implode(" /g:::", $trigger);
+    }
+    if (is_array($deleteElement)){
+      $deleteElement=implode(" /g:::", $deleteElement);
+    }
+    $this->stackPush($trigger, $deleteElement);
+  }
+
+  public function fireModifyTrigger($trigger){
+    if (is_array($trigger)){
+      $trigger=implode(" /g:::", $trigger);
+    }
+    while($element = $this->stackPop($trigger)){
+      if (strpos($element, " /g:::")){
+        $element=explode(" /g:::", $element);
+        $this->groupRemoveItem($element[0], $element[1]);
+      }else{
+        $this->remove($element);
+      }
+    }
+  }
+
   public static function enabled(){
     if (self::$tried==false){
       self::getInstance();
@@ -92,6 +116,7 @@ class Cache{
         Logger::add("CACHE: set ".$name." as ".print_r($val,1));
       }
     }
+    $this->fireModifyTrigger($name);
   }
 
   public function get($name){
@@ -104,6 +129,7 @@ class Cache{
 
   public function remove($name){
     $this->redisObject->del($name);
+    $this->fireModifyTrigger($name);
   }
 
   public function arraySize($arr){
@@ -154,23 +180,30 @@ class Cache{
     return $this->redisObject->hGet($hash, $key);
   }
 
-  public function groupSetItem($hash, $key, $value, $ttl=null){
+  public function groupSetItem($hash, $key, $value, $ttl=null, $noTrigger=false){
+    if (!$noTrigger){
+      $this->fireModifyTrigger([$hash, $key]);
+    }
     return $this->redisObject->hSet($hash, $key, $value);
   }
 
   public function groupIncItem($hash, $key, $value=1){
+    $this->fireModifyTrigger([$hash, $key]);
     return $this->redisObject->hIncrBy($hash, $key, $value);
   }
 
   public function groupDecItem($hash, $key, $value=1){
+    $this->fireModifyTrigger([$hash, $key]);
     return $this->redisObject->hIncrBy($hash, $key, -$value);
   }
 
   public function groupRemoveItem($hash, $key){
+    $this->fireModifyTrigger([$hash, $key]);
     $this->redisObject->hDel($hash, $key);
   }
 
   public function groupDelete($hash){
+    $this->fireModifyTrigger($hash);
     $this->redisObject->del($hash);
   }
 
@@ -199,8 +232,9 @@ class Cache{
     if ($blocking){
       $answer = $this->redisObject->brPop($stack, $blocking);
       return $answer[1];
-    } else
+    } else  {
       return $this->redisObject->rPop($stack);
+    }
   }
 
   public function Status(){

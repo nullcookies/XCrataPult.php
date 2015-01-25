@@ -37,6 +37,7 @@ class CRUDGenerator extends PrivateInstantiation{
                 "\t\t\$collection=new Collection(static::connection(),'".$table->getName().", ".Strings::smartImplode($fields, " AND ", function(Field &$value){$value = $value->getName()."=::".$value->getName();})."', [".Strings::smartImplode($fields, " , ", function(Field &$value){$value = "'".$value->getName()."' => \$".$value->getAlias();})."]);"."\n".
                 "\t\tforeach(\$collection as \$answerData){"."\n".
                 "\t\t\t\$answer[]=\$answerData;"."\n".
+                "\t\t\tCache::getInstance()->addModifyTrigger(['DB_".$db->getAlias()."_".$table->getName()."', \$answerData->cacheKey()],['DB_".$db->getAlias()."_".$table->getName()."', \$cacheKey]);"."\n".
                 "\t\t}"."\n".
                 "\t\tunset(\$collection);"."\n".
                 "\t\tif (Cache::enabled() && C::getDbCacheTtl()){"."\n".
@@ -49,12 +50,20 @@ class CRUDGenerator extends PrivateInstantiation{
                 "\t\t\tunset(\$collection);"."\n".
                 "\t\t\tif (Cache::enabled() && C::getDbCacheTtl()){"."\n".
                 "\t\t\t\tCache::getInstance()->groupSetItem('DB_".$db->getAlias()."_".$table->getName()."', \$cacheKey, \$answer, C::getDbCacheTtl());"."\n".
+                "\t\t\t\tCache::getInstance()->addModifyTrigger(['DB_".$db->getAlias()."_".$table->getName()."', \$answer->cacheKey()], ['DB_".$db->getAlias()."_".$table->getName()."', \$cacheKey]);"."\n".
                 "\t\t\t}"."\n".
                 "\t\t}else{"."\n".
                 "\t\t\t\$answer=null;"."\n".
                 "\t\t}"."\n"
       ).
                 "\t}else{"."\n".
+      ($key->isUnique() ?
+                "\t\t\$answer->setfromCache();"."\n"
+                :
+                "\t\tforeach(\$answer as &\$item){"."\n".
+                "\t\t\t\$item->setfromCache();"."\n".
+                "\t\t}"."\n"
+      ).
                 "\t\tLogger::add('DB_".$db->getAlias()."_".$table->getName().": key '.\$cacheKey.' found in cache. Loading from cache');"."\n".
                 "\t}"."\n".
                 "\treturn \$answer;"."\n".
@@ -113,7 +122,7 @@ class CRUDGenerator extends PrivateInstantiation{
     }
     $creator .= "\t\$classObj->hook_createFromRaw_after();"."\n";
     $creator .= "\t\$classObj->pretendReal();"."\n";
-    $creator .= "\t\$classObj->cache();"."\n".
+    $creator .= "\t\$classObj->cache(true);"."\n".
                 "\treturn \$classObj;"."\n".
                 "}"."\n";
     return $creator;
@@ -216,11 +225,19 @@ class CRUDGenerator extends PrivateInstantiation{
     return $pretendR;
   }
 
-  private static function gCacheKey($primaryFields){
+  private static function gCacheKey($primaryFields, Database &$db, Table &$table){
     $cachekey = "public function cacheKey(){"."\n".
                 (is_array($primaryFields) && count($primaryFields) ?
                 "\treturn ".Strings::smartImplode($primaryFields, ".'&&'.", function(Field &$value){$value = "\$this->PRIMARY_".$value->getAlias()."";}).";"."\n" :
                 "\treturn false;"."\n").
+                "}"."\n";
+    $cachekey .="public function triggerKey(){"."\n".
+                (is_array($primaryFields) && count($primaryFields) ?
+                "\treturn ['DB_".$db->getAlias()."_".$table->getName()."', \$this->cacheKey()];"."\n" :
+                "\treturn false;"."\n").
+                "}"."\n";
+    $cachekey .="static public function tableChangeTriggerKey(){"."\n".
+                "\treturn 'DB_".$db->getAlias()."_".$table->getName()."::CHANGE';"."\n".
                 "}"."\n";
     return $cachekey;
   }
@@ -329,7 +346,7 @@ class CRUDGenerator extends PrivateInstantiation{
       $selectors[] = " * @return Collection";
       $selectors[] = " */";
       $selectors[] = "public static function getBy".$field->getCamelName()."isNull(\$limit=0, \$groupBy=null, \$ttl=null){";
-      $selectors[] = "\treturn static::getByOneField('".$field->getName()." is NULL', \$val, \$limit, \$groupBy);";
+      $selectors[] = "\treturn static::getByOneField('".$table->getName().".".$field->getName()." is NULL', null, \$limit, \$groupBy);";
       $selectors[] = "}";
 
       $selectors[] = "/**";
@@ -337,7 +354,7 @@ class CRUDGenerator extends PrivateInstantiation{
       $selectors[] = " * @return Collection";
       $selectors[] = " */";
       $selectors[] = "public static function getBy".$field->getCamelName()."(\$val, \$limit=0, \$groupBy=null, \$ttl=null){";
-      $selectors[] = "\treturn static::getByOneField('".$field->getName()."=::val', \$val, \$limit, \$groupBy);";
+      $selectors[] = "\treturn static::getByOneField('".$table->getName().".".$field->getName()."=::val', \$val, \$limit, \$groupBy);";
       $selectors[] = "}";
 
       $selectors[] = "/**";
@@ -345,7 +362,7 @@ class CRUDGenerator extends PrivateInstantiation{
       $selectors[] = " * @return Collection";
       $selectors[] = " */";
       $selectors[] = "public static function getBy".$field->getCamelName()."_startsWith(\$val, \$limit=0, \$groupBy=null, \$ttl=null){";
-      $selectors[] = "\treturn static::getByOneField('".$field->getName()." LIKE \"::val%\"', \$val, \$limit, \$groupBy);";
+      $selectors[] = "\treturn static::getByOneField('".$table->getName().".".$field->getName()." LIKE \"::val%\"', \$val, \$limit, \$groupBy);";
       $selectors[] = "}";
 
       $selectors[] = "/**";
@@ -353,7 +370,7 @@ class CRUDGenerator extends PrivateInstantiation{
       $selectors[] = " * @return Collection";
       $selectors[] = " */";
       $selectors[] = "public static function getBy".$field->getCamelName()."_endsWith(\$val, \$limit=0, \$groupBy=null, \$ttl=null){";
-      $selectors[] = "\treturn static::getByOneField('".$field->getName()." LIKE \"%::val\"', \$val, \$limit, \$groupBy);";
+      $selectors[] = "\treturn static::getByOneField('".$table->getName().".".$field->getName()." LIKE \"%::val\"', \$val, \$limit, \$groupBy);";
       $selectors[] = "}";
 
       $selectors[] = "/**";
@@ -361,7 +378,7 @@ class CRUDGenerator extends PrivateInstantiation{
       $selectors[] = " * @return Collection";
       $selectors[] = " */";
       $selectors[] = "public static function getBy".$field->getCamelName()."_contains(\$val, \$limit=0, \$groupBy=null, \$ttl=null){";
-      $selectors[] = "\treturn static::getByOneField('".$field->getName()." LIKE \"%::val%\"', \$val, \$limit, \$groupBy);";
+      $selectors[] = "\treturn static::getByOneField('".$table->getName().".".$field->getName()." LIKE \"%::val%\"', \$val, \$limit, \$groupBy);";
       $selectors[] = "}";
 
       $selectors[] = "/**";
@@ -370,7 +387,7 @@ class CRUDGenerator extends PrivateInstantiation{
       $selectors[] = " */";
       $selectors[] = "public static function getBy".$field->getCamelName()."_greater(\$val, \$limit=0, \$groupBy=null, \$ttl=null){";
       $selectors[] = $timeControl;
-      $selectors[] = "\treturn static::getByOneField('".$field->getName()." > ::val', \$val, \$limit, \$groupBy);";
+      $selectors[] = "\treturn static::getByOneField('".$table->getName().".".$field->getName()." > ::val', \$val, \$limit, \$groupBy);";
       $selectors[] = "}";
 
       $selectors[] = "/**";
@@ -379,7 +396,7 @@ class CRUDGenerator extends PrivateInstantiation{
       $selectors[] = " */";
       $selectors[] = "public static function getBy".$field->getCamelName()."_less(\$val, \$limit=0, \$groupBy=null, \$ttl=null){";
       $selectors[] = $timeControl;
-      $selectors[] = "\treturn static::getByOneField('".$field->getName()." < ::val', \$val, \$limit, \$groupBy);";
+      $selectors[] = "\treturn static::getByOneField('".$table->getName().".".$field->getName()." < ::val', \$val, \$limit, \$groupBy);";
       $selectors[] = "}";
 
       $selectors[] = "/**";
@@ -389,7 +406,7 @@ class CRUDGenerator extends PrivateInstantiation{
       $selectors[] = "public static function getBy".$field->getCamelName()."_between(\$val1, \$val2, \$limit=0, \$groupBy=null, \$ttl=null){";
       $selectors[] = str_replace("\$val", "\$val1", $timeControl);
       $selectors[] = str_replace("\$val", "\$val2", $timeControl);
-      $selectors[] = "\treturn static::getByOneField('".$field->getName()." BETWEEN ::val1 AND ::val2', ['val1'=>\$val1, 'val2'=>\$val2], \$limit, \$groupBy);";
+      $selectors[] = "\treturn static::getByOneField('".$table->getName().".".$field->getName()." BETWEEN ::val1 AND ::val2', ['val1'=>\$val1, 'val2'=>\$val2], \$limit, \$groupBy);";
       $selectors[] = "}";
 
       if ($field->getPHPType()=='int'){
@@ -397,7 +414,7 @@ class CRUDGenerator extends PrivateInstantiation{
         $selectors[] = " * @return \\".$namespaceName."\\".$className."\n";
         $selectors[] = " */";
         $selectors[] = "public function shiftBy".$field->getCamelName()."Down(){";
-        $selectors[] = "\t\$obj=self::get('".$field->getName().">?, ".$field->getName()." asc, #1');";
+        $selectors[] = "\t\$obj=self::get('".$table->getName().".".$field->getName().">?, ".$table->getName().".".$field->getName()." asc, #1');";
         $selectors[] = "\tif (\$obj->count()){";
         $selectors[] = "\t\t\$tmp=\$obj->get".$field->getCamelName()."();";
         $selectors[] = "\t\t\$obj->set".$field->getCamelName()."(\$this->get".$field->getCamelName()."())->save();";
@@ -410,7 +427,7 @@ class CRUDGenerator extends PrivateInstantiation{
         $selectors[] = " * @return \\".$namespaceName."\\".$className."\n";
         $selectors[] = " */";
         $selectors[] = "public function shiftBy".$field->getCamelName()."Up(){";
-        $selectors[] = "\t\$obj=self::get('".$field->getName()."<?, ".$field->getName()." desc, #1');";
+        $selectors[] = "\t\$obj=self::get('".$table->getName().".".$field->getName()."<?, ".$table->getName().".".$field->getName()." desc, #1');";
         $selectors[] = "\tif (\$obj->count()){";
         $selectors[] = "\t\t\$tmp=\$obj->get".$field->getCamelName()."();";
         $selectors[] = "\t\t\$obj->set".$field->getCamelName()."(\$this->get".$field->getCamelName()."())->save();";
@@ -526,7 +543,7 @@ class CRUDGenerator extends PrivateInstantiation{
     $result = str_replace("{%SETTERS%}",        $setters,             $result);
     $result = str_replace("{%VERSION%}",        date('Y.m.d.H.i.s'),  $result);
     $result = str_replace("{%SELECTORS%}",      $selectors,           $result);
-    $result = str_replace("{%CACHEKEY%}",       self::gCacheKey($primaryFields), $result);
+    $result = str_replace("{%CACHEKEY%}",       self::gCacheKey($primaryFields, $db, $table), $result);
     $result = str_replace("{%ISVALID%}",        self::gIsValid($primaryFields), $result);
     $result = str_replace("{%INVALIDATE%}",     self::gInvalidate($primaryFields), $result);
     $result = str_replace("{%ASARRAY%}",        self::gAsArray($table->getFields()), $result);
