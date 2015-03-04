@@ -39,6 +39,7 @@ class CRUDGenerator extends PrivateInstantiation{
                 "\t\t\t\$answer[]=\$answerData;"."\n".
                 "\t\t\tCache::getInstance()->addModifyTrigger(['DB_".$db->getAlias()."_".$table->getName()."', \$answerData->cacheKey()],['DB_".$db->getAlias()."_".$table->getName()."', \$cacheKey]);"."\n".
                 "\t\t}"."\n".
+                "\t\tCache::getInstance()->addModifyTrigger('DB_".$db->getAlias()."_".$table->getName()."::CHANGE',['DB_".$db->getAlias()."_".$table->getName()."', \$cacheKey]);"."\n".
                 "\t\tunset(\$collection);"."\n".
                 "\t\tif (Cache::enabled() && C::getDbCacheTtl()){"."\n".
                 "\t\t\tCache::getInstance()->groupSetItem('DB_".$db->getAlias()."_".$table->getName()."', \$cacheKey, \$answer, C::getDbCacheTtl());"."\n".
@@ -153,7 +154,7 @@ class CRUDGenerator extends PrivateInstantiation{
       case 'double':
       case 'decimal':
       case 'real':
-        $setter.= "\t\$this->".$field->getAlias()." = ".($field->getNull() ? "(\$val===null) ? null : ":"")."doubleval(\$val);"."\n";
+        $setter.= "\t\$this->".$field->getAlias()." = ".($field->getNull() ? "(\$val===null) ? null : ":"")."Strings::doubleval(\$val);"."\n";
         break;
       case 'varchar':
       case 'char':
@@ -221,6 +222,9 @@ class CRUDGenerator extends PrivateInstantiation{
     $pretendR = "private function invalidate(){"."\n".
                 (is_array($primaryFields) && count($primaryFields) ?
                 "\t".Strings::smartImplode($primaryFields, "\n\t", function(Field &$value){$value = "\$this->PRIMARY_".$value->getAlias()."=null;";})."\n":"").
+                "\tif (Cache::getInstance()->enabled()){"."\n".
+                "\t\tCache::getInstance()->fireModifyTrigger(self::tableChangeTriggerKey());"."\n".
+                "\t}"."\n".
                 "}"."\n";
     return $pretendR;
   }
@@ -313,7 +317,7 @@ class CRUDGenerator extends PrivateInstantiation{
             $default = intval($field->getDefault());
             break;
           case 'double':
-            $default = doubleval($field->getDefault());
+            $default = Strings::doubleval($field->getDefault());
             break;
           case 'string':
             $default = '"'.str_replace('"', '\"', strval($field->getDefault())).'"';
