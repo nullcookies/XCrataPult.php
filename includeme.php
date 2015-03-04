@@ -43,6 +43,7 @@ function registerAutoloader($namespaceName, $rootDirectory){
 
 registerAutoloader("X", __XDIR__);
 \X\registerAutoloader("Typograf", __XDIR__.'3rdparty/Typograf/');
+\X\registerAutoloader("Phois", __XDIR__.'3rdparty/Phois/');
 \X\registerAutoloader("Parsedown", __XDIR__.'3rdparty/Parsedown/');
 \X\registerAutoloader("Clickatell", __XDIR__.'3rdparty/Clickatell/');
 \X\registerAutoloader("Afi", __XDIR__.'3rdparty/Afigenius/');
