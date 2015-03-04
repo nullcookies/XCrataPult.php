@@ -107,7 +107,7 @@ class Strings {
     return $answer;
   }
 
-  public static function explodeSelective($string, $delimeters=",", $braces=['()']){
+  public static function explodeSelective($string, $delimeters=",", $braces=['()',"''", '""']){
     $answer=[];
     $ignore=false;
     $offset=0;
@@ -230,5 +230,21 @@ class Strings {
 
   public static function fillBefore($string, $filler, $length){
     return str_repeat($filler, max(0, $length-strlen($string))).$string;
+  }
+
+  public static function doubleval($num){
+
+    $dotPos = strrpos($num, '.');
+    $commaPos = strrpos($num, ',');
+    $sep = (($dotPos > $commaPos) && $dotPos) ? $dotPos :
+      ((($commaPos > $dotPos) && $commaPos) ? $commaPos : false);
+
+    if (!$sep) {
+      return preg_replace("/[^0-9]/", "", $num) ?: 0;
+    }
+
+    return
+      preg_replace("/[^0-9]/", "", substr($num, 0, $sep)) . '.' .
+      preg_replace("/[^0-9]/", "", substr($num, $sep+1, strlen($num)));
   }
 } 
