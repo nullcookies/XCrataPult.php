@@ -99,6 +99,8 @@ final class Image extends AbstractImage
 
     /**
      * {@inheritdoc}
+     *
+     * @return ImageInterface
      */
     public function copy()
     {
@@ -117,6 +119,8 @@ final class Image extends AbstractImage
 
     /**
      * {@inheritdoc}
+     *
+     * @return ImageInterface
      */
     public function crop(PointInterface $start, BoxInterface $size)
     {
@@ -137,6 +141,8 @@ final class Image extends AbstractImage
 
     /**
      * {@inheritdoc}
+     *
+     * @return ImageInterface
      */
     public function flipHorizontally()
     {
@@ -151,6 +157,8 @@ final class Image extends AbstractImage
 
     /**
      * {@inheritdoc}
+     *
+     * @return ImageInterface
      */
     public function flipVertically()
     {
@@ -165,11 +173,18 @@ final class Image extends AbstractImage
 
     /**
      * {@inheritdoc}
+     *
+     * @return ImageInterface
      */
     public function strip()
     {
         try {
-            $this->profile($this->palette->profile());
+            try {
+                $this->profile($this->palette->profile());
+            } catch (\Exception $e) {
+                // here we discard setting the profile as the previous incorporated profile
+                // is corrupted, let's now strip the image
+            }
             $this->imagick->stripImage();
         } catch (\ImagickException $e) {
             throw new RuntimeException('Strip operation failed', $e->getCode(), $e);
@@ -180,6 +195,8 @@ final class Image extends AbstractImage
 
     /**
      * {@inheritdoc}
+     *
+     * @return ImageInterface
      */
     public function paste(ImageInterface $image, PointInterface $start)
     {
@@ -202,6 +219,8 @@ final class Image extends AbstractImage
 
     /**
      * {@inheritdoc}
+     *
+     * @return ImageInterface
      */
     public function resize(BoxInterface $size, $filter = ImageInterface::FILTER_UNDEFINED)
     {
@@ -216,6 +235,8 @@ final class Image extends AbstractImage
 
     /**
      * {@inheritdoc}
+     *
+     * @return ImageInterface
      */
     public function rotate($angle, ColorInterface $background = null)
     {
@@ -237,6 +258,8 @@ final class Image extends AbstractImage
 
     /**
      * {@inheritdoc}
+     *
+     * @return ImageInterface
      */
     public function save($path = null, array $options = array())
     {
@@ -257,6 +280,8 @@ final class Image extends AbstractImage
 
     /**
      * {@inheritdoc}
+     *
+     * @return ImageInterface
      */
     public function show($format, array $options = array())
     {
@@ -375,6 +400,8 @@ final class Image extends AbstractImage
 
     /**
      * {@inheritdoc}
+     *
+     * @return ImageInterface
      */
     public function applyMask(ImageInterface $mask)
     {
@@ -425,6 +452,8 @@ final class Image extends AbstractImage
 
     /**
      * {@inheritdoc}
+     *
+     * @return ImageInterface
      */
     public function fill(FillInterface $fill)
     {
@@ -439,7 +468,7 @@ final class Image extends AbstractImage
                         $color = $fill->getColor(new Point($x, $y));
 
                         $pixel->setColor((string) $color);
-                        $pixel->setColorValue(\Imagick::COLOR_ALPHA, number_format(round($color->getAlpha() / 100, 2), 1));
+                        $pixel->setColorValue(\Imagick::COLOR_ALPHA, $color->getAlpha() / 100);
                     }
 
                     $iterator->syncIterator();
@@ -603,8 +632,15 @@ final class Image extends AbstractImage
      */
     private function flatten()
     {
+        /**
+         * @see https://github.com/mkoppanen/imagick/issues/45
+         */
         try {
-            $this->imagick = $this->imagick->flattenImages();
+            if (method_exists($this->imagick, 'mergeImageLayers') && defined('Imagick::LAYERMETHOD_UNDEFINED')) {
+                $this->imagick = $this->imagick->mergeImageLayers(\Imagick::LAYERMETHOD_UNDEFINED);
+            } elseif (method_exists($this->imagick, 'flattenImages')) {
+                $this->imagick = $this->imagick->flattenImages();
+            }
         } catch (\ImagickException $e) {
             throw new RuntimeException('Flatten operation failed', $e->getCode(), $e);
         }
@@ -693,7 +729,7 @@ final class Image extends AbstractImage
     private function getColor(ColorInterface $color)
     {
         $pixel = new \ImagickPixel((string) $color);
-        $pixel->setColorValue(\Imagick::COLOR_ALPHA, number_format(round($color->getAlpha() / 100, 2), 1));
+        $pixel->setColorValue(\Imagick::COLOR_ALPHA, $color->getAlpha() / 100);
 
         return $pixel;
     }
