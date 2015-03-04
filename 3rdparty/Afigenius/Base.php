@@ -23,7 +23,7 @@ class Base {
     }
     $fields = urlencode(implode(',', $fieldsNeeded));
     $req = $uri.'/'.$params.'?limit='.intval($limit).($fields ? '&fields='.$fields :'');
-    $cacheHash = "AFI:1:".md5($req);
+    $cacheHash = "AFI:5:".md5($req);
     if (Cache::enabled() && ($answer=Cache::getInstance()->get($cacheHash))){
       return $answer;
     }

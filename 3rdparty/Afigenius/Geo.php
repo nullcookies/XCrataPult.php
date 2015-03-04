@@ -14,7 +14,7 @@ namespace Afi;
 class Geo {
 
   public static function countryIdByCityId($id){
-    $answer = Base::request("geo/citybyid", $id, "country_id");
+    $answer = Base::request("geo/citybyid", urlencode($id), "country_id");
     if ($answer["status"]=="ok"){
       if (count($answer["data"])){
         return $answer["data"]["country_id"];
@@ -24,7 +24,7 @@ class Geo {
   }
 
   public static function countryIdByName($name){
-    $answer = Base::request("geo/countrylist", $name, "id");
+    $answer = Base::request("geo/countrylist", urlencode($name), "id");
     if ($answer["status"]=="ok"){
       if (count($answer["data"])){
         return $answer["data"][0]["id"];
@@ -34,7 +34,7 @@ class Geo {
   }
 
   public static function cityIdByName($cityName, $countryName='', $regionName=''){
-    $answer = Base::request("geo/citylist", $cityName.'/'.$countryName.'/'.$regionName, "id");
+    $answer = Base::request("geo/citylist", urlencode($cityName).'/'.urlencode($countryName).'/'.urlencode($regionName), "id");
     if ($answer["status"]=="ok"){
       if (count($answer["data"])){
         return $answer["data"][0]["id"];
@@ -44,7 +44,7 @@ class Geo {
   }
 
   public static function cityById($id){
-    $answer = Base::request("geo/citybyid", $id);
+    $answer = Base::request("geo/citybyid", urlencode($id));
     if ($answer["status"]=="ok"){
       if (count($answer["data"])){
         return $answer["data"];
@@ -54,7 +54,7 @@ class Geo {
   }
 
   public static function countryById($id){
-    $answer = Base::request("geo/countrybyid", $id);
+    $answer = Base::request("geo/countrybyid", urlencode($id));
     if ($answer["status"]=="ok"){
       if (count($answer["data"])){
         return $answer["data"];
