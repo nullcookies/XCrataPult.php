@@ -36,11 +36,14 @@ class Cache{
 
     if ($this->redisObject){
       try{
-        $this->redisObject->connect($host);
-        if (function_exists('igbinary_serialize') && defined('\\Redis::SERIALIZER_IGBINARY')){
-          $this->redisObject->setOption(\Redis::OPT_SERIALIZER, \Redis::SERIALIZER_IGBINARY);
+        if ($this->redisObject->connect($host)){
+          if (function_exists('igbinary_serialize') && defined('\\Redis::SERIALIZER_IGBINARY')){
+            $this->redisObject->setOption(\Redis::OPT_SERIALIZER, \Redis::SERIALIZER_IGBINARY);
+          }else{
+            $this->redisObject->setOption(\Redis::OPT_SERIALIZER, \Redis::SERIALIZER_PHP);
+          }
         }else{
-          $this->redisObject->setOption(\Redis::OPT_SERIALIZER, \Redis::SERIALIZER_PHP);
+          $this->redisObject=null;
         }
       }catch(\RedisException $e){
         $this->redisObject = null;
