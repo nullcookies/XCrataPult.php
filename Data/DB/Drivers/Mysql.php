@@ -47,7 +47,7 @@ class Mysql implements IDB{
    */
   private $alias = '';
   private $currentDatabase = null;
-  private $connection=null;
+  private static $connection=null;
 
   private $dataTypes = Array(
     "boolean"    => "bool",
@@ -56,6 +56,7 @@ class Mysql implements IDB{
     "tinyint"    => "int",
     "int"        => "int",
     "smallint"   => "int",
+    "mediumint"  => "int",
     "bigint"     => "int",
     "serial"     => "int",
 
@@ -106,11 +107,11 @@ class Mysql implements IDB{
   }
 
   public function lazyConnect(){
-    if ($this->connection){
+    if (self::$connection){
       return;
     }
     Logger::add("MySQL: Connecting to ".($this->login ?: "default user")."@".($this->host ?: "default socket")." ...");
-    if ($this->connection=mysql_connect($this->host, $this->login, $this->pass)){
+    if (self::$connection=mysql_connect($this->host, $this->login, $this->pass)){
       Logger::add("MySQL: Connecting to ".($this->login ?: "default user")."@".($this->host ?: "default socket")." ...OK");
       self::chooseDB($this->dbname, $this->alias);
     }else{
@@ -123,7 +124,7 @@ class Mysql implements IDB{
 
   public function escape($string){
     $this->lazyConnect();
-    return mysql_real_escape_string($string, $this->connection);
+    return mysql_real_escape_string($string, self::$connection);
   }
 
   public function getTables(){
@@ -288,7 +289,7 @@ class Mysql implements IDB{
   public function query($sql) {
     $this->lazyConnect();
     Logger::add("MySQL query: ".$sql);
-    return mysql_query($sql, $this->connection);
+    return mysql_query($sql, self::$connection);
   }
 
   public function getNext($resource, $asArray=true, $assoc=true){
@@ -395,9 +396,9 @@ class Mysql implements IDB{
     $res = $this->query($sql);
 
     if (!$res){
-      throw new \Exception("SQL FAILED: >>".$sql."<< WITH ERROR ".mysql_error($this->connection));
+      throw new \Exception("SQL FAILED: >>".$sql."<< WITH ERROR ".mysql_error(self::$connection));
     }
-    if ($res && ($id = mysql_insert_id($this->connection))){
+    if ($res && ($id = mysql_insert_id(self::$connection))){
       $object->autoincrement($id);
     }
     return $res;
@@ -431,14 +432,14 @@ class Mysql implements IDB{
 
     $res = $this->query($sql);
     if (!$res){
-      throw new \Exception("SQL FAILED: >>".$sql."<< WITH ERROR ".mysql_error($this->connection));
+      throw new \Exception("SQL FAILED: >>".$sql."<< WITH ERROR ".mysql_error(self::$connection));
     }
 
     return $res;
   }
 
   public function setCharset($charset){
-    if ($this->connection){
+    if (self::$connection){
       $charset = $this->escape($charset);
       $this->query("SET NAMES '".$charset."'");
     }else{
