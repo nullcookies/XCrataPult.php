@@ -41,16 +41,29 @@ class Whois{
       'expire',
       'expiration',
     ];
-    return strtotime($this->_findProperty($keywords));
+    return $this->_strtotime($this->_findProperty($keywords));
   }
 
   public function getRegisteredDate(){
     $keywords=[
+      'free-date',
       'created',
       'creation',
       'registered',
     ];
-    return strtotime($this->_findProperty($keywords));
+    return $this->_strtotime($this->_findProperty($keywords));
+  }
+
+  private function _strtotime($str){
+    if ($t = strtotime($str)){
+      return $t;
+    }else{
+      if ($t = strtotime(implode(".", array_reverse(explode(".", $str))))){
+        return $t;
+      }else{
+        return 0;
+      }
+    }
   }
 
   private function _findProperty($guesses){
