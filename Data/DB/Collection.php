@@ -505,7 +505,7 @@ class Collection extends \ArrayObject{
         foreach($this->tables[$i]['fields'] as $f1=>$f2){
           $fields[]=$f1."=".$f2;
         }
-        $joinedTables.=implode(",",$fields);
+        $joinedTables.=implode(" AND ",$fields);
         $joinedTables.=")";
       }
     }
@@ -545,6 +545,7 @@ class Collection extends \ArrayObject{
         $this->collapseVars($parsed["ORDER"], $this->whereVars);
       }
     }
+
     $creator = new PHPSQLCreator();
     $sqlExpr = $creator->create($parsed);
 
