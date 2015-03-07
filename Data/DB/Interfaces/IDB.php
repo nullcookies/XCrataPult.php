@@ -28,6 +28,9 @@ Interface IDB{
 
   public function setCharset($charset);
 
+  public function disconnect();
+  public function reconnect();
+
   public function chooseDB($dbname=null, $alias=null);
   public function dropDB($dbname);
 

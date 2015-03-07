@@ -106,12 +106,23 @@ class Mysql implements IDB{
     return $this->alias;
   }
 
+  public function disconnect(){
+    if (self::$connection){
+      mysql_close(self::$connection);
+    }
+    self::$connection=null;
+  }
+
+  public function reconnect(){
+    self::$connection=null;
+    $this->lazyConnect();
+  }
   public function lazyConnect(){
     if (self::$connection){
       return;
     }
     Logger::add("MySQL: Connecting to ".($this->login ?: "default user")."@".($this->host ?: "default socket")." ...");
-    if (self::$connection=mysql_connect($this->host, $this->login, $this->pass)){
+    if (self::$connection=mysql_connect($this->host, $this->login, $this->pass, true)){
       Logger::add("MySQL: Connecting to ".($this->login ?: "default user")."@".($this->host ?: "default socket")." ...OK");
       self::chooseDB($this->dbname, $this->alias);
     }else{
