@@ -302,6 +302,12 @@ class Collection extends \ArrayObject{
   public function limit($lim){
 
     $this->resetRes();
+
+    if ($lim===false){
+      $this->lim=[];
+      return $this;
+    }
+
     if (is_array($lim)){
       if (count($lim)==1){
         $this->lim=[intval($lim[0]), intval($lim[1])];
@@ -399,21 +405,20 @@ class Collection extends \ArrayObject{
           $op='=::'.$newPH;
           $this->whereVars[$newPH]=func_get_arg(1);
         }else{
-          $this->where[]=$part;
-
+          $this->where[]='('.$part.')';
           return $this;
         }
       }
       $part = trim($part);
       if ($field = $this->isField($part)){
-        $this->where[]=$field.$op;
+        $this->where[]='('.$field.$op.')';
       }else{
         throw new \RuntimeException("Expected field, got '".$part."' which is either not field or has ambiguous name");
       }
     }else{
       if (is_array($where)){
         foreach($where as $w){
-          $this->where[]=$w;
+          $this->where[]='('.$w.')';
         }
 
         $where = "WHERE ".implode(" and ", array_filter($this->where,'trim'));
@@ -424,7 +429,7 @@ class Collection extends \ArrayObject{
         }
         unset($parser);
       }else{
-        $this->where[]=$where;
+        $this->where[]='('.$where.')';
       }
     }
 
@@ -873,9 +878,25 @@ class Collection extends \ArrayObject{
         }
       }
       if ($fields===null){
-        throw new \RuntimeException("The table '".$tClass::TABLE_NAME."' cannot be joined with FK '".$conditions."' since it has no fields shared between tables to be connected");
+        //try to parse condition string
+        if (strpos($conditions, "=")!==false){
+          $pairs = explode("and", $conditions);
+          $conditions=[];
+          foreach($pairs as $pair){
+            $tmp = explode("=", $pair);
+            if (count($tmp)==2){
+              $conditions[trim($tmp[0])]=trim($tmp[1]);
+            }else{
+              throw new \RuntimeException("The table '".$tClass::TABLE_NAME."' cannot be joined with '".$conditions."' since it has no fields shared between tables to be connected");
+            }
+          }
+        }else{
+          throw new \RuntimeException("The table '".$tClass::TABLE_NAME."' cannot be joined with FK '".$conditions."' since it has no fields shared between tables to be connected");
+        }
       }
-    }elseif (is_array($conditions) && count($conditions)){
+    }
+
+    if (is_array($conditions) && count($conditions)){
       $fieldCheck = function($fieldName)use($tClass, $alias){
         $fieldName = strtolower($fieldName);
         if (strpos($fieldName, ".")){
@@ -898,7 +919,8 @@ class Collection extends \ArrayObject{
           }elseif(!array_key_exists($fieldName, $this->fieldNames) && array_key_exists($fieldName, $tClass::getFields()) && array_key_exists("fullName", $tClass::getFields()[$fieldName]) && $tClass::getFields()[$fieldName]["fullName"]){
             $fieldName = $tClass::getFields()[$fieldName]["fullName"];
           }else{
-            $fieldName='';
+            //Let's keep condition's part if there is a constant or expression
+            //$fieldName='';
           }
         }
         return $fieldName;
@@ -913,8 +935,6 @@ class Collection extends \ArrayObject{
           throw new \RuntimeException("Fields provided in [".$fromField."=>".$toField."] conditions contain non-existing ones or ambiguous. Use {table_name}.{field_name} naming style.");
         }
       }
-    }else{
-      throw new \RuntimeException("Conditions provided to join tables are not supported. Please, refer to the documentation.");
     }
 
     $this->tables[]=[
