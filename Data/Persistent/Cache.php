@@ -245,20 +245,26 @@ class Cache{
   }
 
   public function lock($lockName, $ttl = 1, $timeWait = 0){
-    $timeWaitTo = min(10, abs(intval($timeWait))) + time();
-    $ttlTo      = $ttl ? (min(10, abs(intval($ttl))) + time()) : 2147483646;
-    while (!$this->redisObject->setnx("LOCK_" . $lockName, $ttlTo)) {
-
-      if (intval($this->get("LOCK_" . $lockName)) <= time()) {
-        $this->set("LOCK_" . $lockName, $ttlTo);
+    $timeWaitTo = $timeWait ? min(10, abs(intval($timeWait))) + time() : 0;
+    $ttlTo      = $ttl ? (min(10, abs(intval($ttl))) + time()) : 1;
+    while (!$this->redisObject->setnx("LOCK_".$lockName, $ttlTo)) {
+      if ($this->get("LOCK_".$lockName)==1){
+        return false;
+      }
+      if (intval($this->get("LOCK_".$lockName)) <= time()) {
+        $this->set("LOCK_".$lockName, $ttlTo);
         return true;
       }
       usleep(100);
-      if ($timeWait==0 || $timeWaitTo < time()){
+      if ($timeWait==0 || $timeWaitTo<time()){
         return false;
       }
     }
     return true;
+  }
+
+  public function islocked($lockName){
+    return $this->get($lockName);
   }
 
   public function unlock($lockName){
