@@ -241,7 +241,7 @@ class DB extends PrivateInstantiation{
     return new Expr($expr); //simple as hell, isn't it?
   }
 
-  public static function get($var){
+  public static function get($var=null){
     if (is_string($var)){
       $start=0;
       try{
