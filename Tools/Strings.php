@@ -49,6 +49,10 @@ class Strings {
     return round($val, $dec).$prefix.$names[$names_c];
   }
 
+  public static function Grades_size($val){
+    return self::Grades($val, 1024, ['B','KB','MB','GB','TB','PB']);
+  }
+
   public static function translitRuEn($string, $nonLatin="'"){
     $converter = array(
       'а' => 'a',   'б' => 'b',   'в' => 'v',
