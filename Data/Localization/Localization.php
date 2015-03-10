@@ -26,6 +26,7 @@ class Localization{
 
   public static function setFolder($path){
     static::$paths[] = C::checkDir($path);
+    static::$paths = array_unique(static::$paths);
     static::update();
   }
 
@@ -146,7 +147,7 @@ class Localization{
     return array_key_exists($code, static::$dictionary);
   }
 
-  private static function gobbleDir($path, $code, $base=null){
+  public static function gobbleDir($path, $code, $base=null){
     if ($base===null){
       $base = $path;
     }
@@ -196,10 +197,12 @@ class Localization{
     }
   }
 
-  private static function fromFile($code, $filename, $base){
+  public static function fromFile($code, $filename, $base, $path=null){
     $ext = explode(".", $filename);
     $ext = array_pop($ext);
-    $path = str_replace($base, '', str_replace('.'.$ext, '', $filename));
+    if (!$path){
+      $path = str_replace($base, '', str_replace('.'.$ext, '', $filename));
+    }
     switch($ext){
       case 'ini':$data = parse_ini_file($filename, true);break;
       case 'yml':$data = yaml_parse_file($filename, 0, $ndocs, ["!pl"=>function($data){return new PluralString($data);},"!ps"=>function($data){return new PlaceholdersString($data);}]);break;
