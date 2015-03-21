@@ -373,6 +373,14 @@ class CRUDGenerator extends PrivateInstantiation{
       $selectors[] = " * @param \$val";
       $selectors[] = " * @return Collection";
       $selectors[] = " */";
+      $selectors[] = "public static function getBy".$field->getCamelName()."_soundsLike(\$val, \$limit=0, \$groupBy=null, \$ttl=null){";
+      $selectors[] = "\treturn static::getByOneField('".$table->getName().".".$field->getName()." SOUNDS LIKE \"::val%\"', \$val, \$limit, \$groupBy);";
+      $selectors[] = "}";
+
+      $selectors[] = "/**";
+      $selectors[] = " * @param \$val";
+      $selectors[] = " * @return Collection";
+      $selectors[] = " */";
       $selectors[] = "public static function getBy".$field->getCamelName()."_endsWith(\$val, \$limit=0, \$groupBy=null, \$ttl=null){";
       $selectors[] = "\treturn static::getByOneField('".$table->getName().".".$field->getName()." LIKE \"%::val\"', \$val, \$limit, \$groupBy);";
       $selectors[] = "}";
