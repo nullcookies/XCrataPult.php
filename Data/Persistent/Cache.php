@@ -64,7 +64,11 @@ class Cache{
       $trigger=implode(" /g:::", $trigger);
     }
     if (is_array($deleteElement)){
-      $deleteElement=implode(" /g:::", $deleteElement);
+      if (count($deleteElement)==1){
+        $deleteElement = $deleteElement[0]." /g:::";
+      }else{
+        $deleteElement=implode(" /g:::", $deleteElement);
+      }
     }
     $this->stackPush($trigger, $deleteElement);
   }
@@ -76,7 +80,11 @@ class Cache{
     while($element = $this->stackPop($trigger)){
       if (strpos($element, " /g:::")){
         $element=explode(" /g:::", $element);
-        $this->groupRemoveItem($element[0], $element[1]);
+        if (!$element[1]){
+          $this->groupDelete($element[0]);
+        }else{
+          $this->groupRemoveItem($element[0], $element[1]);
+        }
       }else{
         $this->remove($element);
       }
