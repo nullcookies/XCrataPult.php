@@ -62,4 +62,24 @@ class Geo {
     }
     return null;
   }
+
+  public static function cityByIp($ip=''){
+    $answer = Base::request("geo/citybyip", urlencode($ip));
+    if ($answer["status"]=="ok"){
+      if (count($answer["data"])){
+        return $answer["data"];
+      }
+    }
+    return null;
+  }
+
+  public static function countryByIp($ip=''){
+    $answer = Base::request("geo/countrybyip", urlencode($ip));
+    if ($answer["status"]=="ok"){
+      if (count($answer["data"])){
+        return $answer["data"];
+      }
+    }
+    return null;
+  }
 } 
