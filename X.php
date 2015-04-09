@@ -132,8 +132,8 @@ class X extends \X\AbstractClasses\PrivateInstantiation{
     return strtoupper($_SERVER['REQUEST_METHOD']);
   }
 
-  public static function getURIparts(){
-    $uri = explode("/", strtolower(self::getURI(false)));
+  public static function getURIparts($lower=true){
+    $uri = explode("/", $lower ? strtolower(self::getURI(false)) : self::getURI(false));
     $uri=array_filter($uri);
     $uri=array_values($uri);
     return $uri;
