@@ -59,6 +59,7 @@ abstract class {%CLASSNAME%} extends CRUD{
     }
     if (Cache::getInstance()->enabled() && $this->isValid()){
       Cache::getInstance()->groupRemoveItem('DB_{%DATABASE_ALIAS%}_{%TABLENAME%}', $this->cacheKey());
+      Cache::getInstance()->fireModifyTrigger(self::tableChangeTriggerKey());
       return true;
     }
   }
