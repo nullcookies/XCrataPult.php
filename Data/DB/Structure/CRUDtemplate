@@ -170,6 +170,9 @@ abstract class {%CLASSNAME%} extends CRUD{
   	if ($this->isValid()){
   		$this->invalidateCache();
   	}
+    if (Cache::getInstance()->enabled()){
+      Cache::getInstance()->fireModifyTrigger(self::tableChangeTriggerKey());
+    }
     $this->invalidate();
   }
 
