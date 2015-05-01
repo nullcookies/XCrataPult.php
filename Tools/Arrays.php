@@ -23,4 +23,19 @@ class Arrays {
     }
   }
 
+  public static function countDimensions(&$array){
+    if (!is_array($array)){
+      return 0;
+    }
+
+    $max_sub_depth = 0;
+    foreach ($array as &$subarray) {
+      $max_sub_depth = max(
+        $max_sub_depth,
+        self::countDimensions($subarray)
+      );
+    }
+    return $max_sub_depth+1;
+  }
+
 } 
