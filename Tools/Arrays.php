@@ -14,7 +14,7 @@ class Arrays {
   public static function clearArray(&$array){
     foreach ($array as $key => $value) {
       if (is_array($value)) {
-        $array[$key] = self::clearArray($array[$key]);
+        self::clearArray($array[$key]);
       }
 
       if (empty($array[$key])) {
