@@ -281,7 +281,7 @@ class C extends \X\AbstractClasses\PrivateInstantiation{
     self::$config["siteicon_path"] = self::checkFile($path);
   }
 
-  public static function getSiteIcon($path){
+  public static function getSiteIcon(){
     return self::$config["siteicon_path"];
   }
 
