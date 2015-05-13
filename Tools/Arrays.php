@@ -11,6 +11,16 @@ namespace X\Tools;
 
 class Arrays {
 
+  public static function implodeRecursively($array, $delimeter=''){
+    if (self::countDimensions($array)==1){
+      return implode($delimeter, $array);
+    }
+    foreach($array as &$element){
+      $element = self::implodeRecursively($element, $delimeter);
+    }
+    return $array;
+  }
+
   public static function clearArray(&$array){
     foreach ($array as $key => $value) {
       if (is_array($value)) {
