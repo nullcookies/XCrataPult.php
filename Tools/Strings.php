@@ -204,7 +204,7 @@ class Strings {
 
   public static function processString($text, $processor, $prefix=null, $postfix=null){
 
-    function process($text, $processor, $default=''){
+    $process = function ($text, $processor, $default=''){
       $answer='';
       if (Values::isCallback($processor)){
         $answer = call_user_func($processor, $text);
@@ -227,9 +227,9 @@ class Strings {
         $answer = $default;
       }
       return $answer;
-    }
+    };
 
-    return process($text, $prefix).process($text, $processor, $text).process($text, $postfix);
+    return $process($text, $prefix).$process($text, $processor, $text).$process($text, $postfix);
   }
 
   public static function fillBefore($string, $filler, $length){

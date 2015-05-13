@@ -9,7 +9,7 @@
 namespace X\Data\DB;
 
 use Typograf\Typograf;
-use X\Debug\Logger;
+use X\Tools\FileSystem;
 use X\Tools\Strings;
 use X\Traits\TFullClassName;
 use X\Validators\Values;
@@ -36,6 +36,7 @@ abstract class Entity {
   const FIELD_TYPE_SORT_POSITION = 'sortpos';
   const FIELD_TYPE_DATE = 'date';
   const FIELD_TYPE_TIME = 'time';
+  const FIELD_TYPE_CONTENT_BLOCK = 'content_block';
 
   const ERROR_INCORRECT='incorrect';
   const ERROR_TOOLONG = 'too_long';
@@ -51,7 +52,7 @@ abstract class Entity {
   const ERROR_IMAGE_WIDTH_SMALL = 'image_width_small';
   const ERROR_IMAGE_HEIGHT_SMALL = 'image_height_small';
 
-  protected static $icon = Icons::ICON_list_alt;
+  protected static $icon = Icons::ICON_list;
 
   protected static $fields=[];
   protected static $groups=[];
@@ -372,6 +373,52 @@ abstract class Entity {
           }else{
             $isOK=true;
           }
+        }elseif($fieldType===self::FIELD_TYPE_CONTENT_BLOCK){
+          $val = json_decode($val, true);
+          $result=[];
+
+          if ($val && is_array($val)) {
+            foreach ($val as $part) {
+              switch($part['type']){
+                case 'image':
+                  $files = X::uploadedFiles();
+                  $imagename = $part['image'];
+                  if (($file = $files[$imagename]) && $file['name']){
+                    if ($file['is_image']){
+                      $filename = explode(".", $file['name']);
+                      $ext = array_pop($filename);
+                      $filename = Strings::processString(implode(".", $filename), $fieldData['filename'], $fieldData['prefix'], $fieldData['postfix']) . '.' . $ext;
+                      $newName = $files->store($file, $fieldData['upload_path'], $filename);
+                      $part['image']=X::path2URI(FileSystem::finalizeDirPath($fieldData['upload_path']).$newName);
+                    }
+                  }
+                  break;
+                case 'slideshow':
+                  $files = X::uploadedFiles();
+                  $images=[];
+                  foreach($part['images'] as $imagename) {
+                    $image = null;
+                    if (($file = $files[$imagename]) && $file['name']) {
+                      if ($file['is_image']) {
+                        $filename = explode(".", $file['name']);
+                        $ext = array_pop($filename);
+                        $filename = Strings::processString(implode(".", $filename), $fieldData['filename'], $fieldData['prefix'], $fieldData['postfix']) . '.' . $ext;
+                        $newName = $files->store($file, $fieldData['upload_path'], $filename);
+                        $image = X::path2URI(FileSystem::finalizeDirPath($fieldData['upload_path']) . $newName);
+                      }
+                    }
+                    if ($image === null) {
+                      $image = $imagename;
+                    }
+                    $images[] = $image;
+                  }
+                  $part['images']=$images;
+                  break;
+              }
+              $result[]=$part;
+            }
+          }
+          $val = json_encode($result);
         }else{
 
           if (array_key_exists('validator', $fieldData) && $isOK){
@@ -437,9 +484,6 @@ abstract class Entity {
               }
             }
           }
-          if (array_key_exists("typograph", $fieldData) && $fieldData['typograph']){//TODO: remove
-            $val = Typograf::process($val);
-          }
           if ($val || !array_key_exists('keep_if_no_changes', $fieldData) || $this->isNew()){
             if (!is_array($fieldData['processor'])){
               $fieldData['processor'] = [$fieldData['processor']];
@@ -449,6 +493,7 @@ abstract class Entity {
                 $val = call_user_func($processor, $val);
               }
             }
+
             $this->object->setFieldValue($name, $val);
           }
         }
