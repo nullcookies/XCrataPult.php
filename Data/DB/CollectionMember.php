@@ -46,6 +46,7 @@ class CollectionMember {
       $tableName = $tableField['alias'];
       return $this->$tableName()->fieldValue($tableField['field']);
     }
+    return null;
   }
 
 } 
