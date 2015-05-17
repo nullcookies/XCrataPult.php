@@ -398,7 +398,14 @@ abstract class Entity {
                   $images=[];
                   foreach($part['images'] as $imagename) {
                     $image = null;
-                    if (($file = $files[$imagename]) && $file['name']) {
+                    $index = null;
+                    list($imagename, $index) = explode(":", $imagename);
+                    if ($files[$imagename] && ( ($index===null && $files[$imagename]['name']) || ($index!==null && $files[$imagename][$index]['name']))){
+                      if ($index!==null){
+                        $file = $files[$imagename][$index];
+                      }else{
+                        $file = $files[$imagename];
+                      }
                       if ($file['is_image']) {
                         $filename = explode(".", $file['name']);
                         $ext = array_pop($filename);
