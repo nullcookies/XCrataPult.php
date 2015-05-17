@@ -14,6 +14,8 @@ use X\Validators\Files;
 
 class SmartFile extends SmartArray{
 
+  private $modernized=[];
+
   public function __construct(array $array=Array()) {
     $this->array = $array;
   }
@@ -26,53 +28,66 @@ class SmartFile extends SmartArray{
     return; //no changes allowed;
   }
 
-  private function modernize(&$file, $pos=null){
-    $getItem = function (&$file, $item) use ($pos){return $pos===null ? $file[$item] : $file[$item][$pos];};
-    $assignItem = function (&$file, $item, $value) use ($pos){ $pos===null ? $file[$item]=$value : $file[$item][$pos]=$value;};
+  private function modernize($file, $pos=null){
 
-    if ($getItem($file, 'error')){
-      return;
+    $getItem = function (&$file, $item) use($pos) {return $pos===null ? $file[$item] : $file[$item][$pos];};
+
+    if (!$file || !is_Array($file)){
+      return [];
     }
 
-    $assignItem($file, 'human_size', Strings::Grades( $getItem($file, 'size'), 1024, 'B,KB,MB,GB,TB', 2, ' ') );
+    if (!array_key_exists('name', $file)){
+      return [];
+    }
+    $answer=[];
+
+    if (is_array($file['name']) && $pos===null){
+      for($i=0; $i<count($file['name']); $i++){
+        $answer_=$this->modernize($file, $i);
+        if ($answer_){
+          $answer[]=$answer_;
+        }
+      }
+      return $answer;
+    }
+
+    foreach($file as $key=>$val){
+      $answer[$key] = $getItem($file, $key);
+    }
+
+    $answer['human_size']=Strings::Grades_size($getItem($file, 'size'));
 
     if (!$getItem($file, 'size')){
-      return;
+      return $answer;
     }
 
     $ext = explode(".", $getItem($file, 'name'));
-    $assignItem($file, 'ext', array_pop($ext));
+    $answer['ext']=array_pop($ext);
 
     // image?
     $imagedata  = getimagesize( $getItem($file, 'tmp_name') );
     if ($imagedata && $imagedata[0] && $imagedata[1]){
-      $assignItem($file, 'width', $imagedata[0]);
-      $assignItem($file, 'height', $imagedata[1]);
-      $assignItem($file, 'is_image', true);
-      $assignItem($file, 'real_type', strtolower($imagedata['mime']));
-      $assignItem($file, 'bits', $imagedata['bits']);
-      $assignItem($file, 'colors', $imagedata['channels']==3 ? 'RGB' : 'CMYK');
-      $assignItem($file, 'channels', $imagedata['channels']);
+      $answer['width']=$imagedata[0];
+      $answer['height']= $imagedata[1];
+      $answer['is_image']= true;
+      $answer['real_type']= strtolower($imagedata['mime']);
+      $answer['bits']= $imagedata['bits'];
+      $answer['colors']= $imagedata['channels']==3 ? 'RGB' : 'CMYK';
+      $answer['channels']= $imagedata['channels'];
     }
 
-    $assignItem($file, 'is_pdf', Files::isPDF($getItem($file, 'tmp_name')));
+    $answer['modernized']=1;
+    $answer['is_pdf']=Files::isPDF($getItem($file, 'tmp_name'));
+    return $answer;
   }
 
   function offsetGet($key) {
     if (!array_key_exists($key, $this->array)){
       return null;
     }
-    $multivalue = is_array($this->array[$key]['name']);
-    if ( ($multivalue && $this->array[$key]['name'][0]['modernized']) || (!$multivalue && $this->array[$key]['modernized']) ){
-      return $this->array[$key];
-    }
-
-    if ($multivalue){
-      for ($i=0; $i<count($this->array[$key]['name']); $i++){
-        $this->modernize($this->array[$key], $i);
-      }
-    }else{
-      $this->modernize($this->array[$key]);
+    if (!array_key_exists($key, $this->modernized)) {
+      $this->array[$key] = $this->modernize($this->array[$key]);
+      $this->modernized[$key]=true;
     }
 
     return $this->array[$key];
