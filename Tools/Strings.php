@@ -50,7 +50,7 @@ class Strings {
   }
 
   public static function Grades_size($val){
-    return self::Grades($val, 1024, ['B','KB','MB','GB','TB','PB']);
+    return self::Grades($val, 1024, ['B','KB','MB','GB','TB','PB'], 2, ' ');
   }
 
   public static function translitRuEn($string, $nonLatin="'"){
