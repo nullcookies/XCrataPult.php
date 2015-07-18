@@ -36,7 +36,7 @@ class Cache{
 
     if ($this->redisObject){
       try{
-        if ($this->redisObject->connect($host)){
+        if ($this->redisObject->pconnect($host)){
           if (function_exists('igbinary_serialize') && defined('\\Redis::SERIALIZER_IGBINARY')){
             $this->redisObject->setOption(\Redis::OPT_SERIALIZER, \Redis::SERIALIZER_IGBINARY);
           }else{
@@ -81,7 +81,7 @@ class Cache{
       if (strpos($element, " /g:::")){
         $element=explode(" /g:::", $element);
         if (!$element[1]){
-          $this->groupDelete($element[0]);
+          $this->groupDelete(trim($element[0]));
         }else{
           $this->groupRemoveItem($element[0], $element[1]);
         }
