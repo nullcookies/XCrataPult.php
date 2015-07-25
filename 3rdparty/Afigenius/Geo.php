@@ -44,6 +44,9 @@ class Geo {
   }
 
   public static function cityById($id){
+    if (!$id){
+      return null;
+    }
     $answer = Base::request("geo/citybyid", urlencode($id));
     if ($answer["status"]=="ok"){
       if (count($answer["data"])){
