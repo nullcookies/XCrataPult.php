@@ -166,6 +166,7 @@ class CRUDGenerator extends PrivateInstantiation{
       case 'mediumblob':
       case 'blob':
       case 'longblob':
+      case 'binary':
         $setter.= "\t\$this->".$field->getAlias()." = ".($field->getNull() ? "(\$val===null) ? null : ":"")."(string)\$val;"."\n";
         break;
       case 'enum':
@@ -207,6 +208,22 @@ class CRUDGenerator extends PrivateInstantiation{
     $setter.= "\treturn \$this;"."\n".
               "}"."\n".
               "\n";
+
+    $setter .=  "/**"."\n".
+                " * Setter for field '".$field->getName()."' if empty"."\n".
+                " *"."\n".
+                " * @param ".$field->getPHPType().($field->getType()=='set' ? "|array" : "")." \$val"."\n".
+                " *"."\n".
+                " * @return \\".$namespaceName."\\".$className."\n".
+                " */"."\n".
+                "public function set".$field->getCamelName()."_ifEmpty(\$val){"."\n";
+    $setter.= "\tif(!\$this->get".$field->getCamelName()."()){\n";
+    $setter.= "\t\t\$this->set".$field->getCamelName()."(\$val);\n";
+    $setter.= "\t}";
+
+    $setter.= "\treturn \$this;"."\n".
+              "}"."\n".
+              "\n";
     return $setter;
   }
 
@@ -230,9 +247,14 @@ class CRUDGenerator extends PrivateInstantiation{
   }
 
   private static function gCacheKey($primaryFields, Database &$db, Table &$table){
-    $cachekey = "public function cacheKey(){"."\n".
+    $cachekey = "public function cacheKey(\$suffix=''){"."\n".
                 (is_array($primaryFields) && count($primaryFields) ?
-                "\treturn ".Strings::smartImplode($primaryFields, ".'&&'.", function(Field &$value){$value = "\$this->PRIMARY_".$value->getAlias()."";}).";"."\n" :
+                "\treturn ".Strings::smartImplode($primaryFields, ".'&&'.", function(Field &$value){$value = "\$this->PRIMARY_".$value->getAlias()."";}).".'__'.\$suffix;"."\n" :
+                "\treturn false;"."\n").
+                "}"."\n";
+    $cachekey .="public function cacheGroup(){"."\n".
+                (is_array($primaryFields) && count($primaryFields) ?
+                "\treturn 'DB_".$db->getAlias()."_".$table->getName()."';"."\n" :
                 "\treturn false;"."\n").
                 "}"."\n";
     $cachekey .="public function triggerKey(){"."\n".

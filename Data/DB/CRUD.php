@@ -4,6 +4,7 @@ namespace X\Data\DB;
 
 use X\C;
 use X\Data\DB\Structure\Field;
+use X\Data\Persistent\Cache;
 use X\Traits\TFullClassName;
 use \X\Validators\Values;
 use \X\Data\DB\Interfaces\IDB;
@@ -12,6 +13,8 @@ use \X\Data\DB\Interfaces\ICRUD;
 abstract class CRUD implements ICRUD{
 
   use TFullClassName;
+
+  protected static $entityClass = null;
 
   const ERR_WRONG_PRIMARY_FIELD=2001;
 
@@ -126,6 +129,51 @@ abstract class CRUD implements ICRUD{
       return $this->$setter($value);
     }
     throw new \RuntimeException("There is no field ".$fieldName." in ".static::TABLE_NAME);
+  }
+
+
+  abstract public function cacheKey($suffix='');
+  abstract public function cacheGroup();
+
+  protected function setCache($key, $val, $ttl=null){
+    if (!count(static::$PrimaryFields)){
+      throw new \RuntimeException("There is no internal cache for objects with no PK");
+    }
+    if (Cache::enabled()){
+      Cache::getInstance()->groupSetItem($this->cacheGroup(), $this->cacheKey($key), $val, $ttl ?: C::getDbCacheTtl());
+    }
+    return [$this->cacheGroup(), $this->cacheKey($key)];
+  }
+
+  protected function getCache($key){
+    if (!count(static::$PrimaryFields)){
+      throw new \RuntimeException("There is no internal cache for objects with no PK");
+    }
+    if (Cache::enabled() && $this->cacheKey($key)){
+      return Cache::getInstance()->groupGetItem($this->cacheGroup(), $this->cacheKey($key));
+    }
+    return false;
+  }
+
+  public function getPKQuery(){
+    $query=[];
+    foreach(static::$PrimaryFields as $key=>$alias){
+      $query[]=$key.'='.urlencode($this->fieldValue($key));
+    }
+    return implode("&", $query);
+  }
+
+  public static function getPrimaryFields(){
+    static::mutate();
+    return static::$PrimaryFields;
+  }
+
+  public function getEntity(){
+    if (static::$entityClass===null){
+      return null;
+    }
+    $class = static::$entityClass;
+    return new $class($this);
   }
 
 }

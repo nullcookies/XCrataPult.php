@@ -14,8 +14,12 @@ use X\Tools\Strings;
 use X\Traits\TFullClassName;
 use X\Validators\Values;
 use X\X;
+use X_CMF\Admin\AdminPanel;
+use X_CMF\Admin\EntityPage;
 use X_CMF\Admin\Icons;
 use X_CMF\Client\Request;
+use X_CMF\Client\Response;
+use X_CMF\Render\Page;
 
 abstract class Entity {
 
@@ -25,18 +29,26 @@ abstract class Entity {
 
   const FIELD_TYPE_AUTO='auto';
   const FIELD_TYPE_TEXT='text';
+  const FIELD_TYPE_URL='url';
+  const FIELD_TYPE_EMAIL='url';
   const FIELD_TYPE_NUMBER='number';
   const FIELD_TYPE_ENUM='enum';
   const FIELD_TYPE_SET='set';
   const FIELD_TYPE_IMAGE='image';
   const FIELD_TYPE_EXTERNAL='external';
-  const FIELD_TYPE_PROPERTY='property';
-  const FIELD_TYPE_ENTITY_LIST='entity_list';
   const FIELD_TYPE_YESNO = 'yes_no';
   const FIELD_TYPE_SORT_POSITION = 'sortpos';
   const FIELD_TYPE_DATE = 'date';
   const FIELD_TYPE_TIME = 'time';
   const FIELD_TYPE_CONTENT_BLOCK = 'content_block';
+
+  const FIELD_TYPE_GEO_CITY = 'geo_city';
+  const FIELD_TYPE_GEO_COUNTRY = 'geo_country';
+
+  const VIEW_TYPE_PROFILE = 'profile';
+  const VIEW_TYPE_WIDGET = 'widget';
+  const VIEW_TYPE_RECORD = 'record';
+  const VIEW_TYPE_EDITOR = 'editor';
 
   const ERROR_INCORRECT='incorrect';
   const ERROR_TOOLONG = 'too_long';
@@ -55,12 +67,16 @@ abstract class Entity {
   protected static $icon = Icons::ICON_list;
 
   protected static $fields=[];
+  protected static $displayFields=[];
   protected static $groups=[];
   protected static $joins=[];
   protected static $pk=[];
 
-  protected static $CRUD='';
-  protected static $listTemplate = 'admin/pages/entity/list.html';
+  static $CRUD='';
+  static $recordTemplate = "admin/pages/entity/record.haml";
+  static $editorTemplate = "admin/pages/entity/editor.haml";
+  static $profileTemplate = "admin/pages/entity/profile.html";
+  static $widgetTemplate = "admin/pages/entity/widget.haml";
 
   /**
    * @var CRUD[]
@@ -84,7 +100,8 @@ abstract class Entity {
 
   public static function getLocalizationPath(){
     $className = get_called_class();
-    return 'entities.'.array_reverse(explode("\\", $className))[0];
+    $tmp = explode("\\", $className);
+    return 'entities.'.end($tmp);
   }
 
   public static function getIcon(){
@@ -103,8 +120,8 @@ abstract class Entity {
     return static::$CRUD;
   }
 
-  public static function getListTemplate(){
-    return static::$listTemplate;
+  public static function getEditorTemplate(){
+    return static::$editorTemplate;
   }
 
   public static function getJoins(){
@@ -171,79 +188,6 @@ abstract class Entity {
     return null;
   }
 
-  public function getList($fieldName){
-    $fieldData = static::getFieldInfo($fieldName);
-    switch($fieldData['type']){
-      case Entity::FIELD_TYPE_ENTITY_LIST:
-        if ($this->object===null){
-          return [];
-        }
-        $subEntityName = implode("\\", array_slice(explode("\\", get_called_class()),0, -1))."\\".ucfirst(strtolower($fieldData['origin']));
-
-        if (!class_exists($subEntityName)){
-          throw new \RuntimeException("sub entity ".$fieldData['origin']." doesn't exist");
-        }
-        $subCrudName = $subEntityName::getCrud();
-        $subTable = $subCrudName::TABLE_NAME;
-
-        $keyName=null;
-        if (array_key_exists($fieldData['origin'], static::getJoins())){
-          $keyName = static::getJoins()[$fieldData['origin']];
-        }
-
-        if (!is_array($keyName)){
-          $crud = static::$CRUD;
-          $table = $crud::TABLE_NAME;
-          if (array_key_exists($table, $subCrudName::$refTables)){
-            if ($keyName && array_key_exists($keyName, $subCrudName::$refTables[$table])){
-              $conditions = $subCrudName::$refTables[$table][$keyName];
-            }else{
-              reset($subCrudName::$refTables[$table]);
-              $conditions = current($subCrudName::$refTables[$table]);
-            }
-          }else{
-            throw new \RuntimeException("there is no FK to join '".$crud."' with '".$subCrudName."'");
-          }
-        }else{
-          $conditions=$keyName;
-        }
-
-        $FKfields=[];
-        $where=[];
-        foreach($conditions as $to=>$from){
-          $to = str_replace("`", "", $to);
-          $from = str_replace("`", "", $from);
-          list(,$fieldTo) = explode(".", $to);
-          list(,$fieldFrom) = explode(".", $from);
-          $FKfields[$fieldTo]=$this->object->fieldValue($fieldFrom);
-          $where[]=$to."=::".$fieldTo;
-        }
-
-        $object = $this->object;
-        $table = $fieldData['origin'];
-        $query=[];
-        $query[]=$object::TABLE_NAME;
-        $query[]=$table;
-
-        if ($where){
-          $query[]=implode(" and ", $where);
-        }
-
-        foreach($subEntityName::getSortBy() as $sortBy){
-          $query[]=$sortBy;
-        }
-
-        $answer=["fields"=>$FKfields, "entity_name"=>$fieldData['origin'], "entity"=>new $subEntityName(), "objects"=>[]];
-        $expr = DB::get(implode(",", $query), $FKfields)->scope($table);
-        //echo $expr->expr()."<bR><br>";
-        foreach($expr as $obj){
-          $answer["objects"][]=new $subEntityName($obj);
-        }
-        return $answer;
-        break;
-    }
-  }
-
   public static function getSortBy(){
     $sortBy=[];
     $crud = static::$CRUD;
@@ -259,6 +203,10 @@ abstract class Entity {
     return static::$fields;
   }
 
+  public static function getDisplayFields(){
+    return static::$displayFields ?: static::$fields;
+  }
+
   public static function getGroups(){
     return static::$groups;
   }
@@ -268,7 +216,19 @@ abstract class Entity {
   }
 
   public static function getPK(){
-    return static::$pk;
+    $crudClass = static::$CRUD;
+    return static::$pk ?: array_keys($crudClass::getPrimaryFields());
+  }
+
+  public function getPKparams(){
+    $crudClass = static::$CRUD;
+    $vars = static::$pk ?: array_keys($crudClass::getPrimaryFields());
+    $vars = (array)$vars;
+    $params=[];
+    foreach($vars as $var){
+      $params[]=$var.'='.urlencode($this->getField($var));
+    }
+    return implode("&",$params);
   }
 
   public static function create(){
@@ -280,7 +240,16 @@ abstract class Entity {
   public static function getByPKKey(){
     $crudName = static::$CRUD;
     $args = [];
-    if (func_num_args()==1 && is_array(func_get_arg(0))){
+    if (func_num_args()==0){
+      $pks=static::getPK();
+      if (count($pks)==0){
+        throw new \Exception("There is no applicable PK in this entity");
+      }
+      $args=[];
+      foreach($pks as $field){
+        $args[]=Request::getpost($field);
+      }
+    }elseif (func_num_args()==1 && is_array(func_get_arg(0))){
       $args = func_get_arg(0);
     }else{
       $args = func_get_args();
@@ -295,17 +264,13 @@ abstract class Entity {
     return $entity;
   }
 
-  public function setField($name, $val=null){
+  public function setField($name, $val=null, $force=false){
     if (array_key_exists($name, static::getFields())){
 
       $fieldData = static::getFields()[$name];
       $fieldType = $fieldData['type'];
 
-      if (in_array($fieldType, [self::FIELD_TYPE_ENTITY_LIST])){
-        return;
-      }
-      
-      if ((array_key_exists('edit', $fieldData) && $fieldData['edit']) || array_key_exists('fk', $fieldData)){
+      if ((array_key_exists('edit', $fieldData) && $fieldData['edit']) || $force || array_key_exists('fk', $fieldData)){
         if (array_key_exists('fk', $fieldData) && $val===null && !$this->isNew()){
           return;
         }
@@ -556,7 +521,7 @@ abstract class Entity {
       }
     }
     foreach($addData as $field=>$value){
-      $entity->setField($field, $value);
+      $entity->setField($field, $value, true);
     }
 
     if (!$entity->saveErrors){
@@ -595,6 +560,179 @@ abstract class Entity {
 
   public function registerSaveError($field, $message){
     $this->saveErrors[$field][]=$message;
+  }
+
+  public function getObject(){
+    return $this->object;
+  }
+
+  public function entityDisplayName(){
+    return null;
+  }
+
+  public function profileLink(){
+    $classname = array_reverse(explode("\\", static::class))[0];
+    return AdminPanel::getBase().'_x/entity/'.$classname.'/profile/?'.$this->getPKparams();
+  }
+
+  public function editorLink(){
+    $classname = array_reverse(explode("\\", static::class))[0];
+    return AdminPanel::getBase().'_x/entity/'.$classname.'/edit/?'.$this->getPKparams();
+  }
+
+  public function view($type=self::VIEW_TYPE_PROFILE, $return=false){
+    $page = AdminPanel::getPage();
+
+    $classname = array_reverse(explode("\\", static::class))[0];
+
+    switch($type){
+      case static::VIEW_TYPE_PROFILE:
+        $firstGuess= static::$profileTemplate!=self::$profileTemplate ? static::$profileTemplate : null;
+        $template = [$firstGuess, 'admin/entities/'.$classname.'/profile.haml', self::$profileTemplate];
+        break;
+      case static::VIEW_TYPE_EDITOR:
+        $firstGuess= static::$editorTemplate!=self::$editorTemplate ? static::$editorTemplate : null;
+        $template = [$firstGuess, 'admin/entities/'.$classname.'/editor.haml', self::$editorTemplate];
+        break;
+      case static::VIEW_TYPE_RECORD:
+        $return=true;
+        $firstGuess= static::$recordTemplate!=self::$recordTemplate ? static::$recordTemplate : null;
+        $template = [$firstGuess, 'admin/entities/'.$classname.'/record.haml', self::$recordTemplate];
+        break;
+      case static::VIEW_TYPE_WIDGET:
+        $return=true;
+        $firstGuess= static::$widgetTemplate!=self::$widgetTemplate ? static::$widgetTemplate : null;
+        $template = [$firstGuess, 'admin/entities/'.$classname.'/widget.haml', self::$widgetTemplate];
+        break;
+      default:
+        $template='admin/pages/entity/';
+    }
+
+    $page->setInsidePanel(!Request::getpost('integrated') && !$return);
+    if (!Request::getpost('integrated') && !$return) {
+      $page->setTitle('entities.' . $classname . '.editor.page_title');
+      $page->setDescription('entities.' . $classname . '.editor.page_description');
+      $page->clearHistory();
+    }
+    $page->addData([
+      "entity"=>$this,
+      "integrated"=>Request::getpost('integrated'),
+      "URI_back"=>Request::getpost("backurl"),
+    ]);
+
+    return $page->show($template, $return);
+  }
+
+  public function record(){
+    return $this->view(self::VIEW_TYPE_RECORD);
+  }
+  public function profile(){
+    return $this->view(self::VIEW_TYPE_PROFILE);
+  }
+  public function widget(){
+    return $this->view(self::VIEW_TYPE_WIDGET);
+  }
+  public function editor(){
+    return $this->view(self::VIEW_TYPE_EDITOR);
+  }
+
+  public static function externalListener($section=['']){
+    $section=(array)$section;
+    $classname = array_reverse(explode("\\", static::class))[0];
+    $entity=null;
+    switch($section[0]){
+      case 'add':
+        $entity = static::create();
+      case 'edit':
+        $data=[];
+        foreach(static::$fields as $fieldName=>$fieldData){
+          if ($fieldData['type']==self::FIELD_TYPE_EXTERNAL){
+            $newValue = Request::getpost($fieldName);
+            if ($newValue!==null || !array_key_exists('keep_if_no_changes', $fieldData)) {
+              $data[$fieldName] = $newValue;
+            }
+          }
+        }
+
+        /**
+         * @var $object static
+         */
+        if (is_object($entity)){
+          $object=$entity;
+        }else{
+          $object=null;
+        }
+
+        $pk = static::getPK();
+        if (!$pk){
+          $pk=[];
+        }
+        $consistent=(count($pk)>0);
+        $keyInfo=[];
+        foreach($pk as $key){
+          if (!Request::param($key)){
+            $consistent=false;
+            break;
+          }else{
+            $keyInfo[]=Request::get($key);
+          }
+        }
+
+        if (X::isPost()){
+          $object=static::processSave($data);
+          if (Request::param("integrated") && !$object->isNew()){
+            self::closeModal();
+            die();
+          }
+        }elseif($consistent){
+          $object=$object ?: call_user_func_array([static::class,'getByPKKey'], $keyInfo);
+        }
+
+        if (!$object && $consistent){
+          AdminPanel::error404();
+          return false;
+        }else{
+          $page = AdminPanel::getPage();
+          $history = $page->getHistory();
+          $page->clearHistory();
+          $page->addHistory('entities.'.$classname.'.name', '#');
+          $page->addHistory('admin.pages.entity.view', $object->profileLink());
+          $page->addHistory($history[0]);
+
+          $page->addData([
+            "integrated"=>Request::param("integrated"),
+            "Entity"=>$object,
+            "form_data"=>$_POST,
+          ]);
+
+          $object->view(static::VIEW_TYPE_EDITOR);
+        }
+        break;
+      case 'profile':
+        if ($entity=static::getByPKKey()){
+          $entity->profile();
+        }else{
+          AdminPanel::error404();
+        }
+      break;
+      case '':
+        Response::redirect(FileSystem::finalizeDirPath(explode("?", X::getURI())[0]).'view/');
+        break;
+    }
+  }
+
+  public function __call($name, $args=[]){
+    if (!method_exists($this->object, $name) && method_exists($this->object, "get".$name)){
+      $name = "get".$name;
+    }
+    return call_user_func_array([$this->object, $name], $args);
+  }
+
+  static public function __callStatic($name, $args=[]){
+    if (!method_exists(static::$CRUD, $name) && method_exists(static::$CRUD, "get".$name)){
+      $name = "get".$name;
+    }
+    return forward_static_call_array([static::$CRUD, $name], $args);
   }
 
 } 
