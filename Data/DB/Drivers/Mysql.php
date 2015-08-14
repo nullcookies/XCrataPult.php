@@ -76,6 +76,7 @@ class Mysql implements IDB{
     "mediumblob" => "string",
     "blob"       => "string",
     "longblob"   => "string",
+    "binary"     => "string",
 
     "enum"       => "string",
     "set"        => "string",

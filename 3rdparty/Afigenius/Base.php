@@ -21,8 +21,9 @@ class Base {
     if (!is_array($fieldsNeeded)){
       $fieldsNeeded = explode(",", $fieldsNeeded);
     }
+    $avc = date('d.m.Y');
     $fields = urlencode(implode(',', $fieldsNeeded));
-    $req = $uri.'/'.$params.'?acv=5&limit='.intval($limit).($fields ? '&fields='.$fields :'');
+    $req = $uri.'/'.$params.'?acv='.$avc.'&limit='.intval($limit).($fields ? '&fields='.$fields :'');
     $cacheHash = "AFI:6:".md5($req);
     if (Cache::enabled() && ($answer=Cache::getInstance()->get($cacheHash))){
       return $answer;

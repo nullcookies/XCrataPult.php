@@ -310,7 +310,7 @@ class Collection extends \ArrayObject{
 
     if (is_array($lim)){
       if (count($lim)==1){
-        $this->lim=[intval($lim[0]), intval($lim[1])];
+        $this->lim=[0, intval($lim[0])];
       }elseif(count($lim)==2){
         $this->lim=[intval($lim[0]), intval($lim[1])];
       }
@@ -682,6 +682,9 @@ class Collection extends \ArrayObject{
     }else{
       array_walk($tables, function(&$v){$v=strtolower(trim($v));});
     }
+
+    $results=[];
+
     foreach($tables as $table){
       $part=null;
       $tmp='';
@@ -694,8 +697,11 @@ class Collection extends \ArrayObject{
       }else{
         $inQuotas=false;
         for($i=0; $i<strlen($table); $i++){
-          if ($table[$i]=='`'){
+          if ($table[$i]=='`' || $table[$i]=="'" || $table[$i]=='"'){
             $inQuotas=!$inQuotas;
+            if ($table[$i]=="'" || $table[$i]=='"'){
+              $tmp.=$table[$i];
+            }
             if ($i!=strlen($table)-1){
               continue;
             }
@@ -720,13 +726,13 @@ class Collection extends \ArrayObject{
             }else{
               if ($tableName && $tmp && !$part){
                 $alias = $tmp;
-                $tmp='';
+                $tmp = '';
               }elseif ($part=='conditions'){
                 if (is_string($conditions)){
                   throw new \RuntimeException("For table ".$tableName." both FK and fields constrain are specified. Should be only one.");
                 }
                 $conditions[]=$tmp;
-                if ($aliasPretender){;
+                if ($aliasPretender){
                   $tmp = explode("=", $tmp)[1];
                   if (strpos($tmp, ".")!==false){
                     $tmp = explode(".", $tmp)[0];
@@ -767,7 +773,16 @@ class Collection extends \ArrayObject{
           $conditions[trim($from)]=trim($to);
         }
       }
-      $this->addTable([$tableName, $alias, $conditions]);
+
+      if (!$results[$tableName.'-'.$alias]){
+        $results[$tableName.'-'.$alias]=[$tableName, $alias, $conditions];
+      }else{
+        $results[$tableName.'-'.$alias][2]=array_merge($results[$tableName.'-'.$alias][2], $conditions);
+      }
+    }
+
+    foreach($results as $result){
+      $this->addTable($result);
     }
 
     return $this;
