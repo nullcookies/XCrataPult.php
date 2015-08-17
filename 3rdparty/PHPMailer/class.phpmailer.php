@@ -1702,6 +1702,7 @@ class PHPMailer
 
         if ($this->ConfirmReadingTo != '') {
             $result .= $this->headerLine('Disposition-Notification-To', '<' . trim($this->ConfirmReadingTo) . '>');
+            $result .= $this->headerLine('Return-Receipt-To', '<' . trim($this->ConfirmReadingTo) . '>');
         }
 
         // Add custom headers
