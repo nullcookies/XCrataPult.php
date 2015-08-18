@@ -8,6 +8,7 @@
 
 namespace X\Data\DB;
 
+use app\website\Common;
 use Typograf\Typograf;
 use X\Tools\FileSystem;
 use X\Tools\Strings;
@@ -580,6 +581,16 @@ abstract class Entity {
     return AdminPanel::getBase().'_x/entity/'.$classname.'/edit/?'.$this->getPKparams();
   }
 
+  private static function closeModal($update=null){
+    (new \X_CMF\Admin\Page(null, null, false))->addData(["update"=>$update])->show("admin/pages/entity/close_modal.haml");
+  }
+
+  public function uid(){
+    $className = array_slice(explode("\\", get_called_class()), -1)[0];
+    $pk = $this->getPKparams();
+    return $className.':'.$pk;
+  }
+
   public function view($type=self::VIEW_TYPE_PROFILE, $return=false){
     $page = AdminPanel::getPage();
 
@@ -681,7 +692,7 @@ abstract class Entity {
         if (X::isPost()){
           $object=static::processSave($data);
           if (Request::param("integrated") && !$object->isNew()){
-            self::closeModal();
+            self::closeModal(Request::getpost("_x_update_entity"));
             die();
           }
         }elseif($consistent){
@@ -708,6 +719,32 @@ abstract class Entity {
           $object->view(static::VIEW_TYPE_EDITOR);
         }
         break;
+      case 'json':
+        $object=null;
+        $pk = static::getPK();
+        if (!$pk){
+          $pk=[];
+        }
+        $consistent=(count($pk)>0);
+        $keyInfo=[];
+        foreach($pk as $key){
+          if (!Request::param($key)){
+            $consistent=false;
+            break;
+          }else{
+            $keyInfo[]=Request::get($key);
+          }
+        }
+
+        if($consistent){
+          $object= call_user_func_array([static::class,'getByPKKey'], $keyInfo);
+        }
+        if ($object){
+          Response::json($object->asArray());
+          die();
+        }
+      break;
+
       case 'profile':
         if ($entity=static::getByPKKey()){
           $entity->profile();
