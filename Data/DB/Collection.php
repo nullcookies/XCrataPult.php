@@ -287,6 +287,7 @@ class Collection extends \ArrayObject{
         throw new \Exception("There is no such field '".$field."'");
       }
     }
+    return $this;
   }
 
   public function group($group){
@@ -470,12 +471,13 @@ class Collection extends \ArrayObject{
 
   }
 
-  public function addFieldsToSelect($field){
-
-    $fields = explode(",", $field);
+  public function addFieldsToSelect($fields){
+    if (!is_array($fields)) {
+      $fields = explode(",", $fields);
+    }
     $fields = array_filter($fields);
     foreach($fields as &$f){
-      if (!($tmp = $this->isField($f))){
+      if (!($tmp = $this->isField($f, true))){
         throw new \RuntimeException("The field '".$f."' cannot be added to the list of fields to select since it is ambiguous");
       }
       $this->fieldsToSelect[]=$tmp;
@@ -489,18 +491,21 @@ class Collection extends \ArrayObject{
    */
   public function expr(){
 
-    if ($this->expr){
-
+    if ($this->expr) {
       return $this->expr;
     }
 
     if (!count($this->tables)){
-
       return false;
     }
     $fieldsWeNeed=[];
 
     if (count($this->fieldsToSelect)){
+      foreach($this->fieldsToSelect as $fieldName){
+        if (!in_array($fieldName."`", $this->excludedFields)){
+          $fieldsWeNeed[]=$fieldName." as '".$tableData['alias'].".".$fieldName."'";
+        }
+      }
       $fieldsWeNeed=$this->fieldsToSelect;
     }else{
       foreach($this->tables as $tableData){
@@ -646,7 +651,7 @@ class Collection extends \ArrayObject{
     return $n;
   }
 
-  private function isField($field){
+  private function isField($field, $as=false){
 
     if (is_numeric($field)){
 
@@ -660,6 +665,7 @@ class Collection extends \ArrayObject{
       }
     }
     $fieldName=$field;
+    $asName = null;
     $field = str_replace("`", "", $field);
     if (strpos($field, ".")!==false){
       list($table, $field) = explode(".", $field);
@@ -668,17 +674,19 @@ class Collection extends \ArrayObject{
         $className = $this->tableNames[$table];
         if (array_key_exists($field, $className::getFields())){
           $fieldName = "`".$table."`.`".$field."`";
+          $asName = "'".$table.".".$field."'";
         }
       }elseif($className = CRUD::classByTable($table, $this->driver->getDatabase()->getName())){
         if (array_key_exists($field, $className::getFields())){
           $fieldName = "`".$table."`.`".$field."`";
+          $asName = "'".$table.".".$field."'";
           $this->addTable($className);
         }
       }
     }else{
       if (array_key_exists($field, $this->fieldNames)){
         if (count($this->fieldNames[$field])==1){
-          $fieldName = $this->fieldNames[$field][0];
+          return $this->isField($this->fieldNames[$field][0], $as);
         }else{
 
           return false;
@@ -686,7 +694,7 @@ class Collection extends \ArrayObject{
       }
     }
 
-    return $fieldName?:false;
+    return $fieldName? $as ? $fieldName.' as '.$asName : $fieldName :false;
   }
 
   public function from($tables){
@@ -1002,7 +1010,6 @@ class Collection extends \ArrayObject{
   public function run(){
 
     if ($this->res===null && $this->expr()){
-      //$this->expr()->get()."<br><br>";
       $this->res = $this->expr()->run($this->driver);
       if ($this->res){
         $this->count = $this->driver->numRows($this->res);
