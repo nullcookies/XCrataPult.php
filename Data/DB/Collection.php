@@ -281,8 +281,8 @@ class Collection extends \ArrayObject{
       $fields = explode(",", $fields);
     }
     foreach($fields as $field){
-      if ($field = static::isField($field)){
-        $this->excludedFields[]=$field;
+      if ($fieldName = static::isField($field)){
+        $this->excludedFields[]=$fieldName;
       }else{
         throw new \Exception("There is no such field '".$field."'");
       }
