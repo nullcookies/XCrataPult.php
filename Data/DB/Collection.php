@@ -43,6 +43,7 @@ class Collection extends \ArrayObject{
   protected $group=[];
   protected $whereVars=[];
   protected $fields=[];
+  protected $excludedFields=[];
   protected $instantiator=null;
 
   protected $fieldsToSelect=[];
@@ -275,6 +276,19 @@ class Collection extends \ArrayObject{
     return $this;
   }
 
+  public function excludeFields($fields){
+    if (!is_array($fields)) {
+      $fields = explode(",", $fields);
+    }
+    foreach($fields as $field){
+      if ($field = static::isField($field)){
+        $this->excludedFields[]=$field;
+      }else{
+        throw new \Exception("There is no such field '".$field."'");
+      }
+    }
+  }
+
   public function group($group){
 
     $this->resetRes();
@@ -485,13 +499,14 @@ class Collection extends \ArrayObject{
       return false;
     }
     $fieldsWeNeed=[];
+
     if (count($this->fieldsToSelect)){
       $fieldsWeNeed=$this->fieldsToSelect;
     }else{
       foreach($this->tables as $tableData){
         $class = $tableData['class'];
         foreach($class::getFields() as $fieldName=>$field){
-          if (array_key_exists('fullName', $field) && $field['fullName']){
+          if (array_key_exists('fullName', $field) && $field['fullName'] && !in_array("`".$tableData['alias'].'`.`'.$fieldName."`", $this->excludedFields)){
             $fieldsWeNeed[]="`".$tableData['alias'].'`.`'.$fieldName."` as '".$tableData['alias'].".".$fieldName."'";
           }
         }
