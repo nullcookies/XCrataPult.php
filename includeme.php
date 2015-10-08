@@ -73,5 +73,7 @@ require_once(__XDIR__.'3rdparty/PHPSQLParser/PHPSQLCreator.php');
 
 require_once(__XDIR__.'3rdparty/PHPMailer/PHPMailerAutoload.php');
 
+require_once(__XDIR__.'3rdparty/Mobile-Detect/Mobile_Detect.php');
+
 
 X::isOk();
