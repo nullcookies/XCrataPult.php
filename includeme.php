@@ -22,7 +22,6 @@ function registerAutoloader($namespaceName, $rootDirectory){
       return;
     }
     $classFullName = (string)str_replace('\\', DIRECTORY_SEPARATOR, substr($className, $namespaceNameLen+1));
-    $classLastName = array_slice(explode( DIRECTORY_SEPARATOR, $className), -1);
 
     if (class_exists("\\X\\Debug\\Logger") && class_exists("\\X\\Tools\\Time") && class_exists("\\X\\Tools\\Validators") && class_exists("\\X\\Debug\\Tracer")){
       \X\Debug\Logger::Add("Autoloader: " . $rootDirectory . $classFullName . '.php...');
@@ -74,6 +73,7 @@ require_once(__XDIR__.'3rdparty/PHPSQLParser/PHPSQLCreator.php');
 require_once(__XDIR__.'3rdparty/PHPMailer/PHPMailerAutoload.php');
 
 require_once(__XDIR__.'3rdparty/Mobile-Detect/Mobile_Detect.php');
+require_once(__XDIR__.'3rdparty/Dropbox/autoload.php');
 
 
 X::isOk();
