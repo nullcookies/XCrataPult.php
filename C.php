@@ -38,6 +38,8 @@ class C extends \X\AbstractClasses\PrivateInstantiation{
     'css_minifier_input'=>'',
     'css_minifier_output'=>'',
 
+    'thumbnails_chmod'=>'0777',
+
     'template_folders'=>[]
   ];
 
@@ -267,6 +269,14 @@ class C extends \X\AbstractClasses\PrivateInstantiation{
 
   public static function getThumbnailsPath(){
     return self::$config["thumbnails_path"];
+  }
+
+  public static function setThumbnailsChmod($chmod){
+    self::$config["thumbnails_chmod"] = $chmod;
+  }
+
+  public static function getThumbnailsChmod(){
+    return is_string(self::$config["thumbnails_chmod"]) ? intval(self::$config["thumbnails_chmod"],8): self::$config["thumbnails_chmod"];
   }
 
   public static function setFavicon($path){
