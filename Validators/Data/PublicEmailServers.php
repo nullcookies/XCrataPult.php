@@ -4870,6 +4870,7 @@ class PublicEmailServers {
     'tiscali.se'=>1,
     'tkcity.com'=>1,
     'tmailinator.com'=>1,
+    'tmaster.ru'=>1,
     'TNbusiness.com'=>1,
     'toast.com'=>1,
     'toke.com'=>1,
