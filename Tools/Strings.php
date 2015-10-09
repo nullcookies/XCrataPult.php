@@ -157,6 +157,8 @@ class Strings {
       'oly'=>'олий',
       'aly'=>'алий',
       'lj'=>'ль',
+      'igor'=>'игорь',
+      'Igor'=>'Игорь',
       'slja'=>'сля',
       'tlja'=>'тля',
       'mlja'=>'мля',
@@ -291,7 +293,13 @@ class Strings {
       "''"=>'Ъ'
     );
 
-    return strtr($string, $back ? $en_ru : $ru_en);
+    $answer = strtr($string, $back ? $en_ru : $ru_en);
+    if ($back){
+      $answer=str_replace("ьь", "ь", $answer);
+      $answer=str_replace("йй", "й", $answer);
+      $answer=str_replace("ъъ", "ъ", $answer);
+    }
+    return $answer;
   }
 
   public static function translitEnRu($string){
@@ -300,6 +308,16 @@ class Strings {
 
   public static function mb_ucwords($str){
     return mb_convert_case($str, MB_CASE_TITLE, "UTF-8");
+  }
+
+  public static function mb_str_split( $string ) {
+    $split = preg_split('/\b([\(\).,\-\'\-,\:!\?;"\{\}\[\]„“»«‘\r\n\/%\.\|]*)/u', $string, -1, PREG_SPLIT_NO_EMPTY);
+    return $split;
+  }
+
+  public static function mb_trim( $string ){
+    $string = preg_replace("/(^\s+)|(\s+$)/us", "", $string);
+    return $string;
   }
 
   public static function offset($val, $minLength=2, $fillChar='0'){
@@ -453,16 +471,18 @@ class Strings {
 
   public static function doubleval($num){
 
+    $negative = trim(strval($num))[0]=='-';
     $dotPos = strrpos($num, '.');
     $commaPos = strrpos($num, ',');
     $sep = (($dotPos > $commaPos) && $dotPos) ? $dotPos :
       ((($commaPos > $dotPos) && $commaPos) ? $commaPos : false);
 
     if (!$sep) {
-      return preg_replace("/[^0-9]/", "", $num) ?: 0;
+      return ($negative ? '-' : '').preg_replace("/[^0-9]/", "", $num) ?: 0;
     }
 
     return
+      ($negative ? '-' : '').
       preg_replace("/[^0-9]/", "", substr($num, 0, $sep)) . '.' .
       preg_replace("/[^0-9]/", "", substr($num, $sep+1, strlen($num)));
   }
