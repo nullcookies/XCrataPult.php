@@ -5,9 +5,6 @@ namespace X\Data\DB\Drivers;
 use X\Data\DB\Expr;
 use X\Data\DB\Interfaces\ICRUD;
 use X\Tools\Strings;
-use \X\X;
-use \X\C;
-use \X\Debug\Logger;
 use \X\Data\DB\DB;
 use \X\Data\DB\Interfaces\IDB;
 use \X\Data\DB\Structure\Database;
@@ -93,7 +90,6 @@ class Mysql implements IDB{
     if (!$this->dbname && !$dbname){
       throw new \Exception("There is no database name specified!", self::ERR_NO_DBNAME);
     }
-    Logger::add("Constructing instance of ".get_called_class()." for DB ".$dbname);
 
     $this->dbname = $dbname;
     $this->alias = $alias ?: $this->database;
@@ -122,9 +118,7 @@ class Mysql implements IDB{
     if (self::$connection){
       return;
     }
-    Logger::add("MySQL: Connecting to ".($this->login ?: "default user")."@".($this->host ?: "default socket")." ...");
     if (self::$connection=mysql_connect($this->host, $this->login, $this->pass, true)){
-      Logger::add("MySQL: Connecting to ".($this->login ?: "default user")."@".($this->host ?: "default socket")." ...OK");
       self::chooseDB($this->dbname, $this->alias);
     }else{
       throw new \Exception("Can't connect to MySQL ".($this->login ?: "default user")."@".($this->host ?: "default socket"), self::ERR_CANNOT_CONNECT);
@@ -147,7 +141,6 @@ class Mysql implements IDB{
     foreach (new Collection($this, new Expr("SELECT TABLE_NAME as name, UNIX_TIMESTAMP(CREATE_TIME) as time FROM TABLES WHERE TABLE_SCHEMA = '".$this->dbname."'")) as $a){
       $tables[]=$a;
     }
-    Logger::add("- got Tables");
     self::chooseDB();
     return $tables;
   }
@@ -194,7 +187,6 @@ class Mysql implements IDB{
       }//else{
         $keys[$key['CONSTRAINT_NAME']]->addField($keyField);
       //}
-      Logger::add("- - key \"".$key['CONSTRAINT_NAME']."\": '".$key['TABLE_NAME']."_".$key['COLUMN_NAME']."'... OK");
     }
     //SHOW INDEX FROM `data`.`object_names`
     foreach(new Collection($this, new Expr("SHOW INDEX FROM `".$this->dbname."`.`".$tableName."`")) as $key){
@@ -219,7 +211,6 @@ class Mysql implements IDB{
         ->tableByName($key['Table'])
         ->fieldByName($key['Column_name']);
       $keys[$key['Key_name']]->addField($keyField);
-      Logger::add("- - key \"".$key['Key_name']."\": '".$key['Table']."_".$key['Column_name']."'... OK");
     }
     return $keys;
   }
@@ -229,7 +220,6 @@ class Mysql implements IDB{
 
     $fields = [];
     foreach(new Collection($this, new Expr("SHOW COLUMNS FROM `".$tableName."`")) as $field){
-      Logger::add("- - table '".$tableName."'... field '".$field['Field']."'");
       $extra = strtolower($field['Extra']);
       $typeParams = explode("(",$field['Type']);
       $type = strtolower($typeParams[0]);
@@ -252,7 +242,6 @@ class Mysql implements IDB{
         ->setTimeOnUpdate($extra == "on update current_timestamp")
         ->setTimeOnCreate($field['Default'] == "CURRENT_TIMESTAMP")
       ;
-      Logger::add("- - table '".$tableName."'... field '".$field['Field']."'... OK");
     }
     return $fields;
   }
@@ -276,10 +265,7 @@ class Mysql implements IDB{
       $dbname = strtolower($dbname);
     }
 
-    Logger::add("MySQL: DB changing to " . $dbname." ...");
-
     if ($this->currentDatabase == strtolower($dbname)){
-      Logger::add("MySQL: DB is already set to " . $dbname);
       return;
     }
 
@@ -289,7 +275,6 @@ class Mysql implements IDB{
       throw new \Exception("Can't choose DB ".$dbname." (".$this->error().")");
     }
 
-    Logger::add("MySQL: DB changing to " . $dbname." ...OK");
   }
 
   public function dropDB($dbname) {
@@ -300,7 +285,6 @@ class Mysql implements IDB{
 
   public function query($sql) {
     $this->lazyConnect();
-    Logger::add("MySQL query: ".$sql);
     return mysql_query($sql, self::$connection);
   }
 

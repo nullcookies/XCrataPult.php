@@ -4,13 +4,8 @@ namespace X\Data\DB;
 
 use \X\C;
 use \X\Data\DB\Interfaces\IDB;
-use \X\Data\DB\Structure\Database;
-use \X\Data\DB\Structure\Field;
-use \X\Debug\Logger;
-use \X\Tools\FileSystem;
 use \X\Validators\Values;
 use \X\AbstractClasses\PrivateInstantiation;
-use \X\Data\DB\CRUDGenerator;
 
 
 class DB extends PrivateInstantiation{
@@ -194,14 +189,8 @@ class DB extends PrivateInstantiation{
    */
   public static function generateCRUDs($forceAbstracts=false, $forceInheritors=false){
     foreach(self::$connections as $database=>$connection){
-      Logger::add("Generating CRUDs for '".$database."'...");
-
-      Logger::add(" - getting database object...");
       $db = &self::connectionByAlias($database)->getDatabase();
-      Logger::add(" - getting database object...OK");
-      Logger::add(" - creating CRUD files...");
       foreach ($db->getTables() as $table){
-        Logger::add("Processing table ".$table->getName());
         $className = ucfirst($table->getName());
         $folderName = ucfirst($db->getAlias());
 
@@ -231,9 +220,6 @@ class DB extends PrivateInstantiation{
           file_put_contents($classFileAbstracts, CRUDGenerator::generateClass($db, $table));
         }
       }
-      Logger::add(" - creating CRUD files...OK");
-
-      Logger::add("Generating CRUDs for '".$database."'...OK");
     }
   }
 

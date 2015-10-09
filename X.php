@@ -5,7 +5,6 @@ if (false == true) die("Meh..");
 
 use \X\Data\Persistent\Session;
 use X\Data\SmartObjects\SmartFile;
-use \X\Debug\Logger;
 
 class X extends \X\AbstractClasses\PrivateInstantiation{
   const METHOD_HTTP = "HTTP";

@@ -3,13 +3,10 @@
 
 namespace X\data\DB;
 use \X\C;
-use \X\Data\DB\Interfaces\IDB;
 use \X\Data\DB\Structure\Database;
 use \X\Data\DB\Structure\Field;
 use \X\Data\DB\Structure\Table;
 use \X\Data\DB\Structure\Key;
-use \X\Debug\Logger;
-use \X\Tools\FileSystem;
 use \X\AbstractClasses\PrivateInstantiation;
 use X\Tools\Strings;
 
@@ -31,7 +28,7 @@ class CRUDGenerator extends PrivateInstantiation{
                 "\tself::mutate();"."\n".
                 "\t\$cacheKey = ".$cacheKey.";"."\n".
                 "\tif (!Cache::enabled() || !C::getDbCacheTtl() || !(\$answer = Cache::getInstance()->groupGetItem('DB_".$db->getAlias()."_".$table->getName()."', \$cacheKey))){"."\n".
-                "\t\tLogger::add('DB_".$db->getAlias()."_".$table->getName().": no key '.\$cacheKey.' in cache. Loading from DB');"."\n".
+
       (!$key->isUnique() ?
                 "\t\t\$answer=[];"."\n".
                 "\t\t\$collection=new Collection(static::connection(),'".$table->getName().", ".Strings::smartImplode($fields, " AND ", function(Field &$value){$value = $value->getName()."=::".$value->getName();})."', [".Strings::smartImplode($fields, " , ", function(Field &$value){$value = "'".$value->getName()."' => \$".$value->getAlias();})."]);"."\n".
@@ -65,7 +62,6 @@ class CRUDGenerator extends PrivateInstantiation{
                 "\t\t\t\$item->setfromCache();"."\n".
                 "\t\t}"."\n"
       ).
-                "\t\tLogger::add('DB_".$db->getAlias()."_".$table->getName().": key '.\$cacheKey.' found in cache. Loading from cache');"."\n".
                 "\t}"."\n".
                 "\treturn \$answer;"."\n".
                 "}"."\n";

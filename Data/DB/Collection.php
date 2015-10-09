@@ -101,7 +101,8 @@ class Collection extends \ArrayObject{
       $group=[];
       $fields=[];
       $limit='';
-      foreach(Strings::explodeSelective($expr) as $part){
+      $exploded = Strings::explodeSelective($expr);
+      foreach($exploded as $part){
         $part = trim($part);
         if (!strlen($part)){
           continue;
@@ -668,6 +669,7 @@ class Collection extends \ArrayObject{
     $asName = null;
     $field = str_replace("`", "", $field);
     if (strpos($field, ".")!==false){
+
       list($table, $field) = explode(".", $field);
       $fieldName=null;
       if (array_key_exists($table, $this->tableNames)){

@@ -2,8 +2,6 @@
 namespace X\Data\Persistent;
 if (!defined('__XDIR__')) die();
 
-use X\C;
-use X\Debug\Logger;
 
 class Cache{
   private $redisObject = null;
@@ -121,10 +119,8 @@ class Cache{
     }elseif ($val !== null){
       if ($ttl){
         $this->redisObject->setex($name, $ttl, $val);
-        Logger::add("CACHE: set ".$name." as ".print_r($val,1)." for ".$ttl." secs");
       }else{
         $this->redisObject->set($name, $val);
-        Logger::add("CACHE: set ".$name." as ".print_r($val,1));
       }
     }
     $this->fireModifyTrigger($name);

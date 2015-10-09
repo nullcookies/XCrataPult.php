@@ -6,7 +6,6 @@
  * Time: 3:36
  */
 namespace X;
-use X\Debug\Logger;
 
 define("__XDIR__", dirname(__FILE__) . DIRECTORY_SEPARATOR);
 
@@ -23,19 +22,8 @@ function registerAutoloader($namespaceName, $rootDirectory){
     }
     $classFullName = (string)str_replace('\\', DIRECTORY_SEPARATOR, substr($className, $namespaceNameLen+1));
 
-    if (class_exists("\\X\\Debug\\Logger") && class_exists("\\X\\Tools\\Time") && class_exists("\\X\\Tools\\Validators") && class_exists("\\X\\Debug\\Tracer")){
-      \X\Debug\Logger::Add("Autoloader: " . $rootDirectory . $classFullName . '.php...');
-    }
-
     if (file_exists( $rootDirectory . $classFullName . '.php')){
       include ( $rootDirectory . $classFullName . '.php');
-      if (class_exists("\\X\\Debug\\Logger") && class_exists("\\X\\Tools\\Time") && class_exists("\\X\\Tools\\Validators") && class_exists("\\X\\Debug\\Tracer")){
-        \X\Debug\Logger::Add("Autoloader: " . $rootDirectory . $classFullName . '.php... Ok!');
-      }
-    }else{
-      if (class_exists("\\X\\Debug\\Logger") && class_exists("\\X\\Tools\\Time") && class_exists("\\X\\Tools\\Validators") && class_exists("\\X\\Debug\\Tracer")){
-        \X\Debug\Logger::Add("Autoloader: " . $rootDirectory . $classFullName . '.php... FAIL!');
-      }
     }
   });
 }
@@ -48,30 +36,13 @@ registerAutoloader("X", __XDIR__);
 \X\registerAutoloader("Afi", __XDIR__.'3rdparty/Afigenius/');
 \X\registerAutoloader("Barzo\\Password", __XDIR__.'3rdparty/PasswordGenerator/');
 
-Logger::add("Loading 3rdParty libs");
+require_once(__XDIR__ . '3rdparty/Imagine/Autoloader.php');
+\Imagine_Autoloader::register();
 
-Logger::add("Loading 'Imagine' Autoloader");
-if (file_exists(__XDIR__ . '3rdparty/Imagine/Autoloader.php')){
-  require_once(__XDIR__ . '3rdparty/Imagine/Autoloader.php');
-  if (class_exists("\\Imagine_Autoloader")){
-    \Imagine_Autoloader::register();
-    Logger::add("'Imagine' Autoloader loaded");
-  }else{
-    Logger::add("'Imagine' Autoloader FAILED TO LOAD");
-  }
-}
-
-Logger::add("Loading 'PHPExcel' Autoloader");
-if (file_exists(__XDIR__ . '3rdparty/PHPExcel/PHPExcel.php')){
-  require_once(__XDIR__ . '3rdparty/PHPExcel/PHPExcel.php');
-  Logger::add("'PHPExcel' Autoloader loaded");
-}
-
+require_once(__XDIR__.'3rdparty/PHPExcel/PHPExcel.php');
 require_once(__XDIR__.'3rdparty/PHPSQLParser/PHPSQLParser.php');
 require_once(__XDIR__.'3rdparty/PHPSQLParser/PHPSQLCreator.php');
-
 require_once(__XDIR__.'3rdparty/PHPMailer/PHPMailerAutoload.php');
-
 require_once(__XDIR__.'3rdparty/Mobile-Detect/Mobile_Detect.php');
 require_once(__XDIR__.'3rdparty/Dropbox/autoload.php');
 

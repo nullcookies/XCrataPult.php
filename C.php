@@ -5,9 +5,7 @@ namespace X;
 use X\Data\Localization\Localization;
 use \X\Data\DB\DB;
 use \X\Data\Persistent\Cache;
-use \X\Debug\Logger;
 use \X\Tools\FileSystem;
-use X\Validators\Values;
 
 class C extends \X\AbstractClasses\PrivateInstantiation{
 
@@ -325,7 +323,6 @@ class C extends \X\AbstractClasses\PrivateInstantiation{
   }
 
   public static function loadINI($path){
-    Logger::add("Loading config from ".$path);
     if ($path[0]!='/'){
       $path = X::getScriptDir().$path;
     }
@@ -336,9 +333,7 @@ class C extends \X\AbstractClasses\PrivateInstantiation{
     if (!$res){
       throw new \exception("Can't read specified file (but file exists) [".$path."]");
     }
-    Logger::add("Loading config from ".$path." ... loaded");
     self::set($res);
-    Logger::add("Loading config from ".$path." ... set");
   }
 
   public static function checkDir($path){

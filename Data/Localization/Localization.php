@@ -6,10 +6,8 @@ if (!defined('__XDIR__')) die();
 // TODO: add cache support
 
 use X\C;
-use \x\debug\Logger;
 use \x\tools\FileSystem;
 use X\Validators\Values;
-use \x\x;
 
 class Localization{
   private static $languages = [];
@@ -156,15 +154,10 @@ class Localization{
       return;
     }
     foreach ($files as $file){
-      Logger::add("Language file: " . $file . " (loading)");
       if (is_dir($file)){
         static::gobbleDir($file, $code, $base);
       }else{
-        if (static::fromFile($code, $file, $base)){
-          Logger::add("Language file: " . $file . " (OK)");
-        }else{
-          Logger::add("Language file: " . $file . " (ERROR)");
-        }
+        static::fromFile($code, $file, $base);
       }
     }
   }
@@ -178,7 +171,6 @@ class Localization{
       $base   = FileSystem::finalizeDirPath($base).$code;
 
       if (!is_dir($base)){
-        Logger::add("Language folder: ".$base. " doesn't exists.");
         continue;
       }
 
