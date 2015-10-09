@@ -477,9 +477,14 @@ abstract class Entity {
     return $this;
   }
 
-  public function getField($name){
+  public function getField($name, $enumText=false){
     if (array_key_exists($name, static::getFields())){
-      return $this->object->fieldValue($name);
+      $fieldData = static::getFieldInfo($name);
+      if ($enumText && $fieldData['type']==Entity::FIELD_TYPE_ENUM && $fieldData['text']){
+        return $this->object->fieldValue($fieldData['text']);
+      }else {
+        return $this->object->fieldValue($name);
+      }
     }
     return null;
   }
@@ -581,6 +586,11 @@ abstract class Entity {
     return AdminPanel::getBase().'_x/entity/'.$classname.'/edit/?'.$this->getPKparams();
   }
 
+  public function fieldLink($name){
+    $classname = array_reverse(explode("\\", static::class))[0];
+    return AdminPanel::getBase().'_x/entity/'.$classname.'/field/?'.$this->getPKparams().'&_x_fieldname='.urlencode($name);
+  }
+
   private static function closeModal($update=null){
     (new \X_CMF\Admin\Page(null, null, false))->addData(["update"=>$update])->show("admin/pages/entity/close_modal.haml");
   }
@@ -591,12 +601,13 @@ abstract class Entity {
     return $className.':'.$pk;
   }
 
-  public function view($type=self::VIEW_TYPE_PROFILE, $return=false){
+  public function view($type=null, $return=false, $addData=[]){
     $page = AdminPanel::getPage();
 
     $classname = array_reverse(explode("\\", static::class))[0];
 
     switch($type){
+      case null:
       case static::VIEW_TYPE_PROFILE:
         $firstGuess= static::$profileTemplate!=self::$profileTemplate ? static::$profileTemplate : null;
         $template = [$firstGuess, 'admin/entities/'.$classname.'/profile.haml', self::$profileTemplate];
@@ -616,12 +627,14 @@ abstract class Entity {
         $template = [$firstGuess, 'admin/entities/'.$classname.'/widget.haml', self::$widgetTemplate];
         break;
       default:
-        $template='admin/pages/entity/';
+        $template = 'admin/entities/'.$classname.'/'.$type.'.haml';
+        break;
     }
 
     $page->setInsidePanel(!Request::getpost('integrated') && !$return);
     if (!Request::getpost('integrated') && !$return) {
-      $page->setTitle('entities.' . $classname . '.editor.page_title');
+      $title = $this->entityDisplayName() ?: 'entities.' . $classname . '.editor.page_title';
+      $page->setTitle($title);
       $page->setDescription('entities.' . $classname . '.editor.page_description');
       $page->clearHistory();
     }
@@ -630,6 +643,9 @@ abstract class Entity {
       "integrated"=>Request::getpost('integrated'),
       "URI_back"=>Request::getpost("backurl"),
     ]);
+    if(count($addData)) {
+      $page->addData($addData);
+    }
 
     return $page->show($template, $return);
   }
@@ -652,6 +668,34 @@ abstract class Entity {
     $classname = array_reverse(explode("\\", static::class))[0];
     $entity=null;
     switch($section[0]){
+      case 'changer':
+
+        $pk = static::getPK();
+        if (!$pk){
+          $pk=[];
+        }
+        $consistent=(count($pk)>0);
+        $keyInfo=[];
+        foreach($pk as $key){
+          if (!Request::param($key)){
+            $consistent=false;
+            break;
+          }else{
+            $keyInfo[]=Request::get($key);
+          }
+        }
+
+        if($consistent){
+          /**
+           * @var Entity $object
+           */
+          $object= call_user_func_array([static::class,'getByPKKey'], $keyInfo);
+          $object->setField(Request::post("field"), Request::post("value"));
+          $object->save();
+          die();
+        }
+
+        break;
       case 'add':
         $entity = static::create();
       case 'edit':
@@ -748,6 +792,14 @@ abstract class Entity {
       case 'profile':
         if ($entity=static::getByPKKey()){
           $entity->profile();
+        }else{
+          AdminPanel::error404();
+        }
+      break;
+
+      case 'field':
+        if ($entity=static::getByPKKey()){
+          $entity->getField(Request::param("_x_fieldname"));
         }else{
           AdminPanel::error404();
         }
