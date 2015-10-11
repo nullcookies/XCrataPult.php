@@ -797,6 +797,14 @@ abstract class Entity {
         }
       break;
 
+      case 'record':
+        if ($entity=static::getByPKKey()){
+          echo $entity->record();
+        }else{
+          AdminPanel::error404();
+        }
+      break;
+
       case 'field':
         if ($entity=static::getByPKKey()){
           $entity->getField(Request::param("_x_fieldname"));
