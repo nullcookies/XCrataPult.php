@@ -4,6 +4,9 @@ if (!defined('__XDIR__')) die();
 
 
 class Cache{
+  /**
+   * @var \Redis
+   */
   private $redisObject = null;
 
   private static $instance=null;
