@@ -5315,6 +5315,8 @@ class PublicEmailServers {
     'yandex.com'=>1,
     'yandex.mail'=>1,
     'yandex.ru'=>1,
+    'yandex.ua'=>1,
+    'yandex.kz'=>1,
     'yapost.com'=>1,
     'yawmail.com'=>1,
     'yclub.com'=>1,
