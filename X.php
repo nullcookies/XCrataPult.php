@@ -18,6 +18,56 @@ class X extends \X\AbstractClasses\PrivateInstantiation{
   const SIZE_100MB  =  104857600;
   const SIZE_1GB    = 1073741824;
 
+  private static $debug = false;
+  private static $debugStartTime = null;
+  private static $debugCache = ['hit'=>[], 'miss'=>[]];
+  private static $debugMessages = [];
+
+  public static function startDebugLog(){
+    static::$debug=true;
+    static::$debugStartTime=microtime(true);
+  }
+
+  public static function debugMessage($message, $function=null, $class=null){
+    if (!static::$debug){
+      return;
+    }
+    static::$debugMessages[]=[
+      "time"=>microtime(true),
+      "delta"=>microtime(true)-static::$debugStartTime,
+      "message"=>$message,
+      "function"=>$function,
+      "class"=>$class,
+      "memory"=>memory_get_usage(true)
+    ];
+  }
+
+  public static function debugCacheHit($key){
+    if (!static::$debug){
+      return;
+    }
+    static::$debugCache['hit'][]=$key;
+  }
+
+  public static function debugCacheMiss($key){
+    if (!static::$debug){
+      return;
+    }
+    static::$debugCache['miss'][]=$key;
+  }
+
+  public static function getDebugLog(){
+    return static::$debugMessages;
+  }
+
+  public static function getDebugState(){
+    return static::$debug;
+  }
+
+  public static function getDebugCacheStats(){
+    return static::$debugCache;
+  }
+
   public static function getScript(){
     return $_SERVER['SCRIPT_FILENAME'];
   }
