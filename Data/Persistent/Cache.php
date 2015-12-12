@@ -1,5 +1,7 @@
 <?php
 namespace X\Data\Persistent;
+use X\X;
+
 if (!defined('__XDIR__')) die();
 
 
@@ -130,7 +132,13 @@ class Cache{
   }
 
   public function get($name){
-    return $this->redisObject->get($name);
+    $answer=$this->redisObject->get($name);
+    if ($answer!==null){
+      X::debugCacheHit($name);
+    }else{
+      X::debugCacheMiss($name);
+    }
+    return $answer;
   }
 
   public function exists($name){
@@ -142,74 +150,43 @@ class Cache{
     $this->fireModifyTrigger($name);
   }
 
-  public function arraySize($arr){
-    return $this->redisObject->lSize($arr);
-  }
-
-  public function arrayGetItem($arr, $index){
-    return $this->redisObject->lGet($arr, $index);
-  }
-
-  public function arrayPush($arr, $value){
-    return $this->redisObject->lPush($arr, $value);
-  }
-
-  public function arraySetItem($arr, $index, $value){
-    return $this->redisObject->lSet($arr, $index, $value);
-  }
-
-  public function arrayRemoveItem($arr, $value, $count){
-    return $this->redisObject->lRem($arr, $value, $count);
-  }
-
-  public function arrayDelete($arr){
-    $this->redisObject->del($arr);
-  }
-
-  public function arrayGet($arr){
-    $answer = Array();
-    while ($a = $this->redisObject->lPop($arr)){
-      $answer[] = $a;
-    }
-    return $answer;
-  }
-
-  public function arrayGetAll($arr){
-    if ($len=$this->redisObject->lLen($arr)){
-      return $this->redisObject->lRange($arr, 0,$len);
-    }else{
-      return [];
-    }
-  }
-
   public function groupSize($hash){
     return $this->redisObject->hLen($hash);
   }
 
   public function groupGetItem($hash, $key){
-    return $this->redisObject->hGet($hash, $key);
+    $ttl = $this->redisObject->hGet($hash, $key."@TTL");
+    $name = $hash.'::'.$key;
+    $ttl=intval($ttl);
+    if ($ttl && $ttl<time()){
+      $this->groupRemoveItem($hash, $key);
+      X::debugCacheMiss($name);
+      return false;
+    }
+    $answer=$this->redisObject->hGet($hash, $key);
+    if ($answer!==null){
+      X::debugCacheHit($name);
+    }else{
+      X::debugCacheMiss($name);
+    }
+    return $answer;
   }
 
   public function groupSetItem($hash, $key, $value, $ttl=null, $noTrigger=false){
     if (!$noTrigger){
       $this->fireModifyTrigger([$hash, $key]);
     }
+    $ttl=intval($ttl);
+    if ($ttl) {
+      $this->redisObject->hSet($hash, $key . "@TTL", time() + $ttl);
+    }
     return $this->redisObject->hSet($hash, $key, $value);
-  }
-
-  public function groupIncItem($hash, $key, $value=1){
-    $this->fireModifyTrigger([$hash, $key]);
-    return $this->redisObject->hIncrBy($hash, $key, $value);
-  }
-
-  public function groupDecItem($hash, $key, $value=1){
-    $this->fireModifyTrigger([$hash, $key]);
-    return $this->redisObject->hIncrBy($hash, $key, -$value);
   }
 
   public function groupRemoveItem($hash, $key){
     $this->fireModifyTrigger([$hash, $key]);
     $this->redisObject->hDel($hash, $key);
+    $this->redisObject->hDel($hash, $key."@TTL");
   }
 
   public function groupDelete($hash){
@@ -221,21 +198,21 @@ class Cache{
     return $this->redisObject->hGetAll($hash);
   }
 
-  public function queryPush($qry, $value){
-    $this->redisObject->rPush($qry, $value);
+  public function queuePush($queue, $value){
+    return $this->redisObject->rPush($queue, $value);
   }
 
-  public function queryPop($qry, $blocking = false){
+  public function queuePop($queue, $blocking = false){
     if ($blocking){
-      $answer = $this->redisObject->blPop($qry, $blocking);
+      $answer = $this->redisObject->blPop($queue, $blocking);
       return $answer[1];
     }else{
-      return $this->redisObject->lPop($qry);
+      return $this->redisObject->lPop($queue);
     }
   }
 
   public function stackPush($stack, $value){
-    $this->queryPush($stack, $value);
+    return $this->queuePush($stack, $value);
   }
 
   public function stackPop($stack, $blocking = false){
@@ -270,7 +247,7 @@ class Cache{
     return true;
   }
 
-  public function islocked($lockName){
+  public function isLocked($lockName){
     return $this->get($lockName);
   }
 
