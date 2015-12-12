@@ -19,6 +19,8 @@ class Collection extends \ArrayObject{
   protected $eof = false;
   protected $res = null;
   protected $expr = null;
+  protected $prefetch = false;
+  protected $prefetched = false;
   protected $exprRestriced=false;
   protected $row = 0;
   protected $count = 0;
@@ -41,6 +43,7 @@ class Collection extends \ArrayObject{
   protected $lim=[];
   protected $order=[];
   protected $group=[];
+  protected $having=[];
   protected $whereVars=[];
   protected $fields=[];
   protected $excludedFields=[];
@@ -315,6 +318,24 @@ class Collection extends \ArrayObject{
     return $this;
   }
 
+  public function having($having){
+
+    $this->resetRes();
+    if (is_array($having)){
+      foreach($having as $g){
+        $this->having($g);
+      }
+
+      return $this;
+    }
+    $having = trim($having);
+    if ($having[0]=='(' && substr($having, -1)==')'){
+      $having = substr($having, 1, -1);
+    }
+    $this->having[]=$having;
+    return $this;
+  }
+
   public function limit($lim){
 
     $this->resetRes();
@@ -539,6 +560,10 @@ class Collection extends \ArrayObject{
     if (count($this->where)){
       $where = "WHERE ". implode($this->where, " AND ");
     }
+    $having='';
+    if (count($this->having)){
+      $having = "HAVING ". implode($this->having, " AND ");
+    }
 
     $groupBy='';
     if (count($this->group)){
@@ -558,7 +583,7 @@ class Collection extends \ArrayObject{
       $limit="LIMIT ".$this->lim[0].", ".$this->lim[1];
     }
 
-    $sqlExpr = 'SELECT '.$fieldsWeNeed.' FROM '.$joinedTables.' '.$where.' '.$groupBy.' '.$orderBy.' '.$limit;
+    $sqlExpr = 'SELECT '.$fieldsWeNeed.' FROM '.$joinedTables.' '.$where.' '.$groupBy.' '.$having.' '.$orderBy.' '.$limit;
 
     $parser = new PHPSQLParser($sqlExpr);
     $parsed = $parser->parsed;
@@ -997,20 +1022,29 @@ class Collection extends \ArrayObject{
 
   }
 
+  public function isPrefetched(){
+    return !!$this->prefetched;
+  }
+
   public function prefetch(){
+    $this->prefetch=true;
+    return $this;
+  }
+
+  private function _prefetch(){
     if (!$this->randomAccessCache){
-      return;
+      return $this;
     }
     $i=0;
     $this->rowCache=[];
     while($a = $this->driver->getNext($this->res)){
       $this->rowCache[$i++]=$a;
     }
-
+    return $this;
   }
 
   public function run(){
-
+    $this->prefetched=false;
     if ($this->res===null && $this->expr()){
       $this->res = $this->expr()->run($this->driver);
       if ($this->res){
@@ -1018,12 +1052,13 @@ class Collection extends \ArrayObject{
       }else{
         $this->count = 0;
       }
-      if ($this->count && $this->count<C::getDbCacheMaxrows()){
-        $this->prefetch();
+      if ($this->count && ($this->count<C::getDbCacheMaxrows() || $this->prefetch)){
+        $this->_prefetch();
+        $this->prefetched=true;
       }
       $this->eof= $this->count===0;
     }
-
+    return $this;
   }
 
   /**

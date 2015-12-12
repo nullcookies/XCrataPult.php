@@ -9,6 +9,7 @@ use \X\Data\DB\Structure\Table;
 use \X\Data\DB\Structure\Key;
 use \X\AbstractClasses\PrivateInstantiation;
 use X\Tools\Strings;
+use X\Validators\Values;
 
 
 class CRUDGenerator extends PrivateInstantiation{
@@ -226,18 +227,22 @@ class CRUDGenerator extends PrivateInstantiation{
   private static function gPretendReal($primaryFields){
     $pretendR = "public function pretendReal(){"."\n".
                 (is_array($primaryFields) && count($primaryFields) ?
-                "\t".Strings::smartImplode($primaryFields, "\n\t", function(Field &$value){$value = "\$this->PRIMARY_".$value->getAlias()."=\$this->".$value->getAlias().";";})."\n":"").
+                "\t".
+                Strings::smartImplode($primaryFields, "\n\t",
+                  function(Field &$value){
+                    $value = "\$this->PRIMARY_".$value->getAlias()."=\$this->".$value->getAlias().";\n".
+                      "\t\$this->addRangeTrigger(['".$value->getName()."']);";
+                  }
+                )."\n":"").
+                "\t\$this->hook_realObjectUpdate();\n".
                 "}"."\n";
     return $pretendR;
   }
 
   private static function gInvalidate($primaryFields){
-    $pretendR = "private function invalidate(){"."\n".
+    $pretendR = "private function invalidatePK(){"."\n".
                 (is_array($primaryFields) && count($primaryFields) ?
                 "\t".Strings::smartImplode($primaryFields, "\n\t", function(Field &$value){$value = "\$this->PRIMARY_".$value->getAlias()."=null;";})."\n":"").
-                "\tif (Cache::getInstance()->enabled()){"."\n".
-                "\t\tCache::getInstance()->fireModifyTrigger(self::tableChangeTriggerKey());"."\n".
-                "\t}"."\n".
                 "}"."\n";
     return $pretendR;
   }
@@ -365,7 +370,7 @@ class CRUDGenerator extends PrivateInstantiation{
 
       $selectors[] = "/**";
       $selectors[] = " * @param \$val";
-      $selectors[] = " * @return Collection";
+      $selectors[] = " * @return ".$className."Collection_helper\n";
       $selectors[] = " */";
       $selectors[] = "public static function getBy".$field->getCamelName()."isNull(\$limit=0, \$groupBy=null, \$ttl=null){";
       $selectors[] = "\treturn static::getByOneField('".$table->getName().".".$field->getName()." is NULL', null, \$limit, \$groupBy);";
@@ -373,7 +378,7 @@ class CRUDGenerator extends PrivateInstantiation{
 
       $selectors[] = "/**";
       $selectors[] = " * @param \$val";
-      $selectors[] = " * @return Collection";
+      $selectors[] = " * @return ".$className."Collection_helper\n";
       $selectors[] = " */";
       $selectors[] = "public static function getBy".$field->getCamelName()."(\$val, \$limit=0, \$groupBy=null, \$ttl=null){";
       $selectors[] = "\treturn static::getByOneField('".$table->getName().".".$field->getName()."=::val', \$val, \$limit, \$groupBy);";
@@ -381,7 +386,7 @@ class CRUDGenerator extends PrivateInstantiation{
 
       $selectors[] = "/**";
       $selectors[] = " * @param \$val";
-      $selectors[] = " * @return Collection";
+      $selectors[] = " * @return ".$className."Collection_helper\n";
       $selectors[] = " */";
       $selectors[] = "public static function getBy".$field->getCamelName()."_startsWith(\$val, \$limit=0, \$groupBy=null, \$ttl=null){";
       $selectors[] = "\treturn static::getByOneField('".$table->getName().".".$field->getName()." LIKE \"::val%\"', \$val, \$limit, \$groupBy);";
@@ -389,7 +394,7 @@ class CRUDGenerator extends PrivateInstantiation{
 
       $selectors[] = "/**";
       $selectors[] = " * @param \$val";
-      $selectors[] = " * @return Collection";
+      $selectors[] = " * @return ".$className."Collection_helper\n";
       $selectors[] = " */";
       $selectors[] = "public static function getBy".$field->getCamelName()."_soundsLike(\$val, \$limit=0, \$groupBy=null, \$ttl=null){";
       $selectors[] = "\treturn static::getByOneField('".$table->getName().".".$field->getName()." SOUNDS LIKE \"::val%\"', \$val, \$limit, \$groupBy);";
@@ -397,7 +402,7 @@ class CRUDGenerator extends PrivateInstantiation{
 
       $selectors[] = "/**";
       $selectors[] = " * @param \$val";
-      $selectors[] = " * @return Collection";
+      $selectors[] = " * @return ".$className."Collection_helper\n";
       $selectors[] = " */";
       $selectors[] = "public static function getBy".$field->getCamelName()."_endsWith(\$val, \$limit=0, \$groupBy=null, \$ttl=null){";
       $selectors[] = "\treturn static::getByOneField('".$table->getName().".".$field->getName()." LIKE \"%::val\"', \$val, \$limit, \$groupBy);";
@@ -405,7 +410,7 @@ class CRUDGenerator extends PrivateInstantiation{
 
       $selectors[] = "/**";
       $selectors[] = " * @param \$val";
-      $selectors[] = " * @return Collection";
+      $selectors[] = " * @return ".$className."Collection_helper\n";
       $selectors[] = " */";
       $selectors[] = "public static function getBy".$field->getCamelName()."_contains(\$val, \$limit=0, \$groupBy=null, \$ttl=null){";
       $selectors[] = "\treturn static::getByOneField('".$table->getName().".".$field->getName()." LIKE \"%::val%\"', \$val, \$limit, \$groupBy);";
@@ -413,7 +418,7 @@ class CRUDGenerator extends PrivateInstantiation{
 
       $selectors[] = "/**";
       $selectors[] = " * @param \$val";
-      $selectors[] = " * @return Collection";
+      $selectors[] = " * @return ".$className."Collection_helper\n";
       $selectors[] = " */";
       $selectors[] = "public static function getBy".$field->getCamelName()."_greater(\$val, \$limit=0, \$groupBy=null, \$ttl=null){";
       $selectors[] = $timeControl;
@@ -422,7 +427,7 @@ class CRUDGenerator extends PrivateInstantiation{
 
       $selectors[] = "/**";
       $selectors[] = " * @param \$val";
-      $selectors[] = " * @return Collection";
+      $selectors[] = " * @return ".$className."Collection_helper\n";
       $selectors[] = " */";
       $selectors[] = "public static function getBy".$field->getCamelName()."_less(\$val, \$limit=0, \$groupBy=null, \$ttl=null){";
       $selectors[] = $timeControl;
@@ -431,7 +436,7 @@ class CRUDGenerator extends PrivateInstantiation{
 
       $selectors[] = "/**";
       $selectors[] = " * @param \$val";
-      $selectors[] = " * @return Collection";
+      $selectors[] = " * @return ".$className."Collection_helper\n";
       $selectors[] = " */";
       $selectors[] = "public static function getBy".$field->getCamelName()."_between(\$val1, \$val2, \$limit=0, \$groupBy=null, \$ttl=null){";
       $selectors[] = str_replace("\$val", "\$val1", $timeControl);

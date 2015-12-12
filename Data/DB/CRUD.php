@@ -15,6 +15,7 @@ abstract class CRUD implements ICRUD{
   use TFullClassName;
 
   protected static $entityClass = null;
+  protected static $DAC = DAC::class;
 
   const ERR_WRONG_PRIMARY_FIELD=2001;
 
@@ -152,7 +153,7 @@ abstract class CRUD implements ICRUD{
     if (Cache::enabled() && $this->cacheKey($key)){
       return Cache::getInstance()->groupGetItem($this->cacheGroup(), $this->cacheKey($key));
     }
-    return false;
+    return null;
   }
 
   public function getPKQuery(){

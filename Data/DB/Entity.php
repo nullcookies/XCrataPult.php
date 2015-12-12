@@ -10,6 +10,7 @@ namespace X\Data\DB;
 
 use app\website\Common;
 use Typograf\Typograf;
+use X\Data\Persistent\Cache;
 use X\Tools\FileSystem;
 use X\Tools\Strings;
 use X\Traits\TFullClassName;
@@ -18,13 +19,15 @@ use X\X;
 use X_CMF\Admin\AdminPanel;
 use X_CMF\Admin\EntityPage;
 use X_CMF\Admin\Icons;
+use X_CMF\Client\Errors;
 use X_CMF\Client\Request;
 use X_CMF\Client\Response;
-use X_CMF\Render\Page;
 
 abstract class Entity {
 
   use TFullClassName;
+
+  protected static $DAC = DAC::class;
 
   const FIELD_TYPE_CONST='const';
 
@@ -85,6 +88,8 @@ abstract class Entity {
   protected $object=null;
   protected $isNew=true;
 
+  static protected $cacheDependencies=[];
+
   public $saveErrors=[];
   public $saved=false;
 
@@ -93,6 +98,14 @@ abstract class Entity {
     if ($object!==null && $object instanceof $crud){
       $this->object=$object;
       $this->isNew=false;
+      $args=[];
+      foreach($this->getPK() as $field){
+        $args[]=$object->fieldValue($field);
+      }
+      if (!static::checkSecurity($args)){
+        Errors::throwError(403);
+        die();
+      }
     }else{
       $this->object = $crud::create();
     }
@@ -238,6 +251,13 @@ abstract class Entity {
     return new $classname;
   }
 
+  private static function checkSecurity($pks=[], $fieldName=null, $operation=null){
+    if ($securityClass=static::$DAC){
+      return $securityClass::checkEntity(static::class, $pks, $fieldName, $operation);
+    }
+    return false;
+  }
+
   public static function getByPKKey(){
     $crudName = static::$CRUD;
     $args = [];
@@ -255,6 +275,12 @@ abstract class Entity {
     }else{
       $args = func_get_args();
     }
+
+    if (!static::checkSecurity($args)){
+      Errors::throwError(403);
+      die();
+    }
+
     $object = call_user_func_array([$crudName, 'getByPKKey'], $args);
     if ($object){
       $class = get_called_class();
@@ -568,12 +594,20 @@ abstract class Entity {
     $this->saveErrors[$field][]=$message;
   }
 
+  /**
+   * @return CRUD
+   */
   public function getObject(){
     return $this->object;
   }
 
   public function entityDisplayName(){
     return null;
+  }
+
+  public function entityLink($viewName){
+    $classname = array_reverse(explode("\\", static::class))[0];
+    return AdminPanel::getBase().'_x/entity/'.$classname.'/'.$viewName.'/?'.$this->getPKparams();
   }
 
   public function profileLink(){
@@ -583,7 +617,7 @@ abstract class Entity {
 
   public function editorLink(){
     $classname = array_reverse(explode("\\", static::class))[0];
-    return AdminPanel::getBase().'_x/entity/'.$classname.'/edit/?'.$this->getPKparams();
+    return AdminPanel::getBase().'_x/entity/'.$classname.'/edit/?'.$this->getPKparams().'&_x_update_entity='.urlencode($this->uid());
   }
 
   public function fieldLink($name){
@@ -601,10 +635,17 @@ abstract class Entity {
     return $className.':'.$pk;
   }
 
+  public function viewCacheControl($type=null, $addData=[], $content=null){
+    return false;
+  }
+
   public function view($type=null, $return=false, $addData=[]){
-    $page = AdminPanel::getPage();
 
     $classname = array_reverse(explode("\\", static::class))[0];
+
+    if ($answer=$this->viewCacheControl($type, $addData)){
+      return $answer;
+    }
 
     switch($type){
       case null:
@@ -631,6 +672,7 @@ abstract class Entity {
         break;
     }
 
+    $page = AdminPanel::getPage();
     $page->setInsidePanel(!Request::getpost('integrated') && !$return);
     if (!Request::getpost('integrated') && !$return) {
       $title = $this->entityDisplayName() ?: 'entities.' . $classname . '.editor.page_title';
@@ -647,20 +689,22 @@ abstract class Entity {
       $page->addData($addData);
     }
 
-    return $page->show($template, $return);
+    $answer=$page->show($template, $return);
+    $this->viewCacheControl($type, $addData, $answer);
+    return $answer;
   }
 
-  public function record(){
-    return $this->view(self::VIEW_TYPE_RECORD);
+  public function record($addData=[]){
+    return $this->view(self::VIEW_TYPE_RECORD, false, $addData);
   }
-  public function profile(){
-    return $this->view(self::VIEW_TYPE_PROFILE);
+  public function profile($addData=[]){
+    return $this->view(self::VIEW_TYPE_PROFILE, false, $addData);
   }
-  public function widget(){
-    return $this->view(self::VIEW_TYPE_WIDGET);
+  public function widget($addData=[]){
+    return $this->view(self::VIEW_TYPE_WIDGET, false, $addData);
   }
-  public function editor(){
-    return $this->view(self::VIEW_TYPE_EDITOR);
+  public function editor($addData=[]){
+    return $this->view(self::VIEW_TYPE_EDITOR, false, $addData);
   }
 
   public static function externalListener($section=['']){
@@ -815,6 +859,12 @@ abstract class Entity {
       case '':
         Response::redirect(FileSystem::finalizeDirPath(explode("?", X::getURI())[0]).'view/');
         break;
+      default:
+        if ($entity=static::getByPKKey()){
+          $entity->view($section[0]);
+        }else{
+          AdminPanel::error404();
+        }
     }
   }
 
@@ -830,6 +880,11 @@ abstract class Entity {
       $name = "get".$name;
     }
     return forward_static_call_array([static::$CRUD, $name], $args);
+  }
+
+  static public function addCacheDependency($entityClassName, $crudClassName, $crudCacheRange){
+    static::$cacheDependencies['entities'][$entityClassName][]=[$crudClassName, $crudCacheRange];
+    static::$cacheDependencies['cruds'][$crudClassName][]=$crudCacheRange;
   }
 
 } 
