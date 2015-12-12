@@ -27,8 +27,8 @@ class C extends \X\AbstractClasses\PrivateInstantiation{
 
     'static_domain'=>null,
 
-    'scss_input'=>'',
-    'scss_output'=>'',
+    'scss_input'=>'/css/scss/',
+    'scss_output'=>'/css/',
 
     'js_minifier_input'=>'',
     'js_minifier_output'=>'',
