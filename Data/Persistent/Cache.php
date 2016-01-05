@@ -248,7 +248,7 @@ class Cache{
   }
 
   public function isLocked($lockName){
-    return $this->get($lockName);
+    return $this->get("LOCK_".$lockName);
   }
 
   public function unlock($lockName){
