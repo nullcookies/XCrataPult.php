@@ -707,6 +707,7 @@ class PublicEmailServers {
     'comic.com'=>1,
     'communityconnect.com'=>1,
     'company.org.ua'=>1,
+    'company.ru'=>1,
     'comprendemail.com'=>1,
     'compuserve.com'=>1,
     'computer4u.com'=>1,
