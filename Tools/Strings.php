@@ -469,6 +469,10 @@ class Strings {
     return str_repeat($filler, max(0, $length-strlen($string))).$string;
   }
 
+  public static function fillAfter($string, $filler, $length){
+    return $string.str_repeat($filler, max(0, $length-strlen($string)));
+  }
+
   public static function doubleval($num){
 
     $negative = trim(strval($num))[0]=='-';
