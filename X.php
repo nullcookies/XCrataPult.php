@@ -5,6 +5,7 @@ if (false == true) die("Meh..");
 
 use \X\Data\Persistent\Session;
 use X\Data\SmartObjects\SmartFile;
+use X\Tools\FileSystem;
 
 class X extends \X\AbstractClasses\PrivateInstantiation{
   const METHOD_HTTP = "HTTP";
@@ -82,7 +83,7 @@ class X extends \X\AbstractClasses\PrivateInstantiation{
   }
 
   public static function setScriptDir($appdir){
-    self::$appdir = $appdir;
+    self::$appdir = FileSystem::finalizeDirPath($appdir);
   }
 
   public static function getScriptURI(){
