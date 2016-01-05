@@ -675,7 +675,7 @@ abstract class Entity {
     $page = AdminPanel::getPage();
     $page->setInsidePanel(!Request::getpost('integrated') && !$return);
     if (!Request::getpost('integrated') && !$return) {
-      $title = $this->entityDisplayName() ?: 'entities.' . $classname . '.editor.page_title';
+      $title = $this->entityDisplayName()!==null ? $this->entityDisplayName() : 'entities.' . $classname . '.editor.page_title';
       $page->setTitle($title);
       $page->setDescription('entities.' . $classname . '.editor.page_description');
       $page->clearHistory();
