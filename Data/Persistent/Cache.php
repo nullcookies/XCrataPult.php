@@ -259,6 +259,10 @@ class Cache{
     $this->redisObject->flushAll();
   }
 
+  public function keys($pattern='*'){
+    return $this->redisObject->keys($pattern);
+  }
+
   public function __isset($name){
     return $this->exists($name);
   }
