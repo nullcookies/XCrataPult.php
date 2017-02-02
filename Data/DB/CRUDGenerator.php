@@ -23,7 +23,7 @@ class CRUDGenerator extends PrivateInstantiation{
     $fields = $key->getFields();
     $cacheKey = "\"__getBy".$keyName."Key\".".Strings::smartImplode($fields, ".", function(Field &$value){$value = "var_export(\$".$value->getAlias().", true)";});
     $getByKey = "/**"."\n".
-                " * @return null|".ucwords($table->getName())."\n".
+                " * @return null|".ucwords($table->getName()).(!$key->isUnique() ? "[]" : "")."\n".
                 " */"."\n".
                 "public static function getBy".$keyName."Key(".Strings::smartImplode($fields, ", ", function(Field &$value){$value = "\$".$value->getAlias();}).", \$ttl=null){"."\n".
                 "\tself::mutate();"."\n".
@@ -353,16 +353,16 @@ class CRUDGenerator extends PrivateInstantiation{
       switch($field->getType()){
         case 'timestamp':
         case 'datetime':
-          $timeControl = "\t\$val == is_int(\$val) ? date('Y-m-d H:i:s', \$val) : \$val;";
+          $timeControl = "\t\$val = is_int(\$val) ? date('Y-m-d H:i:s', \$val) : \$val;";
           break;
         case 'date':
-          $timeControl = "\t\$val == is_int(\$val) ? date('Y-m-d', \$val) : \$val;";
+          $timeControl = "\t\$val = is_int(\$val) ? date('Y-m-d', \$val) : \$val;";
           break;
         case 'time':
-          $timeControl = "\t\$val == is_int(\$val) ? date('H:i:s', \$val) : \$val;";
+          $timeControl = "\t\$val = is_int(\$val) ? date('H:i:s', \$val) : \$val;";
           break;
         case 'year':
-          $timeControl = "\t\$val == (is_int(\$val) && (\$val>2155 || \$val<1901)) ? date('Y', \$val) : \$val;";
+          $timeControl = "\t\$val = (is_int(\$val) && (\$val>2155 || \$val<1901)) ? date('Y', \$val) : \$val;";
           break;
       }
 

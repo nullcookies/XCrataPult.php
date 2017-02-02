@@ -105,7 +105,7 @@ class Mysql implements IDB{
 
   public function disconnect(){
     if (self::$connection){
-      mysql_close(self::$connection);
+	    self::$connection->close();
     }
     self::$connection=null;
   }
@@ -118,7 +118,7 @@ class Mysql implements IDB{
     if (self::$connection){
       return;
     }
-    if (self::$connection=mysql_connect($this->host, $this->login, $this->pass, true)){
+    if (self::$connection=mysqli_connect($this->host, $this->login, $this->pass)){
       self::chooseDB($this->dbname, $this->alias);
     }else{
       throw new \Exception("Can't connect to MySQL ".($this->login ?: "default user")."@".($this->host ?: "default socket"), self::ERR_CANNOT_CONNECT);
@@ -130,7 +130,7 @@ class Mysql implements IDB{
 
   public function escape($string){
     $this->lazyConnect();
-    return mysql_real_escape_string($string, self::$connection);
+    return self::$connection->real_escape_string($string);
   }
 
   public function getTables(){
@@ -269,7 +269,7 @@ class Mysql implements IDB{
       return;
     }
 
-    if (mysql_select_db($dbname)){
+    if (self::$connection->select_db($dbname)){
       $this->currentDatabase = strtolower($dbname);
     }else{
       throw new \Exception("Can't choose DB ".$dbname." (".$this->error().")");
@@ -285,49 +285,41 @@ class Mysql implements IDB{
 
   public function query($sql) {
     $this->lazyConnect();
-    return mysql_query($sql, self::$connection);
+    return self::$connection->query($sql);
   }
 
   public function getNext($resource, $asArray=true, $assoc=true){
     $this->lazyConnect();
     if ($asArray){
-      return mysql_fetch_array($resource, $assoc ? MYSQL_ASSOC : MYSQL_NUM);
+      return $resource->fetch_array($assoc ? MYSQLI_ASSOC : MYSQLI_NUM);
     }else{
-      return mysql_fetch_object($resource);
+      return $resource->fetch_object();
     }
   }
 
   public function numRows($resource) {
     $this->lazyConnect();
-    return mysql_num_rows($resource);
+    return $resource->num_rows;
   }
 
   public function dataSeek($resource, $position) {
     $this->lazyConnect();
-    return mysql_data_seek($resource, $position);
+    return $resource->data_seek($position);
   }
 
   public function freeResource($resource) {
     $this->lazyConnect();
-    return mysql_free_result($resource);
+    return $resource->free();
   }
 
   public function errno($resource = null) {
     $this->lazyConnect();
-    if ($resource===null){
-      return mysql_errno();
-    }else{
-      return mysql_errno($resource);
-    }
+    return self::$connection->errno;
   }
 
   public function error($resource = null) {
     $this->lazyConnect();
-    if ($resource===null){
-      return mysql_error();
-    }else{
-      return mysql_error($resource);
-    }
+    return self::$connection->error;
   }
 
   private function parseOrderBy($condition){
@@ -392,9 +384,9 @@ class Mysql implements IDB{
     $res = $this->query($sql);
 
     if (!$res){
-      throw new \Exception("SQL FAILED: >>".$sql."<< WITH ERROR ".mysql_error(self::$connection));
+      throw new \Exception("SQL FAILED: (".$this->error().") >>".$sql);
     }
-    if ($res && ($id = mysql_insert_id(self::$connection))){
+    if ($res && ($id = self::$connection->insert_id)){
       $object->autoincrement($id);
     }
     return $res;
@@ -428,7 +420,7 @@ class Mysql implements IDB{
 
     $res = $this->query($sql);
     if (!$res){
-      throw new \Exception("SQL FAILED: >>".$sql."<< WITH ERROR ".mysql_error(self::$connection));
+      throw new \Exception("SQL FAILED: (".$this->error().") >>".$sql);
     }
 
     return $res;

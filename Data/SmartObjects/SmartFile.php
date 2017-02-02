@@ -17,7 +17,7 @@ class SmartFile extends SmartArray{
   private $modernized=[];
 
   public function __construct(array $array=Array()) {
-    $this->array = $array;
+    parent::__construct($array);
   }
 
   public function append($value) {
@@ -32,7 +32,7 @@ class SmartFile extends SmartArray{
 
     $getItem = function (&$file, $item) use($pos) {return $pos===null ? $file[$item] : $file[$item][$pos];};
 
-    if (!$file || !is_Array($file)){
+    if (!$file || !is_array($file)){
       return [];
     }
 
@@ -79,6 +79,10 @@ class SmartFile extends SmartArray{
     $answer['modernized']=1;
     $answer['is_pdf']=Files::isPDF($getItem($file, 'tmp_name'));
     return $answer;
+  }
+
+  function getContents($file){
+
   }
 
   function offsetGet($key) {

@@ -11,7 +11,7 @@ class Cache{
    */
   private $redisObject = null;
 
-  private static $instance=null;
+  private static $instances=[];
   private static $tried=false;
 
   /**
@@ -19,15 +19,22 @@ class Cache{
    * @return Cache
    */
   public static function &getInstance($host=null){
-    if (!self::$instance){
+    if (!self::$instances['default'] || !self::$instances[$host]){
       $called_class = get_called_class();
       if ($host!=null){
-        self::$instance = new $called_class($host);
-      }elseif (self::$instance==null){
-        self::$instance = new $called_class("/var/run/redis/redis.sock"); //default for XCrataPult.server
+        self::$instances[$host] = new $called_class($host);
+        if (!self::$instances['default']){
+          self::$instances['default']=self::$instances[$host];
+        }
+      }elseif (self::$instances['default']==null){
+        self::$instances['default'] = new $called_class("/var/run/redis/redis.sock"); //default for XCrataPult.server
       }
     }
-    return self::$instance;
+    return $host===null ? self::$instances['default'] : self::$instances[$host];
+  }
+
+  public static function reset(){
+    self::$instances=[];
   }
 
   private function __construct($host){
@@ -39,7 +46,7 @@ class Cache{
 
     if ($this->redisObject){
       try{
-        if ($this->redisObject->pconnect($host)){
+        if ($this->redisObject->connect($host)){
           if (function_exists('igbinary_serialize') && defined('\\Redis::SERIALIZER_IGBINARY')){
             $this->redisObject->setOption(\Redis::OPT_SERIALIZER, \Redis::SERIALIZER_IGBINARY);
           }else{
@@ -63,6 +70,9 @@ class Cache{
   }
 
   public function addModifyTrigger($trigger, $deleteElement){
+    if (!$this->redisObject){
+      return null;
+    }
     if (is_array($trigger)){
       $trigger=implode(" /g:::", $trigger);
     }
@@ -77,6 +87,9 @@ class Cache{
   }
 
   public function fireModifyTrigger($trigger){
+    if (!$this->redisObject){
+      return null;
+    }
     if (is_array($trigger)){
       $trigger=implode(" /g:::", $trigger);
     }
@@ -99,10 +112,13 @@ class Cache{
       self::getInstance();
       self::$tried=true;
     }
-    return self::$instance!==null && self::getInstance()->alive();
+    return self::$instances['default']!==null && self::getInstance()->alive();
   }
 
   public function __get($name){
+    if (!$this->redisObject){
+      return null;
+    }
     if ($this->exists($name)) {
       return $this->get($name);
     }else{
@@ -111,6 +127,9 @@ class Cache{
   }
 
   public function __set($name, $val){
+    if (!$this->redisObject){
+      return null;
+    }
     if ($val === null && ($this->exists($name) !== false)){
       $this->remove($name);
     }elseif($val !== null){
@@ -119,6 +138,9 @@ class Cache{
   }
 
   public function set($name, $val, $ttl = null){
+    if (!$this->redisObject){
+      return null;
+    }
     if ($val === null && ($this->redisObject->exists($name) !== false)){
       $this->remove($name);
     }elseif ($val !== null){
@@ -132,6 +154,9 @@ class Cache{
   }
 
   public function get($name){
+    if (!$this->redisObject){
+      return null;
+    }
     $answer=$this->redisObject->get($name);
     if ($answer!==null){
       X::debugCacheHit($name);
@@ -142,19 +167,31 @@ class Cache{
   }
 
   public function exists($name){
+    if (!$this->redisObject){
+      return false;
+    }
     return $this->redisObject->exists($name);
   }
 
   public function remove($name){
+    if (!$this->redisObject){
+      return null;
+    }
     $this->redisObject->del($name);
     $this->fireModifyTrigger($name);
   }
 
   public function groupSize($hash){
+    if (!$this->redisObject){
+      return null;
+    }
     return $this->redisObject->hLen($hash);
   }
 
   public function groupGetItem($hash, $key){
+    if (!$this->redisObject){
+      return null;
+    }
     $ttl = $this->redisObject->hGet($hash, $key."@TTL");
     $name = $hash.'::'.$key;
     $ttl=intval($ttl);
@@ -173,6 +210,9 @@ class Cache{
   }
 
   public function groupSetItem($hash, $key, $value, $ttl=null, $noTrigger=false){
+    if (!$this->redisObject){
+      return null;
+    }
     if (!$noTrigger){
       $this->fireModifyTrigger([$hash, $key]);
     }
@@ -184,25 +224,40 @@ class Cache{
   }
 
   public function groupRemoveItem($hash, $key){
+    if (!$this->redisObject){
+      return null;
+    }
     $this->fireModifyTrigger([$hash, $key]);
     $this->redisObject->hDel($hash, $key);
     $this->redisObject->hDel($hash, $key."@TTL");
   }
 
   public function groupDelete($hash){
+    if (!$this->redisObject){
+      return null;
+    }
     $this->fireModifyTrigger($hash);
     $this->redisObject->del($hash);
   }
 
   public function groupGet($hash){
+    if (!$this->redisObject){
+      return null;
+    }
     return $this->redisObject->hGetAll($hash);
   }
 
   public function queuePush($queue, $value){
+    if (!$this->redisObject){
+      return null;
+    }
     return $this->redisObject->rPush($queue, $value);
   }
 
   public function queuePop($queue, $blocking = false){
+    if (!$this->redisObject){
+      return null;
+    }
     if ($blocking){
       $answer = $this->redisObject->blPop($queue, $blocking);
       return $answer[1];
@@ -212,10 +267,16 @@ class Cache{
   }
 
   public function stackPush($stack, $value){
+    if (!$this->redisObject){
+      return null;
+    }
     return $this->queuePush($stack, $value);
   }
 
   public function stackPop($stack, $blocking = false){
+    if (!$this->redisObject){
+      return null;
+    }
     if ($blocking){
       $answer = $this->redisObject->brPop($stack, $blocking);
       return $answer[1];
@@ -225,12 +286,21 @@ class Cache{
   }
 
   public function Status(){
+    if (!$this->redisObject){
+      return null;
+    }
     return $this->redisObject->info();
   }
 
   public function lock($lockName, $ttl = 1, $timeWait = 0){
-    $timeWaitTo = $timeWait ? min(10, abs(intval($timeWait))) + time() : 0;
-    $ttlTo      = $ttl ? (min(10, abs(intval($ttl))) + time()) : 1;
+    if (!$this->redisObject){
+      return null;
+    }
+    $timeWaitTo = $timeWait ? intval($timeWait) + time()   : 0;
+    $ttlTo      = $ttl ? intval($ttl) + time() : 1;
+    if ($this->isLocked($lockName)){
+      return false;
+    }
     while (!$this->redisObject->setnx("LOCK_".$lockName, $ttlTo)) {
       if ($this->get("LOCK_".$lockName)==1){
         return false;
@@ -239,35 +309,58 @@ class Cache{
         $this->set("LOCK_".$lockName, $ttlTo);
         return true;
       }
-      usleep(100);
       if ($timeWait==0 || $timeWaitTo<time()){
         return false;
       }
+      usleep(100);
     }
     return true;
   }
 
   public function isLocked($lockName){
-    return $this->get("LOCK_".$lockName);
+    if (!$this->redisObject){
+      return null;
+    }
+    $val = $this->get("LOCK_".$lockName);
+    if ($val===1 || $val>=time()){
+      return true;
+    }else{
+      return false;
+    }
   }
 
   public function unlock($lockName){
+    if (!$this->redisObject){
+      return null;
+    }
     $this->redisObject->del("LOCK_" . $lockName);
   }
 
   public function flushAll(){
+    if (!$this->redisObject){
+      return null;
+    }
     $this->redisObject->flushAll();
   }
 
   public function keys($pattern='*'){
+    if (!$this->redisObject){
+      return null;
+    }
     return $this->redisObject->keys($pattern);
   }
 
   public function __isset($name){
+    if (!$this->redisObject){
+      return null;
+    }
     return $this->exists($name);
   }
 
   public function __unset($name){
+    if (!$this->redisObject){
+      return null;
+    }
     $this->remove($name);
   }
 }

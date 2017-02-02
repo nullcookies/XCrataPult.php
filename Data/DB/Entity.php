@@ -44,6 +44,7 @@ abstract class Entity {
   const FIELD_TYPE_SORT_POSITION = 'sortpos';
   const FIELD_TYPE_DATE = 'date';
   const FIELD_TYPE_TIME = 'time';
+  const FIELD_TYPE_DATETIME = 'datetime';
   const FIELD_TYPE_CONTENT_BLOCK = 'content_block';
 
   const FIELD_TYPE_GEO_CITY = 'geo_city';
@@ -146,7 +147,15 @@ abstract class Entity {
     $fieldData = static::getFieldInfo($fieldName);
     if ($fieldData['type']==Entity::FIELD_TYPE_ENUM){
       if (array_key_exists('values', $fieldData)){
-        return $fieldData['values'];
+        if (Values::isAssoc($fieldData['values'])){
+          $answer=$fieldData['values'];
+        }else{
+          $answer=[];
+          foreach($fieldData['values'] as $val){
+            $answer[$val]=$val;
+          }
+        }
+        return $answer;
       }elseif(array_key_exists('origin', $fieldData)){
         if (strpos($fieldData['origin'], '.')){
           list($table, $field)=explode(".", $fieldData['origin']);
@@ -605,9 +614,9 @@ abstract class Entity {
     return null;
   }
 
-  public function entityLink($viewName){
+  public function entityLink($viewName, $integrated=false){
     $classname = array_reverse(explode("\\", static::class))[0];
-    return AdminPanel::getBase().'_x/entity/'.$classname.'/'.$viewName.'/?'.$this->getPKparams();
+    return AdminPanel::getBase().'_x/entity/'.$classname.'/'.$viewName.'/?'.$this->getPKparams().($integrated ? '&integrated=1':'');
   }
 
   public function profileLink(){
@@ -615,9 +624,9 @@ abstract class Entity {
     return AdminPanel::getBase().'_x/entity/'.$classname.'/profile/?'.$this->getPKparams();
   }
 
-  public function editorLink(){
+  public function editorLink($updateUID=null){
     $classname = array_reverse(explode("\\", static::class))[0];
-    return AdminPanel::getBase().'_x/entity/'.$classname.'/edit/?'.$this->getPKparams().'&_x_update_entity='.urlencode($this->uid());
+    return AdminPanel::getBase().'_x/entity/'.$classname.'/edit/?'.$this->getPKparams().'&_x_update_entity='.urlencode($updateUID ?: $this->uid());
   }
 
   public function fieldLink($name){
@@ -629,10 +638,10 @@ abstract class Entity {
     (new \X_CMF\Admin\Page(null, null, false))->addData(["update"=>$update])->show("admin/pages/entity/close_modal.haml");
   }
 
-  public function uid(){
+  public function uid($suffix=''){
     $className = array_slice(explode("\\", get_called_class()), -1)[0];
     $pk = $this->getPKparams();
-    return $className.':'.$pk;
+    return $className.':'.$pk.($suffix ? ':'.$suffix : '');
   }
 
   public function viewCacheControl($type=null, $addData=[], $content=null){
@@ -663,7 +672,7 @@ abstract class Entity {
         $template = [$firstGuess, 'admin/entities/'.$classname.'/record.haml', self::$recordTemplate];
         break;
       case static::VIEW_TYPE_WIDGET:
-        $return=true;
+        $return=!Request::getpost('integrated');
         $firstGuess= static::$widgetTemplate!=self::$widgetTemplate ? static::$widgetTemplate : null;
         $template = [$firstGuess, 'admin/entities/'.$classname.'/widget.haml', self::$widgetTemplate];
         break;
@@ -677,6 +686,7 @@ abstract class Entity {
     if (!Request::getpost('integrated') && !$return) {
       $title = $this->entityDisplayName()!==null ? $this->entityDisplayName() : 'entities.' . $classname . '.editor.page_title';
       $page->setTitle($title);
+      $page->displayTitle(false);
       $page->setDescription('entities.' . $classname . '.editor.page_description');
       $page->clearHistory();
     }

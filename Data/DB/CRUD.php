@@ -177,4 +177,16 @@ abstract class CRUD implements ICRUD{
     return new $class($this);
   }
 
+  public function getCacheTags(){
+    return [];
+  }
+
+  public function serialize(){
+    $answer=['name'=>static::getFullClassName(), 'data'=>[]];
+    foreach(static::$Fields as $fieldName=>$data){
+      $answer['data'][$fieldName]=$this->fieldValue($fieldName);
+    }
+    return $answer;
+  }
+
 }

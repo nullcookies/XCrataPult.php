@@ -229,25 +229,25 @@ abstract class {%CLASSNAME%} extends CRUD{
   }
 
   public function save(){
+    $this->invalidateCache();
   	try{
   	  $this->hook_save_before();
   		static::connection()->store($this);
   		$this->hook_save_after();
   	}catch(\Exception $e){
-  		throw new \Exception('Could not save to table '.static::TABLE_NAME.'!', $e->getCode(), $e);
+  		throw new \Exception('Could not save to table '.static::TABLE_NAME.'! '.$e->getMessage(), $e->getCode(), $e);
   	}
     $this->pretendReal();
-    $this->invalidateCache();
     return $this;
   }
 
   public function delete(){
+    $this->invalidateCache();
   	try{
   		static::connection()->delete($this);
   	}catch(\Exception $e){
-  		throw new \Exception('Could not delete from table '.static::TABLE_NAME.'!', $e->getCode(), $e);
+  		throw new \Exception('Could not delete from table '.static::TABLE_NAME.'! '.$e->getMessage(), $e->getCode(), $e);
   	}
-    $this->invalidateCache();
     $this->invalidatePK();
   }
 
