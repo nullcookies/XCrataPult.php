@@ -9,6 +9,6 @@
  */
 
 if (class_exists("X\\X")){
-  define(__AFI_DIR__, dirname(__FILE__).'/' );
+  define('__AFI_DIR__', dirname(__FILE__).'/' );
   \X\registerAutoloader("Afi", __AFI_DIR__);
 }
