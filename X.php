@@ -128,7 +128,7 @@ class X extends \X\AbstractClasses\PrivateInstantiation{
   }
 
   public static function getIP(){
-    return getenv("HTTP_X_REAL_IP") ?: getenv("REMOTE_ADDR");
+    return array_key_exists("REMOTE_ADDR",$_SERVER) ? $_SERVER['REMOTE_ADDR'] : getenv("HTTP_X_REAL_IP") ?: getenv("REMOTE_ADDR");
   }
 
   public static function getHost(){
@@ -241,6 +241,56 @@ class X extends \X\AbstractClasses\PrivateInstantiation{
 
   public static function isPC(){
     return !static::isMobile() && !static::isTablet();
+  }
+
+  public static function isCli() {
+    if(php_sapi_name() == 'cli' && empty($_SERVER['REMOTE_ADDR'])) {
+      return true;
+    }
+    return false;
+  }
+
+  public static function cpuCount(){
+    static $numCpus = null;
+    if ($numCpus){
+      return $numCpus;
+    }
+    if (is_file('/proc/cpuinfo'))
+    {
+      $cpuinfo = file_get_contents('/proc/cpuinfo');
+      preg_match_all('/^processor/m', $cpuinfo, $matches);
+      $numCpus = count($matches[0]);
+    }
+    else if ('WIN' == strtoupper(substr(PHP_OS, 0, 3)))
+    {
+      $process = @popen('wmic cpu get NumberOfCores', 'rb');
+      if (false !== $process)
+      {
+        fgets($process);
+        $numCpus = intval(fgets($process));
+        pclose($process);
+      }
+    }
+    else
+    {
+      $process = @popen('sysctl -a', 'rb');
+      if (false !== $process)
+      {
+        $output = stream_get_contents($process);
+        preg_match('/hw.ncpu: (\d+)/', $output, $matches);
+        if ($matches)
+        {
+          $numCpus = intval($matches[1][0]);
+        }
+        pclose($process);
+      }
+    }
+
+    if (!$numCpus){
+      $numCpus=1;
+    }
+
+    return $numCpus;
   }
 }
 

@@ -14,6 +14,7 @@ class C extends \X\AbstractClasses\PrivateInstantiation{
     'db_abstract'=>true,
     'db_cache_ttl'=>0,
     'db_cache_maxrows'=>10000,
+    'db_cache_max_object_size_bytes'=>10000,
     'cache_tech_prefix'=>"_X_:",
 
     'cmf_x_media_folder'=>'x_media',
