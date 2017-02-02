@@ -76,7 +76,7 @@ class Values extends PrivateInstantiation{
 
   public static function isSignedInteger($val){
     $val=str_replace(" ","",trim($val));
-    return eregi("^-?([0-9])+$",$val);
+    return preg_match("/^-[1-9][0-9]*$/",$val);
   }
 
   public static function startsWith($haystack, $needle){

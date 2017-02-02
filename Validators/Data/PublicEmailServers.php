@@ -888,6 +888,7 @@ class PublicEmailServers {
     'disposeamail.com '=>1,
     'disposemail.com'=>1,
     'dispostable.com'=>1,
+    'divismail.ru'=>1,
     'di-ve.com'=>1,
     'djibouti.cc'=>1,
     'dm.w3internet.co.uk'=>1,
