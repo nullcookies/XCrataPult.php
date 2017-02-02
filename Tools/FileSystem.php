@@ -9,6 +9,10 @@ use \X\Debug\Tracer;
 
 class FileSystem extends PrivateInstantiation{
 
+  public static function validateRoot($root, $path){
+    
+  }
+
   public static function writeLocked($fileLink, $content, $mode="w", $permissions=0774){
     if (!is_resource($fileLink)){
       if (is_string($fileLink)){
@@ -19,7 +23,7 @@ class FileSystem extends PrivateInstantiation{
         }
 
         $resource = fopen($fileLink, $mode);
-        $result = self::writeLocked($resource, $content, $mode, $permissions);
+        $result = static::writeLocked($resource, $content, $mode, $permissions);
         if ($resource){
           fclose($resource);
           chmod ( $fileLink , $permissions );
@@ -110,12 +114,33 @@ class FileSystem extends PrivateInstantiation{
     return $res;
   }
 
-  public static function deleteIfExists($path){
-    if (file_exists($path) && !is_dir($path)){
-      unlink($path);
+  public static function deleteDir($dirPath) {
+    if (! is_dir($dirPath)) {
+      throw new \InvalidArgumentException("$dirPath must be a directory");
     }
+    if (substr($dirPath, strlen($dirPath) - 1, 1) != '/') {
+      $dirPath .= '/';
+    }
+    $files = glob($dirPath . '*', GLOB_MARK);
 
-    // TODO: add if DIR
+    foreach ($files as $file) {
+      if (is_dir($file)) {
+        self::deleteDir($file);
+      } else {
+        unlink($file);
+      }
+    }
+    rmdir($dirPath);
+  }
+
+  public static function deleteIfExists($path){
+    if (file_exists($path)){
+      if (!is_dir($path)) {
+        unlink($path);
+      }else{
+        static::deleteDir($path);
+      }
+    }
   }
 
   public static function unZIP($file, $path=''){
@@ -132,5 +157,20 @@ class FileSystem extends PrivateInstantiation{
     }else{
       return false;
     }
+  }
+  
+  public static function parsePDF($pdf){
+    if (strlen($pdf)<200 && file_exists($pdf)){
+      $pdf = file_get_contents($pdf);
+    }
+    $wd = \X\X::getScriptDir().'.tmp/';
+    $from=$wd.uniqid("pdf-parse-", true).'.pdf';
+    $to=$from.'.txt';
+    file_put_contents($from, $pdf);
+    shell_exec("pdftotext -layout \"".$from."\" \"".$to."\"");
+    $answer=file_get_contents($to);
+    unlink($to);
+    unlink($from);
+    return $answer;
   }
 }

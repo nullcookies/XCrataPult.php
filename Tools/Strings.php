@@ -315,6 +315,43 @@ class Strings {
     return $split;
   }
 
+  public static function mb_explode($delimiter, $string, $limit = -1, $encoding = 'auto') {
+    if(!is_array($delimiter)) {
+      $delimiter = array($delimiter);
+    }
+    if(strtolower($encoding) === 'auto') {
+      $encoding = mb_internal_encoding();
+    }
+    if(is_array($string) || $string instanceof \Traversable) {
+      $result = array();
+      foreach($string as $key => $val) {
+        $result[$key] = static::mb_explode($delimiter, $val, $limit, $encoding);
+      }
+      return $result;
+    }
+    $result = array();
+    $currentpos = 0;
+    $string_length = mb_strlen($string, $encoding);
+    while($limit < 0 || count($result) < $limit) {
+      $minpos = $string_length;
+      $delim_index = null;
+      foreach($delimiter as $index => $delim) {
+        if(($findpos = mb_strpos($string, $delim, $currentpos, $encoding)) !== false) {
+          if($findpos < $minpos) {
+            $minpos = $findpos;
+            $delim_index = $index;
+          }
+        }
+      }
+      $result[] = mb_substr($string, $currentpos, $minpos - $currentpos, $encoding);
+      if($delim_index === null) {
+        break;
+      }
+      $currentpos = $minpos + mb_strlen($delimiter[$delim_index], $encoding);
+    }
+    return $result;
+  }
+
   public static function mb_trim( $string ){
     $string = preg_replace("/(^\s+)|(\s+$)/us", "", $string);
     return $string;
@@ -466,11 +503,11 @@ class Strings {
   }
 
   public static function fillBefore($string, $filler, $length){
-    return str_repeat($filler, max(0, $length-strlen($string))).$string;
+    return str_repeat($filler, max(0, $length-mb_strlen($string))).$string;
   }
 
   public static function fillAfter($string, $filler, $length){
-    return $string.str_repeat($filler, max(0, $length-strlen($string)));
+    return $string.str_repeat($filler, max(0, $length-mb_strlen($string)));
   }
 
   public static function doubleval($num){
