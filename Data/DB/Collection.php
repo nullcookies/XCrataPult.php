@@ -21,7 +21,7 @@ class Collection extends \ArrayObject{
   protected $expr = null;
   protected $prefetch = false;
   protected $prefetched = false;
-  protected $exprRestriced=false;
+  protected $exprRestricted=false;
   protected $row = 0;
   protected $count = 0;
   protected $rowCache = [];
@@ -73,10 +73,10 @@ class Collection extends \ArrayObject{
 
     if ($expr instanceof Collection){
       $this->expr = $expr->expr();
-      $this->exprRestriced=true;
+      $this->exprRestricted=true;
     }elseif ($expr instanceof Expr){
       $this->expr = $expr;
-      $this->exprRestriced=true;
+      $this->exprRestricted=true;
     }elseif(is_array($expr)){
       $vars = array_slice($expr, 1);
       if (count($vars)==1 && is_array($vars[0])){
@@ -1091,7 +1091,7 @@ class Collection extends \ArrayObject{
     $this->row = $num;
     $this->eof = $this->lastRow===false;
 
-    if ($this->exprRestriced){
+    if ($this->exprRestricted){
 
       return $this->lastRow;
     }else{
@@ -1152,7 +1152,7 @@ class Collection extends \ArrayObject{
   public function resetRes(){
 
     $this->res = null;
-    if (!$this->exprRestriced){
+    if (!$this->exprRestricted){
       $this->expr = null;
     }
 
